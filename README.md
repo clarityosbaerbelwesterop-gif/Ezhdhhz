@@ -24,9 +24,13 @@ pip install -e ".[test]"
 python -m titan backends                       # what is really available
 python -m titan matmul --m 256 --n 192 --k 128 --dtype bf16   # vertical slice, verified
 python -m titan quickstart                     # train an MLP on TITAN (or: -i for guided mode)
-python -m titan quickstart --model transformer --profile small
+python -m titan quickstart --data examples/data/machines.csv --target status   # your own data
+python -m titan quickstart --data my_book.txt  # your own text -> character-level transformer
+python -m titan quickstart --params 100m       # sized transformer, trained for real on this host
+python -m titan quickstart --params 100b       # too big for any single host -> distributed TITAN plan
+python -m titan plan --params 100b --devices 64 --compare-b300
 python -m titan bench --suite default          # reproducible report (reports/)
-python -m pytest -q                            # 274 tests (RTL tests need Verilator)
+python -m pytest -q                            # 304 tests (RTL tests need Verilator)
 make lint test                                 # RTL lint (warnings = errors) + 4 RTL simulations
 ```
 
@@ -41,6 +45,9 @@ make lint test                                 # RTL lint (warnings = errors) + 
 | Compiler | fusion, memory planning, tiling, multi-core, barrier elimination, interleaving | 60 end-to-end tests vs float64 reference |
 | NN + autodiff | MLP, attention, transformer block, char-LM; reverse-mode AD | every gradient rule vs finite differences |
 | Training | forward+loss+backward+optimizer as one TITAN program; checkpoints | loss reduction, bitwise resume, corruption detection |
+| Own data | `.csv/.tsv/.npz/.npy` (classification or regression), `.txt` (language model) | format, validation and end-to-end tests |
+| Execution speed | bit-exact replay of the ISA program; `fast` backend runs TITAN IR kernels on whole tensors | replay memory images identical to the reference engine; fast ≈ ISA within FP32 tolerance |
+| Large models | meta graphs of any size, distributed planner (TP×PP×DP, ZeRO, recompute) up to 175B | parameter/FLOP formulas equal compiled graphs exactly |
 | Performance | cycle model, roofline, benchmark harness, verified autotuner | `reports/` (method + provenance on every number) |
 | RTL | `rtl/titan_mxu_tile.sv` (MXU tile), `rtl/rtl_mac_array.sv` (D0) | directed + 2000-cycle random TBs; Verilator co-sim 0 mismatches |
 | FPGA prep | Yosys (generic, xc7, ECP5) + nextpnr-ecp5 P&R | `reports/synth/`, `docs/FPGA.md` |
@@ -56,6 +63,9 @@ make lint test                                 # RTL lint (warnings = errors) + 
 | RTL ↔ emulator | 48 random INT8/INT4 MATMUL cases incl. overflow, 0 mismatches | Verilator co-simulation |
 | 8×8 INT8 MXU tile on ECP5-85F | 64 MULT18X18D, 2048 FF, 179.8 MHz | nextpnr post-route STA estimate |
 | Data parallel, 16 devices (flat ring) | 2.86× speed-up, 63 % time in all-reduce | simulated compute + modelled links (assumed) |
+| MLP training, 300 steps | 5.2 s → 0.24 s (21×), identical loss trajectory | measured on the host (emulator speed) |
+| Largest model trained for real on this 16 GB host | 255 M parameters (transformer, fast backend) | measured on the host |
+| GPT-100B on 64 × `titan-x1-target` | ~2.2 s/step, ~0.96 M tokens/s, MFU 41 %; 7.0× the same plan on 64 × B300 | analytical planner, assumed links (Mode C) |
 
 ## Performance honesty
 
@@ -67,7 +77,10 @@ make lint test                                 # RTL lint (warnings = errors) + 
   *measured (host)*; accelerator timing is *simulated* or *analytical*, never mixed.
 * B300 figures (`titan/perf/reference.py`) carry sources and retrieval date; the code refuses
   cross-precision, sparse-vs-dense and simulated-vs-peak ratios.
+* 100B parameters cannot be trained numerically on a single host (≈1.6 TB of weights, gradients
+  and Adam states). Models up to that size and beyond are defined (meta graphs), compiled to TITAN IR
+  and planned for the distributed target system; numeric training here is limited by host RAM.
 
 Documentation: [Architecture](docs/ARCHITECTURE.md) · [ISA](docs/ISA.md) · [Performance](docs/PERFORMANCE.md) ·
 [Verification](docs/VERIFICATION.md) · [FPGA](docs/FPGA.md) · [Roadmap](docs/ROADMAP.md) ·
-[Status](docs/PROJECT_STATUS.md) · [M0 audit](docs/AUDIT_M0.md)
+[Status](docs/PROJECT_STATUS.md) · [M0 audit](docs/AUDIT_M0.md) · [Speed & large models](reports/SPEED_AND_LARGE_MODELS.md)

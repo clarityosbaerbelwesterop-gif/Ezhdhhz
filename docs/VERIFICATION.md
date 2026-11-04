@@ -16,6 +16,10 @@ estimate as a measurement.
 | Autodiff | every rule vs central finite differences | `pytest tests/test_nn.py` |
 | NN forward | vs reference and an independent textbook attention | `pytest tests/test_nn.py` |
 | Training | loss reduction, determinism, resume ≡ uninterrupted, checksum | `pytest tests/test_training.py` |
+| Replay executor | complete memory images bit-identical to the reference engine (4 programs incl. training step, BF16, INT8); cached cycle timing == full simulation | `pytest tests/test_replay.py` |
+| Fast IR executor | outputs and updated parameters vs ISA level (FP32 1e-4, BF16 2e-3); training trajectories agree | `pytest tests/test_scale.py` |
+| Own data | CSV/TSV/NPZ/NPY/TXT, header and delimiter detection, categorical features, regression, 5 error classes, end-to-end training | `pytest tests/test_data.py` |
+| Large-model accounting | parameter count and forward/training matmul FLOPs of the planner == compiled graphs (exact); 100B-width meta graph | `pytest tests/test_scale.py` |
 | Performance tooling | roofline classes, comparison refusals, verified tuning | `pytest tests/test_perf.py` |
 | Multi-chip | ring all-reduce exactness + traffic, DP ≡ large batch, replicas identical | `pytest tests/test_multichip.py` |
 | RTL D0 MAC array | directed + 2000-cycle randomized self-checking TB (Verilator and Icarus) | `make test` |

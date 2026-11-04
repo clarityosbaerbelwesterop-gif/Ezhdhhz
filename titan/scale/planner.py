@@ -256,6 +256,6 @@ def host_training_bytes(spec: TransformerSpec, batch: int) -> int:
     """Estimated host RAM for numeric training with the fast executor (FP32 Adam, all on one host)."""
     t = batch * spec.seq
     states = 16 * spec.params()                      # weights, grads, Adam m and v (FP32)
-    transient = 16 * spec.params()                   # update temporaries, init copies
+    transient = 8 * spec.params()                    # update temporaries (measured: 255M params -> 5.4 GB peak)
     acts = 4 * spec.layers * t * spec.d_model * (34 + 5 * spec.heads * spec.seq / spec.d_model)
     return int(states + transient + acts + 4 * t * spec.vocab * 3)

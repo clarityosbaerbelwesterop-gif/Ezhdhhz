@@ -8,6 +8,10 @@ training runtimes that execute forward, backward and optimizer updates on the vi
 a QuickStart CLI, a performance engine, an RTL matrix-engine tile verified bit-exact against the
 emulator, synthesis/P&R reports and a multi-chip scaling model.
 
+Since M12: training on your own data (CSV/NPZ/NPY/TXT), a bit-exact replay executor (21× faster
+steps), a fast IR-kernel executor for large models, meta graphs of any size and a distributed
+training planner up to 175B parameters (`titan plan`, `titan quickstart --params`).
+
 ## Evidence status
 
 | Item | Status |
@@ -34,6 +38,11 @@ emulator, synthesis/P&R reports and a multi-chip scaling model.
   emulation speed (seconds to minutes), which says nothing about accelerator speed.
 * Multi-chip results use assumed link parameters; there is no die-to-die or network RTL.
 * `titan-x1-target` is an unbuilt design point; its numbers are analytical paper figures.
+* 100B-parameter models are planned, not trained: numeric training is limited by host RAM
+  (255 M parameters measured here). The planner's assumptions (links, GEMM efficiency, no
+  communication overlap) are not validated against real distributed runs.
+* The fast IR executor skips the ISA level; its results agree with ISA-level execution within FP32
+  tolerance but are not bit-identical.
 
 ## Performance honesty
 

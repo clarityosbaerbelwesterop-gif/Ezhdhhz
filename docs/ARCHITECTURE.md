@@ -69,6 +69,12 @@ and `BARRIER`. Faults are precise; `WAIT` without a matching `SIGNAL` is a detec
 | C analytical | roofline estimates, bounds, scaling requirements | `titan/perf/analytical.py` |
 | D RTL | bit-exact MXU results from Verilator; hybrid execution of INT8/INT4 MATMUL | `titan/rtl/cosim.py` |
 
+Execution paths for Mode A: the **reference engine** (`titan/emu/engine.py`), the **replay
+executor** (`titan/emu/replay.py`; same instructions and order, pre-bound to memory views,
+bit-identical memory images, ~12-21× faster) and the **fast IR executor** (`titan/runtime/fast.py`;
+the same compiled kernels on whole tensors, no ISA program, FP32 summation order differs). Mode B
+reuses the simulated timing of a program because the cycle model is data-independent.
+
 ## 6. Software stack
 
 Graph (2-D tensors, batched products, element-wise, reductions, row norms, casts, composite
@@ -85,7 +91,15 @@ Chiplet → package → system hierarchy (`titan/multichip`): ring, fully connec
 switch levels with assumed link bandwidth/latency; hierarchical all-reduce cost model;
 functional ring all-reduce; data-parallel training with replica-consistency checks.
 
-## 8. Research targets and non-goals
+## 8. Large models
+
+Graphs can be built in meta mode (shapes only) for any size; parameter and FLOP counts are read
+from the graph and compiled to TITAN IR without host memory. `titan/scale/planner.py` splits a
+transformer over many packages (tensor, pipeline and data parallelism; ZeRO 1-3; activation
+recomputation) and estimates memory per device and step time. Numeric training on a host is
+limited by its RAM (255 M parameters measured on 16 GB with the fast executor).
+
+## 9. Research targets and non-goals
 
 * Targets: 10× one B300 per package, 100× per system, on like-for-like workloads — unvalidated.
 * The cycle model is not RTL-accurate; the target configuration is not physically designed

@@ -64,3 +64,25 @@ None of this is achieved; it is the quantitative statement of the research probl
 * Data-parallel scaling saturates: with assumed 900 GB/s links, an MLP step reaches 3.4× on 8
   and 2.9× on 16 devices because all-reduce volume stays constant while compute shrinks.
 * INT4 multipliers are not DSP-mapped on Xilinx 7-series by Yosys (5790 LUT vs 2048 for INT8).
+
+## 7. Large-model planner (Mode C)
+
+`titan plan` / `titan.scale.plan` evaluates every combination of tensor (TP), pipeline (PP) and data
+parallelism (DP), micro-batch size, ZeRO stage and activation recomputation for a transformer and a
+device count, keeps the plans whose per-device memory fits (90 % of capacity) and returns the
+fastest. Accounting: mixed-precision Adam 16 bytes/parameter; activations per layer
+t·d·(34 + 5·a·T/d)/TP bytes (Korthikanti et al., 2022); GEMMs on a roofline with an assumed
+efficiency of 0.8; attention and element-wise traffic on HBM; TP ring all-reduces, PP point-to-point
+plus bubble (p−1)/(m+p−1); DP gradient all-reduce without overlap. Parameter and FLOP formulas are
+tested for exact equality with compiled TITAN graphs.
+
+| GPT-100B (101.7 B params), global batch 1024 × 2048 tokens | 64 × titan-x1-target | 64 × B300 |
+|---|---|---|
+| best plan | TP1 PP8 DP8 ZeRO-1 | TP2 DP32 ZeRO-3 (per planner) |
+| step time (estimate) | 2.18 s | 15.3 s |
+| tokens/s | 0.96 M | 0.14 M |
+| MFU | 41 % | 60 % |
+
+Ratio 7.0× under identical assumptions, below the 10.25× BF16 paper-peak ratio because the target
+design point has 4× (not 10×) the memory bandwidth. Full table 1.3B-175B:
+`reports/SPEED_AND_LARGE_MODELS.md`. The planner is not validated against real distributed runs.

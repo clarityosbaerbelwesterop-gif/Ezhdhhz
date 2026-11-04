@@ -19,6 +19,15 @@ stated gaps; **open** = not started. Commit SHAs refer to branch `titan-x1/platf
 | M11 FPGA preparation | synthesis + P&R reports | partial | `docs/FPGA.md`, `reports/synth/` (`48f95c0`); no board, no measurement |
 | M12 Multi-chip | topologies, collectives, data parallel, scaling | done (model) | `tests/test_multichip.py` (`d9ed8af`); links are assumptions |
 
+### Extensions after M12
+
+| Item | Status | Evidence |
+|---|---|---|
+| Own data (CSV/TSV/NPZ/NPY/TXT; classification, regression, LM) | done | `tests/test_data.py` (`8bf3f5c`) |
+| Bit-exact replay executor, cached cycle timing | done | `tests/test_replay.py` (`c43f1e4`) |
+| Fast IR executor, meta graphs, host emulation config | done | `tests/test_scale.py` (`58323ae`) |
+| Distributed planner up to 175B, `titan plan`, `quickstart --params` | done (analytical) | `tests/test_scale.py` (`2eee40f`) |
+
 ## Next gates (in order)
 
 1. **RTL coverage:** VPU and DMA RTL with the same co-simulation harness; command-processor RTL

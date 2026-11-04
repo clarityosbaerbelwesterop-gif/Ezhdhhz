@@ -105,7 +105,7 @@ class TrainConfig:
         p.pop("lr", None)
         self.overrides = p
         if self.warmup is None:
-            self.warmup = max(1, min(200, self.steps // 10)) if self.model == "transformer" else 0
+            self.warmup = max(10, min(200, self.steps // 10)) if self.model == "transformer" else 0
         if self.out_dir is None:
             self.out_dir = f"runs/{self.model}-{self.dataset}-{self.profile}-{self.precision}-{self.backend}-s{self.seed}"
         return self
@@ -226,6 +226,8 @@ class Trainer:
         rec = {"step": self.step, "loss": float(out.outputs["loss"][0, 0]), "titan_instructions": r.instructions,
                "titan_ops": r.ops, "host_execute_s": round(out.timings["execute_s"], 6),
                "host_io_s": round(out.host_io_s, 6)}
+        if r.mode == "fast":
+            rec["titan_kernels"] = r.counts.get("kernels", 0)
         if r.cycles is not None:
             rec["simulated_cycles"] = r.cycles
             rec["simulated_s"] = r.simulated_seconds
@@ -317,7 +319,9 @@ class Trainer:
                    (self.history[0]["loss"] if self.history else None),
                    "final_loss_avg10": float(np.mean(tail)) if tail else None, **self.evaluate(),
                    "host_wall_s": round(wall, 3), "parameters": self.n_params,
-                   "titan_instructions_per_step": self.history[-1]["titan_instructions"] if self.history else 0,
+                   **({"titan_kernels_per_step": self.history[-1]["titan_kernels"]} if self.history and
+                      "titan_kernels" in self.history[-1] else
+                      {"titan_instructions_per_step": self.history[-1]["titan_instructions"] if self.history else 0}),
                    "backend": BACKENDS[self.tc.backend].label, "placement": PLACEMENT,
                    "provenance": provenance()}
         sims = [h["simulated_cycles"] for h in self.history if "simulated_cycles" in h]
