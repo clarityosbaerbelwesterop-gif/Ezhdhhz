@@ -110,6 +110,56 @@ class RunResult:
             json.dump({"traceEvents": ev, "displayTimeUnit": "ns"}, f)
 
 
+def expand_program(prog: Program, cfg):
+    """Command-processor front end: kernel inlining, GEMM sequencing, barrier fan-out (no execution)."""
+    seq = 0
+    bid = 0
+
+    def relocate(ins: Instruction, off: int) -> Instruction:
+        if not off:
+            return ins
+        ops = tuple(r.with_addr(r.addr + off) if r.space == Space.GLOBAL else r for r in ins.operands)
+        return Instruction(ins.opcode, ins.core, ops, ins.imm, ins.func, ins.flags)
+
+    def one(ins: Instruction, origin: int, depth: int, off: int):
+        nonlocal seq, bid
+        ins = relocate(ins, off)
+        if off:
+            try:
+                validate(ins, cfg, set(prog.kernels))
+            except ISAError as e:
+                raise TitanFault(e.code, str(e), ins.core, origin, ins) from None
+        if ins.opcode == Opcode.EXECUTE_KERNEL:
+            if depth >= cfg.kernel_max_depth:
+                raise TitanFault(ErrorCode.KERNEL_DEPTH, f"kernel nesting > {cfg.kernel_max_depth}",
+                                 ins.core, origin, ins)
+            body = prog.kernels.get(ins.imm[0])
+            if body is None:
+                raise TitanFault(ErrorCode.KERNEL_NOT_FOUND, f"kernel {ins.imm[0]}", ins.core, origin, ins)
+            for b in body:
+                yield from one(b.with_core(ins.core), origin, depth + 1, off + ins.iimm(1))
+        elif ins.opcode == Opcode.GEMM:
+            try:
+                micro = expand_gemm(ins, cfg)
+            except ISAError as e:
+                raise TitanFault(e.code, str(e), ins.core, origin, ins) from None
+            for u in micro:
+                seq += 1
+                yield Entry(seq, origin, ins.core, u)
+        elif ins.opcode == Opcode.BARRIER:
+            rng = tuple(barrier_range(ins, cfg.cores))
+            bid += 1
+            for c in rng:
+                seq += 1
+                yield Entry(seq, origin, c, ins.with_core(c), bid, rng)
+        else:
+            seq += 1
+            yield Entry(seq, origin, ins.core, ins)
+
+    for origin, ins in enumerate(prog.instructions):
+        yield from one(ins, origin, 0, 0)
+
+
 class Engine:
     def __init__(self, machine: Machine, mode: str = FUNCTIONAL, trace: bool = False, matmul_hook=None):
         if mode not in (FUNCTIONAL, CYCLE):
@@ -119,54 +169,7 @@ class Engine:
 
     # ---------------------------------------------------------- command processor
     def expand(self, prog: Program):
-        """Command-processor front end: kernel inlining, GEMM sequencing, barrier fan-out."""
-        seq = 0
-        bid = 0
-        cfg = self.cfg
-
-        def relocate(ins: Instruction, off: int) -> Instruction:
-            if not off:
-                return ins
-            ops = tuple(r.with_addr(r.addr + off) if r.space == Space.GLOBAL else r for r in ins.operands)
-            return Instruction(ins.opcode, ins.core, ops, ins.imm, ins.func, ins.flags)
-
-        def one(ins: Instruction, origin: int, depth: int, off: int):
-            nonlocal seq, bid
-            ins = relocate(ins, off)
-            if off:
-                try:
-                    validate(ins, cfg, set(prog.kernels))
-                except ISAError as e:
-                    raise TitanFault(e.code, str(e), ins.core, origin, ins) from None
-            if ins.opcode == Opcode.EXECUTE_KERNEL:
-                if depth >= cfg.kernel_max_depth:
-                    raise TitanFault(ErrorCode.KERNEL_DEPTH, f"kernel nesting > {cfg.kernel_max_depth}",
-                                     ins.core, origin, ins)
-                body = prog.kernels.get(ins.imm[0])
-                if body is None:
-                    raise TitanFault(ErrorCode.KERNEL_NOT_FOUND, f"kernel {ins.imm[0]}", ins.core, origin, ins)
-                for b in body:
-                    yield from one(b.with_core(ins.core), origin, depth + 1, off + ins.iimm(1))
-            elif ins.opcode == Opcode.GEMM:
-                try:
-                    micro = expand_gemm(ins, cfg)
-                except ISAError as e:
-                    raise TitanFault(e.code, str(e), ins.core, origin, ins) from None
-                for u in micro:
-                    seq += 1
-                    yield Entry(seq, origin, ins.core, u)
-            elif ins.opcode == Opcode.BARRIER:
-                rng = tuple(barrier_range(ins, cfg.cores))
-                bid += 1
-                for c in rng:
-                    seq += 1
-                    yield Entry(seq, origin, c, ins.with_core(c), bid, rng)
-            else:
-                seq += 1
-                yield Entry(seq, origin, ins.core, ins)
-
-        for origin, ins in enumerate(prog.instructions):
-            yield from one(ins, origin, 0, 0)
+        return expand_program(prog, self.cfg)
 
     # ---------------------------------------------------------- execution
     def run(self, prog: Program, validate_program: bool = True) -> RunResult:
