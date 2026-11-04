@@ -12,14 +12,16 @@ import numpy as np
 from . import __version__
 
 ROOT = Path(__file__).resolve().parent.parent
+CODE_PATHS = ("titan", "configs", "rtl", "tb", "scripts", "tests", "examples", "pyproject.toml", "Makefile")
 
 
 def git_sha() -> str:
     try:
         sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True,
                              timeout=5).stdout.strip()
-        dirty = subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"], cwd=ROOT,
-                               capture_output=True, text=True, timeout=5).stdout.strip()
+        # "dirty" refers to source changes only; generated outputs (reports/, runs/) are excluded
+        dirty = subprocess.run(["git", "status", "--porcelain", "--untracked-files=no", "--", *CODE_PATHS],
+                               cwd=ROOT, capture_output=True, text=True, timeout=5).stdout.strip()
         return (sha or "unknown") + ("-dirty" if dirty else "")
     except (OSError, subprocess.SubprocessError):
         return "unknown"
