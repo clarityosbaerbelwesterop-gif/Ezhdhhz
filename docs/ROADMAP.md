@@ -1,40 +1,34 @@
 # Roadmap and acceptance gates
 
-## D0 — RTL functional tile
-- [x] Define 16-lane INT8 MAC tile.
-- [x] Add self-checking directed testbench.
-- [x] Add reproducible Verilator Makefile.
-- [ ] Run tests in a real tool environment and record version/logs.
+Status legend: **done** = implemented, tested, documented; **partial** = deliverable exists with
+stated gaps; **open** = not started. Commit SHAs refer to branch `titan-x1/platform`.
 
-## D1 — Robust digital verification
-- Randomized signed operand tests against a software reference.
-- Overflow behavior specification and tests.
-- Assertions for reset, clear and enable priority.
-- Lint with warnings resolved rather than suppressed.
+| Milestone | Deliverable | Status | Evidence |
+|---|---|---|---|
+| M0 Audit | repository audit, plan | done | `docs/AUDIT_M0.md` (`35e326b`) |
+| M1 Functional compute engine | matmul/vector/activation/normalization numerics, all precisions | done | `tests/test_semantics.py`, `tests/test_dtypes.py` (`ffa9534`) |
+| M2 Memory system | address spaces, L2, bandwidth/latency/contention | done | `tests/test_engine.py` (`1a024b5`, `24c737f`) |
+| M3 TITAN ISA | opcodes, encoding, validation, assembler, spec | done | `docs/ISA.md`, `tests/test_isa.py` (`ffa9534`) |
+| M4 Compiler | graph → IR → ISA; matmul graph executes | done | `tests/test_compiler.py` (`24c737f`, `041f774`, `f65c032`) |
+| M5 Hardware emulator | command processor, scheduling, sync, faults, modes A/B | done | `tests/test_engine.py` (`1a024b5`) |
+| M6 Neural networks | MLP, attention, transformer block on TITAN | done | `tests/test_nn.py` (`53716a9`) |
+| M7 Training runtime | full loop on TITAN, checkpoints, reproducibility | done | `tests/test_training.py`, `reports/TRAINING_AND_SCALING.md` (`f29a697`) |
+| M8 QuickStart | one-command training, backend status | done | `titan quickstart`, `tests/test_cli.py` (`52d995d`) |
+| M9 Performance & optimization | roofline, benchmarks, verified autotuning | done | `reports/bench_default_titan-x1-dev.md` (`21bb9fb`, `bb5f1ac`) |
+| M10 RTL integration | synthesizable MXU tile, co-simulation | partial | INT8/INT4 MATMUL bit-exact (`7c7a783`); DMA, VPU, SFU, command processor not in RTL |
+| M11 FPGA preparation | synthesis + P&R reports | partial | `docs/FPGA.md`, `reports/synth/` (`48f95c0`); no board, no measurement |
+| M12 Multi-chip | topologies, collectives, data parallel, scaling | done (model) | `tests/test_multichip.py` (`d9ed8af`); links are assumptions |
 
-## D2 — GEMM dataflow
-- Input staging and output accumulation buffers.
-- Tiled matrix multiplication controller.
-- Explicit backpressure and valid/ready interfaces.
-- SRAM inference and bandwidth model.
+## Next gates (in order)
 
-## D3 — Performance architecture
-- Parameterized array sizes and data widths.
-- FP16/BF16 design study (not simply widening INT8).
-- Roofline model with bandwidth, utilization and memory traffic.
-- Transformer kernel mapping and workload traces.
-
-## D4 — FPGA proof
-- Select an affordable supported FPGA board only after checking current availability and toolchain.
-- Synthesize, place, route and measure actual clock, resources and power where instrumentation permits.
-
-## D5 — ASIC exploration
-- Select a compatible open PDK and shuttle.
-- Run synthesis, floorplanning, place-and-route, DRC/LVS and timing analysis.
-- Treat open-PDK results as process-specific research, not a shortcut to leading-edge manufacturing.
-
-## D6 — Multi-chip system
-- Die-to-die protocol and topology.
-- Distributed memory and collective communication.
-- Fault tolerance, checkpoint/restart and thermal/power management.
-- Measure scaling efficiency; do not assume linear scaling.
+1. **RTL coverage:** VPU and DMA RTL with the same co-simulation harness; command-processor RTL
+   decoding the binary format; formal properties (clear > load > step, no X propagation).
+2. **Cycle-model calibration:** compare Mode B against RTL simulation cycle counts per instruction
+   class once the DMA/VPU RTL exists; publish the error distribution.
+3. **FPGA prototype:** ECP5-85F class board, BRAM scratchpad, UART/AXI host link, on-board
+   cycle counters; first hardware measurements with full provenance.
+4. **Compiler:** attention-specific fusion (flash-style tiling), SHARED-SRAM weight broadcast,
+   pipeline/tensor parallelism; autotuner integrated into compilation.
+5. **Numerics:** FP8 formats (E4M3/E5M2) and structured sparsity — prerequisite for any
+   like-for-like comparison with B300 FP8/FP4 figures.
+6. **Physical design study:** area/power model per PE and SRAM macro for the target design point.
