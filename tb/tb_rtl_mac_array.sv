@@ -13,7 +13,9 @@ module tb_rtl_mac_array;
 
     rtl_mac_array #(.LANES(LANES), .DATA_W(DATA_W), .ACC_W(ACC_W)) dut (.*);
 
-    always #5 clk = ~clk;
+    /* verilator lint_off BLKSEQ */
+    always #5 clk = ~clk;  // testbench clock generator
+    /* verilator lint_on BLKSEQ */
 
     task automatic tick;
         @(posedge clk);
