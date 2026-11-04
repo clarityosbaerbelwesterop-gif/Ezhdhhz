@@ -44,6 +44,7 @@ class CompileOptions:
     gemm_distribution: str = "auto"   # auto | rows | tiles
     resident_b: bool = True           # keep a small B operand resident in LOCAL SRAM
     cores: int | None = None          # restrict the number of cores used
+    interleave: bool = True           # round-robin per-core streams to avoid dispatch head-of-line blocking
 
 
 @dataclass
@@ -123,6 +124,32 @@ class Emitter:
 
     def emit(self, *ins) -> None:
         self.ins.extend(ins)
+
+    def interleave(self, start: int) -> None:
+        """Round-robin interleave the per-core instruction streams emitted since ``start``.
+
+        The command processor dispatches in stream order into bounded per-core queues; a
+        stream that lists all of core 0's work first starves the other cores (head-of-line
+        blocking). Order within each core is preserved and no instruction crosses a BARRIER,
+        so the program's semantics are unchanged.
+        """
+        seg, out, i = self.ins[start:], [], 0
+        while i < len(seg):
+            j = i
+            while j < len(seg) and seg[j].opcode != Opcode.BARRIER:
+                j += 1
+            per: dict[int, list] = {}
+            for ins in seg[i:j]:
+                per.setdefault(ins.core, []).append(ins)
+            queues = [per[c] for c in sorted(per)]
+            k = 0
+            while any(k < len(q) for q in queues):
+                out.extend(q[k] for q in queues if k < len(q))
+                k += 1
+            if j < len(seg):
+                out.append(seg[j])
+            i = j + 1
+        self.ins[start:] = out
 
 
 def _acc(buf: Buffer, write: bool, sig):
@@ -792,7 +819,10 @@ class Compiler:
         gen = {"ewise": self.gen_ewise, "gemm": self.gen_gemm, "rownorm": self.gen_rownorm,
                "reduce": self.gen_reduce, "transpose": self.gen_transpose, "copy": self.gen_copy}
         for K in kernels:
+            start = len(em.ins)
             gen[K.kind](K, em)
+            if self.o.interleave:
+                em.interleave(start)
         meta = {"graph": g.name, "config": self.cfg.name, "config_hash": self.cfg.config_hash(),
                 "isa": "%d.%d" % ISA_VERSION, "options": asdict(self.o)}
         prog = Program(em.ins, {}, meta).validate(self.cfg)

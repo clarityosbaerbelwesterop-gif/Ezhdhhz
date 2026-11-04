@@ -276,3 +276,14 @@ def test_shared_executable_state_survives_peer_runs(tiny, rng):
     for _ in range(3):
         dev.run(e1, {"x": rng.standard_normal((64, 64))})
         np.testing.assert_allclose(dev.run(e2).outputs["z"], want, rtol=1e-5, atol=1e-5)
+
+
+def test_stream_interleaving_removes_dispatch_head_of_line_blocking(dev, rng):
+    g = Graph()
+    g.output("c", g.matmul(g.input("a", (1024, 64), DType.BF16), g.input("b", (64, 1024), DType.BF16)))
+    feeds = {"a": rng.standard_normal((1024, 64)), "b": rng.standard_normal((64, 1024))}
+    _, plain = check(g, feeds, dev, CompileOptions(interleave=False), modes=("cycle",), rtol=1e-3, atol=1e-3)
+    _, inter = check(g, feeds, dev, CompileOptions(interleave=True), modes=("cycle",), rtol=1e-3, atol=1e-3)
+    np.testing.assert_array_equal(plain.outputs["c"], inter.outputs["c"])
+    assert inter.result.cycles < 0.6 * plain.result.cycles
+    assert inter.result.counters["cp_dispatch_stall_cycles"] < plain.result.counters["cp_dispatch_stall_cycles"]
