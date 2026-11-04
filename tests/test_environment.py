@@ -130,3 +130,17 @@ def test_env_and_prepare_data_commands(tmp_path, capsys):
     assert (tmp_path / "x.json").exists()
     assert main(["quickstart", "--data", str(tmp_path / "x.bin"), "--profile", "tiny", "--steps", "5", "--arch",
                  "tiny", "--out", str(tmp_path / "r")]) == 0
+
+
+def test_gpt2_initialization_for_large_transformers(tmp_path):
+    from titan.train import TrainConfig as TC
+    big = TC(model="transformer", profile="small", overrides={"d_model": 256, "heads": 2, "d_ff": 1024, "layers": 2,
+                                                             "seq": 16}, out_dir=str(tmp_path / "a")).resolve()
+    small = TC(model="transformer", profile="tiny", out_dir=str(tmp_path / "b")).resolve()
+    assert big.init_scheme == "gpt2" and small.init_scheme == "xavier"
+    tr = Trainer(TC(model="transformer", profile="small", steps=1, eval_every=1000, ckpt_every=0, backend="fast",
+                    overrides={"d_model": 256, "heads": 2, "d_ff": 1024, "layers": 4, "seq": 16},
+                    out_dir=str(tmp_path / "c")), log=None)
+    w = tr.dev.read(tr.train_exe, "tlm.b0.ff1.w")
+    r = tr.dev.read(tr.train_exe, "tlm.b0.ff2.w")
+    assert abs(w.std() - 0.02) < 0.002 and abs(r.std() - 0.02 / np.sqrt(8)) < 0.001   # residual scaling

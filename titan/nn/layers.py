@@ -22,6 +22,8 @@ class ParamStore:
         self.meta = meta          # shapes only: define models larger than host memory
         self.lazy = lazy          # values generated on the device, one parameter at a time
         self.seed = seed
+        self.scheme = "xavier"    # xavier | gpt2 (std 0.02; residual projections / sqrt(2 * layers))
+        self.layers = 1
 
     def get(self, name: str, shape, init: str = "xavier") -> Tensor:
         if name in self.params:
@@ -30,11 +32,16 @@ class ParamStore:
             t = self.g.param(name, tuple(shape), meta=True)
             self.params[name] = t
             return t
+        if self.scheme == "gpt2" and init in ("xavier", "embed"):
+            resid = name.endswith((".ff2.w",)) or ".attn.o" in name
+            init = ("normal", 0.02 / np.sqrt(2 * self.layers) if resid else 0.02)
         if self.lazy:
             t = self.g.param_lazy(name, tuple(shape), _initializer(self.seed, name, tuple(shape), init))
             self.params[name] = t
             return t
-        if init == "xavier":
+        if isinstance(init, tuple):
+            v = self.rng.standard_normal(shape) * init[1]
+        elif init == "xavier":
             v = self.rng.standard_normal(shape) * np.sqrt(2.0 / (shape[0] + shape[1]))
         elif init == "zeros":
             v = np.zeros(shape)
@@ -56,6 +63,8 @@ def _initializer(seed: int, name: str, shape: tuple, kind: str):
 
     def make():
         rng = np.random.default_rng([seed, zlib.crc32(name.encode())])
+        if isinstance(kind, tuple):
+            return rng.standard_normal(shape, dtype=np.float32) * np.float32(kind[1])
         if kind == "xavier":
             return rng.standard_normal(shape, dtype=np.float32) * np.float32(np.sqrt(2.0 / (shape[0] + shape[1])))
         if kind == "embed":

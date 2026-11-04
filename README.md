@@ -75,6 +75,9 @@ make lint test                                 # RTL lint (warnings = errors) + 
 | Largest model trained for real on this 16 GB host | 255 M parameters (transformer, fast backend) | measured on the host |
 | 101 M-parameter transformer step, 4-core host | 7.2 s (`fast`) → 2.7 s (`accel`, CPU), identical loss | measured on the host |
 | Byte-level pretrain (docs) → fine-tune (code), 150 steps | eval loss 2.01 vs 2.37 from scratch | measured, `accel` backend |
+| Model larger than this host's RAM, trained with storage offload | 705 M parameters on 16 GB RAM, 3 steps in 370 s | measured on the host |
+| GPT-100B training step on one machine (exact, compiled program) | 12.5 GB RAM + 1.63 TB storage | schedule accounting |
+| GPT-2 initialization for large transformers (101 M, 12 steps) | eval loss 2.83 vs 3.51 with Xavier | measured, `accel` backend |
 | GPT-100B on 64 × `titan-x1-target` | ~2.2 s/step, ~0.96 M tokens/s, MFU 41 %; 7.0× the same plan on 64 × B300 | analytical planner, assumed links (Mode C) |
 
 ## Performance honesty

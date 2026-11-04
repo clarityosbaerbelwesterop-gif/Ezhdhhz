@@ -40,6 +40,7 @@ class TinyTransformerLM:
     kind: str = "lm"
 
     def build(self, g: Graph, ps: ParamStore, batch: int, compute: DType) -> tuple[Tensor, Tensor]:
+        ps.layers = self.layers
         tok = g.input("x", (batch * self.seq, self.vocab))                     # one-hot tokens (host prepared)
         pos = g.const(np.tile(np.eye(self.seq), (batch, 1)), name="pos_onehot")
         emb = g.matmul(tok, ps.get(f"{self.name}.tok_emb", (self.vocab, self.d_model), "embed"))

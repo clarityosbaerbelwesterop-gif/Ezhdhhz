@@ -74,14 +74,18 @@ Exact accounting of the compiled GPT-100B training step (101.7 B parameters, 380
 sequence 128): **12.5 GB RAM and 1.63 TB storage**. That is ~16 bytes per parameter: FP32 weights, Adam m and v (all
 updated in place, no copies) plus gradients. Use NVMe: every step reads and writes the optimizer
 state, so storage bandwidth sets the speed. If the storage is too small, `quickstart`
-prints the exact requirement and the distributed plan instead.
+prints the exact requirement and the distributed plan instead. Measured in a 16 GB sandbox: a
+705 M-parameter transformer (training state larger than the machine's RAM) trained with offload,
+3 steps in 370 s on 4 CPU cores and a network disk.
 
 ## 6. Quality controls (defaults for transformers)
 
-AdamW (decoupled weight decay 0.1 on matrices), linear warmup + cosine decay to 10 % of the
+GPT-2 initialization for transformers with d_model ≥ 256 (std 0.02, residual projections scaled by
+1/√(2·layers); measured on a 101 M model: eval loss 2.83 vs 3.51 with Xavier after 12 steps, no early
+loss spike), AdamW (decoupled weight decay 0.1 on matrices), linear warmup + cosine decay to 10 % of the
 learning rate, global gradient-norm clipping at 1.0 computed on TITAN (logged as `grad_norm`),
 best-checkpoint saving (`checkpoints/best.npz`) and optional early stopping. Override with
-`--schedule`, `--warmup`, `--weight-decay`, `--clip-grad`, `--early-stop`, `--lr`.
+`--init`, `--schedule`, `--warmup`, `--weight-decay`, `--clip-grad`, `--early-stop`, `--lr`.
 
 ## 7. Limits, honestly
 

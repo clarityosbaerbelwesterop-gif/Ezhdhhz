@@ -84,6 +84,7 @@ class TrainConfig:
     # ---- beyond RAM: weights, optimizer state and large temporaries on attached storage
     offload_dir: str | None = None    # memory-mapped storage for all large tensors (NVMe/SSD recommended)
     offload_mb: float = 4.0           # tensors of at least this size go to storage
+    init_scheme: str = "auto"         # auto | xavier | gpt2 (auto: gpt2 for transformers with d_model >= 256)
 
     def resolve(self) -> "TrainConfig":
         if self.data:
@@ -129,6 +130,10 @@ class TrainConfig:
             self.weight_decay = 0.1 if lm and self.optimizer == "adam" else 0.0
         if self.clip_grad is None and lm:
             self.clip_grad = 1.0
+        if self.init_scheme == "auto":
+            self.init_scheme = "gpt2" if lm and self.overrides.get("d_model", 0) >= 256 else "xavier"
+        if self.init_scheme not in ("xavier", "gpt2"):
+            raise ValueError("init_scheme must be auto, xavier or gpt2")
         if self.tokenizer not in ("char", "byte"):
             raise ValueError("tokenizer must be char or byte")
         if self.offload_dir and self.backend not in ("fast",):
@@ -216,6 +221,7 @@ class Trainer:
     def _build_train(self):
         g = Graph(f"{self.model.name}-train")
         ps = ParamStore(g, self.tc.seed, lazy=bool(self.tc.offload_dir))
+        ps.scheme = self.tc.init_scheme
         _, logits = self.model.build(g, ps, self.tc.batch, self.compute)
         y = g.input("y", logits.shape)
         if self.ds.kind == "regression":
@@ -249,6 +255,7 @@ class Trainer:
     def _build_eval(self):
         g = Graph(f"{self.model.name}-eval")
         ps = ParamStore(g, self.tc.seed, lazy=bool(self.tc.offload_dir))
+        ps.scheme = self.tc.init_scheme
         _, logits = self.model.build(g, ps, self.eval_batch, self.compute)
         g.output("logits", logits)
         return compile_graph(g, self.cfg, self._opts(), share_with=self.train_exe)
@@ -271,7 +278,7 @@ class Trainer:
                 "compile_s": round(self.compile_s, 4), "frozen": self.frozen, "initialized_from": self.init_info,
                 "offload": {"dir": self.tc.offload_dir, "threshold_mb": self.tc.offload_mb,
                             "bytes_on_storage": getattr(self.dev, "offloaded_bytes", 0)} if self.tc.offload_dir else None,
-                "quality": {"schedule": self.tc.schedule, "warmup": self.tc.warmup, "weight_decay": self.tc.weight_decay,
+                "quality": {"init": self.tc.init_scheme, "schedule": self.tc.schedule, "warmup": self.tc.warmup, "weight_decay": self.tc.weight_decay,
                             "clip_grad": self.tc.clip_grad, "early_stop": self.tc.early_stop},
                 "provenance": provenance()}
         (self.out / "config.json").write_text(json.dumps(info, indent=2, default=str))

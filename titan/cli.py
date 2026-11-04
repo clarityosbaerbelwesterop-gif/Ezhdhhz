@@ -181,7 +181,7 @@ def cmd_quickstart(a) -> int:
                      data=a.data, target=a.target, task=a.task, overrides=a.overrides, init_from=a.init_from,
                      freeze=a.freeze or [], tokenizer=a.tokenizer, schedule=a.schedule, weight_decay=a.weight_decay,
                      clip_grad=a.clip_grad, early_stop=a.early_stop, warmup=a.warmup,
-                     offload_dir=a.offload_dir, offload_mb=a.offload_mb)
+                     offload_dir=a.offload_dir, offload_mb=a.offload_mb, init_scheme=a.init)
     try:
         tr = Trainer(tc)
     except (RuntimeError, ValueError) as e:
@@ -519,6 +519,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="storage (NVMe/SSD) for weights, optimizer state and large temporaries: model size is then "
                         "limited by storage instead of RAM")
     s.add_argument("--offload-mb", type=float, default=4.0, help="offload tensors of at least this many MiB")
+    s.add_argument("--init", default="auto", choices=["auto", "xavier", "gpt2"],
+                   help="weight initialization (auto: GPT-2 scheme for transformers with d_model >= 256)")
     s.add_argument("--profile", default="small", choices=["tiny", "small", "medium"])
     s.add_argument("--batch", type=int, default=None)
     s.add_argument("--precision", default="fp32", choices=["fp32", "bf16", "fp16"])
