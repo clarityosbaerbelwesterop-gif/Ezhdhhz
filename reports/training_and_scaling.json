@@ -1,0 +1,539 @@
+{
+  "provenance": {
+    "titan_version": "0.1.0",
+    "commit": "f7bd718ec56c0dceb9a418f07e6b6fea775f2812",
+    "timestamp_utc": "2026-11-04T16:38:04+00:00",
+    "host": {
+      "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+      "logical_cpus": 4,
+      "os": "Linux-6.18.44-fc-v233-x86_64-with-glibc2.39",
+      "python": "3.13.18",
+      "numpy": "2.5.3"
+    }
+  },
+  "training": [
+    {
+      "config": {
+        "model": "mlp",
+        "dataset": "spirals",
+        "profile": "small",
+        "precision": "fp32",
+        "backend": "functional"
+      },
+      "summary": {
+        "steps": 300,
+        "initial_loss": 1.1130011081695557,
+        "final_loss_avg10": 0.0007135999214369804,
+        "eval_loss": 0.011306405448247096,
+        "eval_accuracy": 0.99609375,
+        "eval_examples": 256,
+        "eval_mode": "functional (TITAN logits, host metrics)",
+        "host_wall_s": 5.944,
+        "parameters": 4547,
+        "titan_instructions_per_step": 816,
+        "backend": "Functional Emulator",
+        "placement": {
+          "titan": [
+            "forward pass",
+            "softmax cross-entropy loss",
+            "backward pass (autodiff)",
+            "optimizer update"
+          ],
+          "host": [
+            "dataset generation and shuffling",
+            "one-hot encoding",
+            "Adam bias-corrected lr scalar (1 value/step)",
+            "evaluation argmax, accuracy and loss from TITAN logits",
+            "checkpoint serialization"
+          ]
+        },
+        "provenance": {
+          "titan_version": "0.1.0",
+          "commit": "f7bd718ec56c0dceb9a418f07e6b6fea775f2812",
+          "timestamp_utc": "2026-11-04T16:36:39+00:00",
+          "host": {
+            "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+            "logical_cpus": 4,
+            "os": "Linux-6.18.44-fc-v233-x86_64-with-glibc2.39",
+            "python": "3.13.18",
+            "numpy": "2.5.3"
+          }
+        }
+      },
+      "train_program": {
+        "graph_nodes": 107,
+        "kernels": 67,
+        "kernels_by_kind": {
+          "gemm": 8,
+          "ewise": 40,
+          "reduce": 6,
+          "rownorm": 1,
+          "copy": 12
+        },
+        "fused_nodes": 81,
+        "instructions": 774,
+        "barriers": 14,
+        "barriers_avoided": 33,
+        "global_bytes_peak": 125696,
+        "cores_used": 4,
+        "inplace_updates": 6
+      }
+    },
+    {
+      "config": {
+        "model": "mlp",
+        "dataset": "spirals",
+        "profile": "small",
+        "precision": "bf16",
+        "backend": "functional"
+      },
+      "summary": {
+        "steps": 300,
+        "initial_loss": 1.1131855249404907,
+        "final_loss_avg10": 0.0007456627034116536,
+        "eval_loss": 0.013749127026716287,
+        "eval_accuracy": 0.99609375,
+        "eval_examples": 256,
+        "eval_mode": "functional (TITAN logits, host metrics)",
+        "host_wall_s": 8.163,
+        "parameters": 4547,
+        "titan_instructions_per_step": 914,
+        "backend": "Functional Emulator",
+        "placement": {
+          "titan": [
+            "forward pass",
+            "softmax cross-entropy loss",
+            "backward pass (autodiff)",
+            "optimizer update"
+          ],
+          "host": [
+            "dataset generation and shuffling",
+            "one-hot encoding",
+            "Adam bias-corrected lr scalar (1 value/step)",
+            "evaluation argmax, accuracy and loss from TITAN logits",
+            "checkpoint serialization"
+          ]
+        },
+        "provenance": {
+          "titan_version": "0.1.0",
+          "commit": "f7bd718ec56c0dceb9a418f07e6b6fea775f2812",
+          "timestamp_utc": "2026-11-04T16:36:47+00:00",
+          "host": {
+            "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+            "logical_cpus": 4,
+            "os": "Linux-6.18.44-fc-v233-x86_64-with-glibc2.39",
+            "python": "3.13.18",
+            "numpy": "2.5.3"
+          }
+        }
+      },
+      "train_program": {
+        "graph_nodes": 116,
+        "kernels": 74,
+        "kernels_by_kind": {
+          "ewise": 47,
+          "gemm": 8,
+          "reduce": 6,
+          "rownorm": 1,
+          "copy": 12
+        },
+        "fused_nodes": 85,
+        "instructions": 863,
+        "barriers": 17,
+        "barriers_avoided": 30,
+        "global_bytes_peak": 133376,
+        "cores_used": 4,
+        "inplace_updates": 6
+      }
+    },
+    {
+      "config": {
+        "model": "mlp",
+        "dataset": "blobs",
+        "profile": "small",
+        "precision": "fp32",
+        "backend": "functional",
+        "optimizer": "sgd",
+        "lr": 0.05
+      },
+      "summary": {
+        "steps": 300,
+        "initial_loss": 1.5080151557922363,
+        "final_loss_avg10": 0.00015408670697070193,
+        "eval_loss": 0.0001279792133061321,
+        "eval_accuracy": 1.0,
+        "eval_examples": 256,
+        "eval_mode": "functional (TITAN logits, host metrics)",
+        "host_wall_s": 4.518,
+        "parameters": 4996,
+        "titan_instructions_per_step": 595,
+        "backend": "Functional Emulator",
+        "placement": {
+          "titan": [
+            "forward pass",
+            "softmax cross-entropy loss",
+            "backward pass (autodiff)",
+            "optimizer update"
+          ],
+          "host": [
+            "dataset generation and shuffling",
+            "one-hot encoding",
+            "Adam bias-corrected lr scalar (1 value/step)",
+            "evaluation argmax, accuracy and loss from TITAN logits",
+            "checkpoint serialization"
+          ]
+        },
+        "provenance": {
+          "titan_version": "0.1.0",
+          "commit": "f7bd718ec56c0dceb9a418f07e6b6fea775f2812",
+          "timestamp_utc": "2026-11-04T16:36:52+00:00",
+          "host": {
+            "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+            "logical_cpus": 4,
+            "os": "Linux-6.18.44-fc-v233-x86_64-with-glibc2.39",
+            "python": "3.13.18",
+            "numpy": "2.5.3"
+          }
+        }
+      },
+      "train_program": {
+        "graph_nodes": 59,
+        "kernels": 43,
+        "kernels_by_kind": {
+          "gemm": 8,
+          "ewise": 22,
+          "reduce": 6,
+          "rownorm": 1,
+          "copy": 6
+        },
+        "fused_nodes": 39,
+        "instructions": 562,
+        "barriers": 11,
+        "barriers_avoided": 21,
+        "global_bytes_peak": 113152,
+        "cores_used": 4,
+        "inplace_updates": 6
+      }
+    },
+    {
+      "config": {
+        "model": "transformer",
+        "dataset": "text",
+        "profile": "small",
+        "precision": "fp32",
+        "backend": "functional"
+      },
+      "summary": {
+        "steps": 300,
+        "initial_loss": 3.9904022216796875,
+        "final_loss_avg10": 0.9077328264713287,
+        "eval_loss": 1.152359711776438,
+        "eval_accuracy": 0.6171875,
+        "eval_examples": 128,
+        "eval_mode": "functional (TITAN logits, host metrics)",
+        "host_wall_s": 64.559,
+        "parameters": 19032,
+        "titan_instructions_per_step": 7167,
+        "backend": "Functional Emulator",
+        "placement": {
+          "titan": [
+            "forward pass",
+            "softmax cross-entropy loss",
+            "backward pass (autodiff)",
+            "optimizer update"
+          ],
+          "host": [
+            "dataset generation and shuffling",
+            "one-hot encoding",
+            "Adam bias-corrected lr scalar (1 value/step)",
+            "evaluation argmax, accuracy and loss from TITAN logits",
+            "checkpoint serialization"
+          ]
+        },
+        "provenance": {
+          "titan_version": "0.1.0",
+          "commit": "f7bd718ec56c0dceb9a418f07e6b6fea775f2812",
+          "timestamp_utc": "2026-11-04T16:37:56+00:00",
+          "host": {
+            "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+            "logical_cpus": 4,
+            "os": "Linux-6.18.44-fc-v233-x86_64-with-glibc2.39",
+            "python": "3.13.18",
+            "numpy": "2.5.3"
+          }
+        }
+      },
+      "train_program": {
+        "graph_nodes": 760,
+        "kernels": 487,
+        "kernels_by_kind": {
+          "gemm": 91,
+          "rownorm": 10,
+          "ewise": 262,
+          "reduce": 44,
+          "copy": 80
+        },
+        "fused_nodes": 552,
+        "instructions": 6906,
+        "barriers": 87,
+        "barriers_avoided": 225,
+        "global_bytes_peak": 873216,
+        "cores_used": 4,
+        "inplace_updates": 40
+      }
+    },
+    {
+      "config": {
+        "model": "mlp",
+        "dataset": "spirals",
+        "profile": "small",
+        "precision": "fp32",
+        "backend": "cycle",
+        "steps": 20
+      },
+      "summary": {
+        "steps": 20,
+        "initial_loss": 1.1130011081695557,
+        "final_loss_avg10": 0.4612651228904724,
+        "eval_loss": 0.3579242969770654,
+        "eval_accuracy": 0.79296875,
+        "eval_examples": 256,
+        "eval_mode": "functional (TITAN logits, host metrics)",
+        "host_wall_s": 0.943,
+        "parameters": 4547,
+        "titan_instructions_per_step": 816,
+        "backend": "Cycle Simulator",
+        "placement": {
+          "titan": [
+            "forward pass",
+            "softmax cross-entropy loss",
+            "backward pass (autodiff)",
+            "optimizer update"
+          ],
+          "host": [
+            "dataset generation and shuffling",
+            "one-hot encoding",
+            "Adam bias-corrected lr scalar (1 value/step)",
+            "evaluation argmax, accuracy and loss from TITAN logits",
+            "checkpoint serialization"
+          ]
+        },
+        "provenance": {
+          "titan_version": "0.1.0",
+          "commit": "f7bd718ec56c0dceb9a418f07e6b6fea775f2812",
+          "timestamp_utc": "2026-11-04T16:37:57+00:00",
+          "host": {
+            "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+            "logical_cpus": 4,
+            "os": "Linux-6.18.44-fc-v233-x86_64-with-glibc2.39",
+            "python": "3.13.18",
+            "numpy": "2.5.3"
+          }
+        },
+        "simulated_cycles_per_step": 15186.71875,
+        "simulated_step_s_at_clock": 1.518671875e-05
+      },
+      "train_program": {
+        "graph_nodes": 107,
+        "kernels": 67,
+        "kernels_by_kind": {
+          "gemm": 8,
+          "ewise": 40,
+          "reduce": 6,
+          "rownorm": 1,
+          "copy": 12
+        },
+        "fused_nodes": 81,
+        "instructions": 774,
+        "barriers": 14,
+        "barriers_avoided": 33,
+        "global_bytes_peak": 125696,
+        "cores_used": 4,
+        "inplace_updates": 6
+      }
+    }
+  ],
+  "data_parallel": {
+    "devices": 4,
+    "system": {
+      "name": "4-ring",
+      "devices": 4,
+      "levels": [
+        {
+          "name": "inter-package",
+          "size": 4,
+          "topology": "ring",
+          "link_gbps": 900.0,
+          "latency_us": 2.0
+        }
+      ],
+      "note": "ASSUMED link parameters for modelling: inter-package 900 GB/s/link, 2.0 us/hop; d2d 2000 GB/s, 0.5 us"
+    },
+    "steps": 100,
+    "final_loss": 0.0519029307179153,
+    "replicas_identical": true,
+    "eval_accuracy": 0.9965277777777778,
+    "last_step": {
+      "step": 99,
+      "loss": 0.0519029307179153,
+      "host_s": 0.05809490100000403,
+      "allreduce_bytes_per_rank": 54568,
+      "replicas_identical": true,
+      "sim_compute_s": 8.36653125e-06,
+      "sim_update_s": 2.7501875e-06,
+      "model_comm_s": 1.2030313333333334e-05,
+      "step_s": 2.3147032083333335e-05
+    }
+  },
+  "scaling_flat": {
+    "workload": "MLP 64-256-256-16, global batch 256, one SGD step",
+    "arch": "titan-x1-dev",
+    "rows": [
+      {
+        "devices": 1,
+        "system": "1-ring",
+        "local_batch": 256,
+        "sim_compute_s": 0.000274006125,
+        "model_comm_s": 0.0,
+        "step_s": 0.000274006125,
+        "speedup": 1.0,
+        "efficiency": 1.0,
+        "comm_fraction": 0.0
+      },
+      {
+        "devices": 2,
+        "system": "2-ring",
+        "local_batch": 128,
+        "sim_compute_s": 0.000146502,
+        "model_comm_s": 4.38464e-06,
+        "step_s": 0.00015088664,
+        "speedup": 1.815973402283993,
+        "efficiency": 0.9079867011419965,
+        "comm_fraction": 0.029059166537209656
+      },
+      {
+        "devices": 4,
+        "system": "4-ring",
+        "local_batch": 64,
+        "sim_compute_s": 8.16684375e-05,
+        "model_comm_s": 1.257696e-05,
+        "step_s": 9.42453975e-05,
+        "speedup": 2.907368765673677,
+        "efficiency": 0.7268421914184192,
+        "comm_fraction": 0.1334490631226846
+      },
+      {
+        "devices": 8,
+        "system": "8-ring",
+        "local_batch": 32,
+        "sim_compute_s": 5.258240625e-05,
+        "model_comm_s": 2.867312e-05,
+        "step_s": 8.125552625e-05,
+        "speedup": 3.372153718590925,
+        "efficiency": 0.4215192148238656,
+        "comm_fraction": 0.35287593746893
+      },
+      {
+        "devices": 16,
+        "system": "16-ring",
+        "local_batch": 16,
+        "sim_compute_s": 3.5190640625e-05,
+        "model_comm_s": 6.07212e-05,
+        "step_s": 9.5911840625e-05,
+        "speedup": 2.856853994402216,
+        "efficiency": 0.1785533746501385,
+        "comm_fraction": 0.6330938870979466
+      },
+      {
+        "devices": 32,
+        "system": "32-ring",
+        "local_batch": 8,
+        "sim_compute_s": 3.17750625e-05,
+        "model_comm_s": 0.00012474524000000002,
+        "step_s": 0.0001565203025,
+        "speedup": 1.7506107554321906,
+        "efficiency": 0.054706586107255956,
+        "comm_fraction": 0.7969907929356321
+      }
+    ],
+    "method": "compute: simulated (cycle model, one device; ranks are symmetric); communication: analytical alpha-beta model with ASSUMED link parameters",
+    "provenance": {
+      "titan_version": "0.1.0",
+      "commit": "f7bd718ec56c0dceb9a418f07e6b6fea775f2812",
+      "timestamp_utc": "2026-11-04T16:38:04+00:00",
+      "host": {
+        "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+        "logical_cpus": 4,
+        "os": "Linux-6.18.44-fc-v233-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "numpy": "2.5.3"
+      },
+      "arch_hash": "ae5c9f6222b89391"
+    }
+  },
+  "scaling_hierarchical": {
+    "workload": "MLP 64-256-256-16, global batch 256, one SGD step",
+    "arch": "titan-x1-dev",
+    "rows": [
+      {
+        "devices": 4,
+        "system": "4-ring",
+        "local_batch": 64,
+        "sim_compute_s": 8.16684375e-05,
+        "model_comm_s": 1.257696e-05,
+        "step_s": 9.42453975e-05,
+        "speedup": 2.907368765673677,
+        "efficiency": 0.7268421914184192,
+        "comm_fraction": 0.1334490631226846
+      },
+      {
+        "devices": 8,
+        "system": "2x4-hier-ring",
+        "local_batch": 32,
+        "sim_compute_s": 5.258240625e-05,
+        "model_comm_s": 7.355792e-06,
+        "step_s": 5.993819825e-05,
+        "speedup": 4.571477505165081,
+        "efficiency": 0.5714346881456351,
+        "comm_fraction": 0.12272294154254128
+      },
+      {
+        "devices": 16,
+        "system": "4x4-hier-ring",
+        "local_batch": 16,
+        "sim_compute_s": 3.5190640625e-05,
+        "model_comm_s": 1.5403872e-05,
+        "step_s": 5.0594512625e-05,
+        "speedup": 5.41572812512096,
+        "efficiency": 0.33848300782006,
+        "comm_fraction": 0.304457365054023
+      },
+      {
+        "devices": 32,
+        "system": "8x4-hier-ring",
+        "local_batch": 8,
+        "sim_compute_s": 3.17750625e-05,
+        "model_comm_s": 3.1427912e-05,
+        "step_s": 6.32029745e-05,
+        "speedup": 4.335335910495795,
+        "efficiency": 0.1354792472029936,
+        "comm_fraction": 0.4972536854258338
+      }
+    ],
+    "method": "compute: simulated (cycle model, one device; ranks are symmetric); communication: analytical alpha-beta model with ASSUMED link parameters",
+    "provenance": {
+      "titan_version": "0.1.0",
+      "commit": "f7bd718ec56c0dceb9a418f07e6b6fea775f2812",
+      "timestamp_utc": "2026-11-04T16:38:04+00:00",
+      "host": {
+        "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+        "logical_cpus": 4,
+        "os": "Linux-6.18.44-fc-v233-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "numpy": "2.5.3"
+      },
+      "arch_hash": "ae5c9f6222b89391"
+    }
+  },
+  "duration_s": 93.0
+}
