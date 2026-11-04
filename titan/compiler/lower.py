@@ -331,9 +331,20 @@ class Compiler:
                         raise CompileError(f"shared buffer {b.name}: {pb.shape}/{pb.dtype.name} vs "
                                            f"{b.shape}/{b.dtype.name}")
                     b.addr = pb.addr
+        gaps = []
+        if self.share is not None:
+            # The peer executes repeatedly and overwrites its temporaries, so this executable's
+            # persistent state must live above the peer's high-water mark. The gaps below it are
+            # reserved only while persistent buffers are placed and are reusable for temporaries.
+            hw = self.share.stats["global_bytes_peak"]
+            gaps = [(lo, min(hi, hw)) for lo, hi in list(gal.free) if lo < hw]
+            for lo, hi in gaps:
+                gal.reserve(lo, hi - lo)
         for b in {id(b): b for b in bufs.values()}.values():
             if b.persistent and b.addr < 0:
                 b.addr = gal.alloc(b.nbytes)
+        for lo, _ in gaps:
+            gal.release(lo)
         last: dict[int, int] = {}
         for k, K in enumerate(kernels):
             K.inputs = [bufs[t.id] for t in K.in_tensors]

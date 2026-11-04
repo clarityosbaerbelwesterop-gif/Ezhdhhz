@@ -244,3 +244,35 @@ def test_generated_program_roundtrips_through_binary(tiny, rng):
     back = decode_program(encode_program(exe.program))
     assert back.instructions == exe.program.instructions
     assert back.meta["config_hash"] == tiny.config_hash()
+
+
+def test_shared_executable_state_survives_peer_runs(tiny, rng):
+    """Persistent buffers of an executable compiled with share_with must not overlap the peer's temporaries."""
+    g1 = Graph("big-temps")
+    x = g1.input("x", (64, 64))
+    w = g1.param("w", rng.standard_normal((64, 64)))
+    h = x
+    for _ in range(4):
+        h = g1.tanh(g1.matmul(h, w))
+    g1.output("y", g1.sum(h, 2))
+    g2 = Graph("with-const")
+    w2 = g2.param("w", np.zeros((64, 64)))
+    c = g2.const(rng.standard_normal((8, 64)), name="table")
+    s = g2.param("state", rng.standard_normal((8, 64)))
+    g2.output("z", g2.add(g2.matmul(c, w2), s))
+    e1 = compile_graph(g1, tiny)
+    e2 = compile_graph(g2, tiny, share_with=e1)
+    peer = {id(b): b for b in e1.buffers.values()}.values()
+    for b in e2.buffers.values():
+        if b.kind in ("const", "param", "input", "output") and b.name != "w":
+            assert b.addr >= e1.stats["global_bytes_peak"], b
+            assert all(b.addr + b.nbytes <= p.addr or p.addr + p.nbytes <= b.addr for p in peer)
+    dev = Device(tiny)
+    dev.load(e1)
+    dev.load(e2, init=False)
+    dev.write(e2, "table", c.value)
+    dev.write(e2, "state", s.value)
+    want = c.value @ w.value + s.value
+    for _ in range(3):
+        dev.run(e1, {"x": rng.standard_normal((64, 64))})
+        np.testing.assert_allclose(dev.run(e2).outputs["z"], want, rtol=1e-5, atol=1e-5)
