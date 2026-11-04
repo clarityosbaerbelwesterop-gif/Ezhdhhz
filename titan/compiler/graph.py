@@ -98,8 +98,10 @@ class Graph:
         return t
 
     def _unique(self, name: str) -> None:
-        if any(t.name == name and t.kind in ("input", "param", "const") for t in self.tensors):
+        names = self.__dict__.setdefault("_names", set())
+        if name in names:
             raise GraphError(f"duplicate tensor name {name!r}")
+        names.add(name)
 
     def input(self, name: str, shape, dtype=DType.FP32) -> Tensor:
         self._unique(name)
@@ -119,6 +121,16 @@ class Graph:
         if arr.ndim == 1:
             arr = arr[None, :]
         return self._tensor(arr.shape, dtype, "param", name, value=arr)
+
+    def param_lazy(self, name: str, shape, initializer, dtype=DType.FP32) -> Tensor:
+        """Parameter whose values are produced on the device by ``initializer()`` (never held by the graph).
+
+        Used for models whose weights do not fit host memory: the runtime materializes one
+        parameter at a time directly into its storage (RAM or a memory-mapped file).
+        """
+        t = self.param(name, tuple(shape), dtype, meta=True)
+        t.initializer = initializer
+        return t
 
     def matmul_flops(self) -> int:
         """Exact 2*M*N*K operation count of all (batched) matrix products in the graph."""

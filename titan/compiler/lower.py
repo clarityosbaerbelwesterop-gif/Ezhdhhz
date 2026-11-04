@@ -60,6 +60,7 @@ class Executable:
     params: list[str]
     stats: dict = field(default_factory=dict)
     options: CompileOptions = field(default_factory=CompileOptions)
+    lazy_init: dict = field(default_factory=dict)   # name -> initializer() for device-side initialization
 
     def ref(self, name: str) -> TensorRef:
         return self.buffers[name].ref
@@ -91,6 +92,26 @@ def _eb(dt: DType) -> float:
 
 
 # ===================================================================== emitter
+
+class _Bump:
+    """Linear allocator for IR-only compilation (no reuse; O(1) per buffer)."""
+
+    def __init__(self, base: int = 0):
+        self.base = self.top = -(-int(base) // 256) * 256
+        self.free = []
+
+    def alloc(self, n: int) -> int:
+        a = self.top
+        self.top += -(-max(int(n), 1) // 256) * 256
+        return a
+
+    def release(self, addr: int) -> None:
+        pass
+
+    @property
+    def peak(self) -> int:
+        return self.top
+
 
 class Emitter:
     """Collects instructions and inserts barriers only where cross-core hazards exist."""
@@ -248,9 +269,7 @@ class Compiler:
                                 and nd.output.shape == P.shape and P.attrs.get("batch", 1) == 1):
                             K = P
                             break
-                if K is not None:
-                    kernels.remove(K)
-                else:
+                if K is None:
                     K = Kernel("ewise", nd.output.shape)
                 add_step(K, nd, ins)
                 kernels.append(K)
@@ -281,7 +300,13 @@ class Compiler:
             else:
                 raise CompileError(f"no lowering for op {nd.op!r}")
         self.producer = producer
-        return kernels
+        # a kernel extended by fusion was re-appended; it executes at its last position (O(n) dedupe)
+        seen, out = set(), []
+        for K in reversed(kernels):
+            if id(K) not in seen:
+                seen.add(id(K))
+                out.append(K)
+        return out[::-1]
 
     def place_assigns(self, kernels):
         """Parameter updates: write element-wise results in place when provably safe, else copy at the end."""
@@ -303,22 +328,27 @@ class Compiler:
             else:
                 copies.append(copy_of(v, target))
         copy_inputs = {id(x) for ck in copies for x in ck.in_tensors}
-        for i, K in enumerate(inplace):
+        later: set[int] = set()                     # tensors read by in-place kernels that run later
+        demote = []
+        for K in reversed(inplace):
             t = K.attrs["target"]
-            later_reads = any(x is t for P in inplace[i + 1:] for x in P.in_tensors)
-            if later_reads or id(t) in copy_inputs:
-                del K.attrs["target"]
-                copies.append(copy_of(K.head, t))
-        for K in inplace:
-            kernels.remove(K)
-        return kernels + inplace + copies
+            if id(t) in later or id(t) in copy_inputs:
+                demote.append(K)
+            later.update(id(x) for x in K.in_tensors)
+        for K in reversed(demote):
+            t = K.attrs.pop("target")
+            copies.append(copy_of(K.head, t))
+        ids = {id(K) for K in inplace}
+        return [K for K in kernels if id(K) not in ids] + inplace + copies
 
     def plan_memory(self, kernels):
         g, C = self.g, self.canon
         bufs: dict[int, Buffer] = {}
         named: dict[str, Buffer] = {}
-        cap = self.cfg.global_bytes if self.o.emit_isa else int(self.cfg.global_mem_gib * 2 ** 30)
-        gal = Allocator(cap, 0, 256)
+        if self.o.emit_isa:
+            gal = Allocator(self.cfg.global_bytes, 0, 256)
+        else:   # TITAN IR only: addresses are buffer identities; a bump allocator scales to 100B+ models
+            gal = _Bump(self.share.stats["global_bytes_peak"] if self.share is not None else 0)
 
         def leaf(t: Tensor) -> Buffer:
             if t.id not in bufs:
@@ -355,7 +385,8 @@ class Compiler:
             # alias same-named persistent state; keep every other persistent range of the peer intact
             peer = {id(b): b for b in self.share.buffers.values()}
             for b in peer.values():
-                gal.reserve(b.addr, b.nbytes)
+                if self.o.emit_isa:
+                    gal.reserve(b.addr, b.nbytes)
             for b in {id(b): b for b in bufs.values()}.values():
                 pb = self.share.buffers.get(b.name)
                 if b.kind in ("param", "const") and pb is not None:
@@ -364,7 +395,7 @@ class Compiler:
                                            f"{b.shape}/{b.dtype.name}")
                     b.addr = pb.addr
         gaps = []
-        if self.share is not None:
+        if self.share is not None and self.o.emit_isa:
             # The peer executes repeatedly and overwrites its temporaries, so this executable's
             # persistent state must live above the peer's high-water mark. The gaps below it are
             # reserved only while persistent buffers are placed and are reusable for temporaries.
@@ -847,9 +878,11 @@ class Compiler:
             "global_bytes_peak": self.global_peak, "cores_used": self.n,
             "inplace_updates": sum(1 for K in kernels if K.kind != "copy" and "target" in K.attrs),
         }
+        lazy = {t.name: t.initializer for t in g.tensors
+                if t.kind == "param" and t.value is None and hasattr(t, "initializer") and t.name in named}
         return Executable(prog, module, self.cfg, named, init,
                           [t.name for t in g.inputs()], list(g.outputs), [t.name for t in g.params()],
-                          stats, self.o)
+                          stats, self.o, lazy)
 
 
 def compile_graph(g: Graph, cfg, opts: CompileOptions | None = None,

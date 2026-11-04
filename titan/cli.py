@@ -107,10 +107,35 @@ def _quickstart_params(a) -> int | None:
         if a.arch == "dev" and n > 2e6:
             a.arch = "host"
         return None
+    import shutil
+    from .scale import offload_requirements
+    seq_o = a.seq or 128
+    big = spec_for_params(n, vocab, seq_o)
+    req = offload_requirements(big, batch)
+    if a.offload_dir:
+        Path(a.offload_dir).mkdir(parents=True, exist_ok=True)
+        free = shutil.disk_usage(a.offload_dir).free
+        if req["storage_bytes"] <= 0.9 * free and (not avail or req["ram_bytes"] <= 0.8 * avail):
+            print(f"{n / 1e9:.3g}B parameters exceed RAM; training with storage offload at {a.offload_dir}: needs "
+                  f"~{req['storage_bytes'] / 1e9:,.0f} GB storage ({free / 1e9:,.0f} GB free) and "
+                  f"~{req['ram_bytes'] / 1e9:.1f} GB RAM")
+            a.model = "transformer"
+            a.overrides = {"seq": seq_o, "d_model": big.d_model, "heads": big.heads, "d_ff": big.d_ff,
+                           "layers": big.layers}
+            a.backend = "fast"
+            a.arch = "host" if a.arch == "dev" else a.arch
+            return None
+        print(f"Single-machine training of {n / 1e9:.3g}B parameters with storage offload needs "
+              f"~{req['storage_bytes'] / 1e12:.2f} TB free storage and ~{req['ram_bytes'] / 1e9:.0f} GB RAM; "
+              f"{a.offload_dir} has {free / 1e9:,.0f} GB free and this host {avail / 1e9:.0f} GB RAM.\n")
+    else:
+        print(f"A {n / 1e9:.3g}B-parameter model needs about {16 * big.params() / 1e12:.2f} TB for weights, "
+              f"gradients and Adam states, more than this host's {avail / 1e9:.1f} GB RAM. It trains on ONE machine "
+              f"with --offload-dir on storage with ~{req['storage_bytes'] / 1e12:.2f} TB free (and "
+              f"~{req['ram_bytes'] / 1e9:.0f} GB RAM), or distributed. Exact accounting: "
+              f"`titan plan --params {a.params} --single-machine`.\n")
     spec = spec_for_params(n, 50304, 2048)
-    print(f"A {n / 1e9:.3g}B-parameter model needs about {16 * spec.params() / 1e12:.2f} TB just for weights, "
-          f"gradients and Adam states (plus activations). This host has {avail / 1e9:.1f} GB RAM, so it cannot be "
-          f"trained numerically here. Distributed training plan on the TITAN-X1 target system instead:\n")
+    print("Distributed training plan on the TITAN-X1 target system:")
     dev = DeviceSpec.from_arch(load_config("target"))
     for d in (a.devices or [None]):
         r0 = plan(spec, dev, 1)
@@ -155,7 +180,8 @@ def cmd_quickstart(a) -> int:
                      eval_every=a.eval_every, ckpt_every=a.ckpt_every, arch=a.arch, out_dir=a.out,
                      data=a.data, target=a.target, task=a.task, overrides=a.overrides, init_from=a.init_from,
                      freeze=a.freeze or [], tokenizer=a.tokenizer, schedule=a.schedule, weight_decay=a.weight_decay,
-                     clip_grad=a.clip_grad, early_stop=a.early_stop, warmup=a.warmup)
+                     clip_grad=a.clip_grad, early_stop=a.early_stop, warmup=a.warmup,
+                     offload_dir=a.offload_dir, offload_mb=a.offload_mb)
     try:
         tr = Trainer(tc)
     except (RuntimeError, ValueError) as e:
@@ -231,6 +257,23 @@ def _print_plan(r: dict, title: str) -> None:
 def cmd_plan(a) -> int:
     from .scale import DeviceSpec, Links, compare_devices, plan, preset, spec_for_params
     spec = preset(a.preset, a.vocab, a.seq) if a.preset else spec_for_params(a.params, a.vocab, a.seq)
+    if a.single_machine:
+        import time as _t
+        from .scale import compile_training_program, execution_memory
+        t0 = _t.perf_counter()
+        exe = compile_training_program(spec, a.batch)
+        n = sum(exe.buffers[p].shape[0] * exe.buffers[p].shape[1] for p in exe.params
+                if not p.endswith((".adam_m", ".adam_v")))
+        print(f"{spec.name}: complete training step (forward, loss, backward, clipping, AdamW) compiled to TITAN IR "
+              f"in {_t.perf_counter() - t0:.1f} s: {n / 1e9:.2f}B parameters, {len(exe.module.kernels):,} kernels, "
+              f"{len(exe.lazy_init):,} lazily initialized tensors (seq {spec.seq}, batch {a.batch})")
+        for off in (None, a.offload_mb):
+            m = execution_memory(exe, off)
+            how = "in RAM" if off is None else f"with storage offload (tensors >= {off:g} MiB)"
+            print(f"  {how:38s}: RAM {m['ram_bytes'] / 1e9:9.1f} GB   storage {m['storage_bytes'] / 1e9:9.1f} GB")
+        print("method: exact accounting of the compiled kernel schedule (FP32 storage); "
+              "run with `titan quickstart --params ... --offload-dir DIR` on a machine that meets it")
+        return 0
     dev = DeviceSpec.from_arch(load_config(a.arch))
     links = Links(tp_gbps=a.tp_gbps, dp_gbps=a.dp_gbps, gemm_efficiency=a.gemm_eff)
     out = []
@@ -472,6 +515,10 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--weight-decay", type=float, default=None)
     s.add_argument("--clip-grad", type=float, default=None)
     s.add_argument("--early-stop", type=int, default=0, help="stop after N evaluations without improvement")
+    s.add_argument("--offload-dir", default=None,
+                   help="storage (NVMe/SSD) for weights, optimizer state and large temporaries: model size is then "
+                        "limited by storage instead of RAM")
+    s.add_argument("--offload-mb", type=float, default=4.0, help="offload tensors of at least this many MiB")
     s.add_argument("--profile", default="small", choices=["tiny", "small", "medium"])
     s.add_argument("--batch", type=int, default=None)
     s.add_argument("--precision", default="fp32", choices=["fp32", "bf16", "fp16"])
@@ -512,6 +559,10 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--vocab", type=int, default=50304)
     s.add_argument("--arch", default="target", help=arch_help)
     s.add_argument("--compare-b300", action="store_true", help="apply the same model to NVIDIA B300")
+    s.add_argument("--single-machine", action="store_true",
+                   help="compile the full training step and report exact RAM/storage for one machine")
+    s.add_argument("--batch", type=int, default=1, help="sequences per step for --single-machine")
+    s.add_argument("--offload-mb", type=float, default=4.0)
     s.add_argument("--tp-gbps", type=float, default=900.0, help="ASSUMED tensor-parallel link bandwidth")
     s.add_argument("--dp-gbps", type=float, default=400.0, help="ASSUMED data/pipeline-parallel link bandwidth")
     s.add_argument("--gemm-eff", type=float, default=0.8, help="ASSUMED achievable GEMM efficiency")

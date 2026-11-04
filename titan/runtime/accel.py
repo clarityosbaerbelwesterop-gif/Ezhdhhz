@@ -93,6 +93,8 @@ class AccelDevice:
         if init:
             for name, v in exe.init.items():
                 self.write(exe, name, v)
+            for name, fn in getattr(exe, "lazy_init", {}).items():
+                self.write(exe, name, fn())
         self._loaded.add(id(exe))
 
     def write(self, exe: Executable, name: str, value) -> None:

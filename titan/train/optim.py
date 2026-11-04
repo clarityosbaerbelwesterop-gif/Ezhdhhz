@@ -11,6 +11,14 @@ import numpy as np
 from ..compiler.graph import Graph, Tensor
 
 
+def _state(g: Graph, name: str, like: Tensor) -> Tensor:
+    """Zero-initialized optimizer state; lazy (device-side zeros) when the parameter itself is lazy."""
+    if like.value is None:
+        shape = like.shape
+        return g.param_lazy(name, shape, lambda: np.zeros(shape, dtype=np.float32))
+    return g.param(name, np.zeros(like.shape, dtype=np.float32))
+
+
 class SGD:
     host_inputs: tuple = ()
 
@@ -22,7 +30,7 @@ class SGD:
             if self.wd:
                 gr = g.add(gr, g.scale(p, self.wd))
             if self.momentum:
-                v = g.param(f"{p.name}.momentum", np.zeros(p.shape, dtype=np.float32))
+                v = _state(g, f"{p.name}.momentum", p)
                 gr = g.add(g.scale(v, self.momentum), gr)
                 g.assign(v, gr)
             g.assign(p, g.sub(p, g.scale(gr, self.lr)))
@@ -49,8 +57,8 @@ class Adam:
         lr_t = g.input("opt.lr_t", (1, 1))
         wd_t = g.input("opt.wd_t", (1, 1)) if self.wd else None
         for p, gr in zip(params, grads):
-            m = g.param(f"{p.name}.adam_m", np.zeros(p.shape, dtype=np.float32))
-            v = g.param(f"{p.name}.adam_v", np.zeros(p.shape, dtype=np.float32))
+            m = _state(g, f"{p.name}.adam_m", p)
+            v = _state(g, f"{p.name}.adam_v", p)
             m_new = g.add(g.scale(m, self.b1), g.scale(gr, 1 - self.b1))
             v_new = g.add(g.scale(v, self.b2), g.scale(g.square(gr), 1 - self.b2))
             g.assign(m, m_new)

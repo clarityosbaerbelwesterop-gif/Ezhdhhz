@@ -139,6 +139,6 @@ def test_quickstart_params_trains_small_and_plans_100b(tmp_path, capsys):
     assert "training numerically" in out and "eval loss" in out
     assert main(["quickstart", "--params", "100b"]) == 0
     out = capsys.readouterr().out
-    assert "cannot be trained numerically here" in out and "best plan" in out
+    assert "--offload-dir" in out and "best plan" in out
     assert main(["plan", "--preset", "gpt-70b", "--devices", "16", "--compare-b300"]) == 0
     assert "TITAN / B300 step-time ratio" in capsys.readouterr().out

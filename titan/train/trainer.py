@@ -81,6 +81,9 @@ class TrainConfig:
     weight_decay: float | None = None # decoupled (AdamW), applied to matrices only
     clip_grad: float | None = None    # global gradient-norm clipping, computed on TITAN
     early_stop: int = 0               # stop after N evaluations without improvement (0 = off)
+    # ---- beyond RAM: weights, optimizer state and large temporaries on attached storage
+    offload_dir: str | None = None    # memory-mapped storage for all large tensors (NVMe/SSD recommended)
+    offload_mb: float = 4.0           # tensors of at least this size go to storage
 
     def resolve(self) -> "TrainConfig":
         if self.data:
@@ -128,6 +131,8 @@ class TrainConfig:
             self.clip_grad = 1.0
         if self.tokenizer not in ("char", "byte"):
             raise ValueError("tokenizer must be char or byte")
+        if self.offload_dir and self.backend not in ("fast",):
+            self.backend = "fast"           # storage offload is implemented by the kernel-level NumPy executor
         if self.backend == "auto":
             from ..runtime.accel import torch_available
             big = lm and self.overrides.get("d_model", 0) >= 512
@@ -189,7 +194,7 @@ class Trainer:
             from ..runtime.accel import AccelDevice
             self.dev = AccelDevice(self.cfg)
         elif tc.backend == "fast":
-            self.dev = FastDevice(self.cfg)
+            self.dev = FastDevice(self.cfg, tc.offload_dir, tc.offload_mb)
         else:
             self.dev = Device(self.cfg)
         self.dev.load(self.train_exe)
@@ -210,7 +215,7 @@ class Trainer:
     # ------------------------------------------------------------ build
     def _build_train(self):
         g = Graph(f"{self.model.name}-train")
-        ps = ParamStore(g, self.tc.seed)
+        ps = ParamStore(g, self.tc.seed, lazy=bool(self.tc.offload_dir))
         _, logits = self.model.build(g, ps, self.tc.batch, self.compute)
         y = g.input("y", logits.shape)
         if self.ds.kind == "regression":
@@ -243,7 +248,7 @@ class Trainer:
 
     def _build_eval(self):
         g = Graph(f"{self.model.name}-eval")
-        ps = ParamStore(g, self.tc.seed)
+        ps = ParamStore(g, self.tc.seed, lazy=bool(self.tc.offload_dir))
         _, logits = self.model.build(g, ps, self.eval_batch, self.compute)
         g.output("logits", logits)
         return compile_graph(g, self.cfg, self._opts(), share_with=self.train_exe)
@@ -264,6 +269,8 @@ class Trainer:
                 "backend_kind": BACKENDS[self.tc.backend].kind, "placement": PLACEMENT,
                 "train_program": self.train_exe.stats, "eval_program": self.eval_exe.stats,
                 "compile_s": round(self.compile_s, 4), "frozen": self.frozen, "initialized_from": self.init_info,
+                "offload": {"dir": self.tc.offload_dir, "threshold_mb": self.tc.offload_mb,
+                            "bytes_on_storage": getattr(self.dev, "offloaded_bytes", 0)} if self.tc.offload_dir else None,
                 "quality": {"schedule": self.tc.schedule, "warmup": self.tc.warmup, "weight_decay": self.tc.weight_decay,
                             "clip_grad": self.tc.clip_grad, "early_stop": self.tc.early_stop},
                 "provenance": provenance()}
@@ -325,7 +332,8 @@ class Trainer:
         return res
 
     def save_checkpoint(self, name: str | None = None) -> Path:
-        arrays = {n: self.dev.read(self.train_exe, n) for n in self.train_exe.params}
+        get = getattr(self.dev, "view", self.dev.read)          # no RAM copies for storage-backed tensors
+        arrays = {n: get(self.train_exe, n) for n in self.train_exe.params}
         path = self.out / "checkpoints" / f"{name or f'step_{self.step:06d}'}.npz"
         np.savez(path, **arrays)
         digest = _sha256_file(path)

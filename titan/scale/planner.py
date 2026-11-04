@@ -259,3 +259,97 @@ def host_training_bytes(spec: TransformerSpec, batch: int) -> int:
     transient = 8 * spec.params()                    # update temporaries (measured: 255M params -> 5.4 GB peak)
     acts = 4 * spec.layers * t * spec.d_model * (34 + 5 * spec.heads * spec.seq / spec.d_model)
     return int(states + transient + acts + 4 * t * spec.vocab * 3)
+
+
+def execution_memory(exe, offload_mb: float | None = None) -> dict:
+    """Exact host memory of running ``exe`` with the kernel-level executor, derived from its kernel schedule.
+
+    Floats are held as FP32 by the executor. With ``offload_mb`` every persistent tensor and every
+    temporary of at least that size lives on storage (memory-mapped); RAM then holds small tensors,
+    the largest kernel's working set (inputs + output) and the page cache.
+    """
+    thr = None if offload_mb is None else int(offload_mb * 2 ** 20)
+
+    def nb(buf):
+        return buf.shape[0] * buf.shape[1] * (4 if buf.dtype.is_float or buf.dtype.bits == 32 else 1)
+
+    persistent = {}
+    for b in list(exe.buffers.values()) + [K.output for K in exe.module.kernels]:
+        if b.persistent:
+            persistent[(b.addr, b.shape, int(b.dtype))] = nb(b)
+    big = lambda x: thr is not None and x >= thr  # noqa: E731
+    p_disk = sum(v for v in persistent.values() if big(v))
+    p_ram = sum(persistent.values()) - p_disk
+    last = {}
+    for i, K in enumerate(exe.module.kernels):
+        for b in K.inputs:
+            if not b.persistent:
+                last[id(b)] = i
+    live_ram = live_disk = peak_ram = peak_disk = work = 0
+    sizes = {}
+    for i, K in enumerate(exe.module.kernels):
+        out = K.output
+        w = nb(out) + sum(nb(b) for b in K.inputs)
+        work = max(work, w)
+        if not out.persistent:
+            s = nb(out)
+            sizes[id(out)] = s
+            if big(s):
+                live_disk += s
+            else:
+                live_ram += s
+        peak_ram, peak_disk = max(peak_ram, live_ram), max(peak_disk, live_disk)
+        for b in K.inputs:
+            if not b.persistent and last.get(id(b)) == i and id(b) in sizes:
+                s = sizes.pop(id(b))
+                if big(s):
+                    live_disk -= s
+                else:
+                    live_ram -= s
+    ram = p_ram + peak_ram + (work if thr is not None else 0)
+    return {"ram_bytes": int(ram), "storage_bytes": int(p_disk + peak_disk), "persistent_bytes": int(sum(persistent.values())),
+            "temporary_peak_bytes": int(peak_ram + peak_disk), "largest_kernel_working_set": int(work),
+            "kernels": len(exe.module.kernels), "offload_threshold_bytes": thr,
+            "label": "exact accounting of the compiled kernel schedule (FP32 storage in the executor)"}
+
+
+def compile_training_program(spec: TransformerSpec, batch: int = 1, cfg_name: str = "target",
+                             weight_decay: float = 0.1, clip: float = 1.0):
+    """Build and compile the complete training step (forward, loss, backward, clipping, AdamW) of a
+    transformer of any size to TITAN IR with lazy parameters (no weights are materialized)."""
+    from ..compiler import CompileOptions, Graph, compile_graph, gradients
+    from ..config import load_config
+    from ..nn.layers import ParamStore
+    from ..nn.models import TinyTransformerLM
+    from ..train.optim import Adam
+    g = Graph(f"{spec.name}-train")
+    ps = ParamStore(g, 0, lazy=True)
+    m = TinyTransformerLM(spec.vocab, spec.seq, spec.d_model, spec.heads, spec.d_ff, spec.layers)
+    _, logits = m.build(g, ps, batch, DType.FP32)
+    loss = g.xent(logits, g.input("y", logits.shape))
+    params = list(ps.params.values())
+    grads = gradients(g, loss, params)
+    sq = None
+    for gr in grads:
+        s_ = g.sum(g.square(gr), 2)
+        sq = s_ if sq is None else g.add(sq, s_)
+    norm = g.sqrt(sq)
+    c = g.const(float(clip), name="clip_threshold")
+    f = g.div(c, g.maximum(norm, c))
+    Adam(3e-4, weight_decay=weight_decay).apply(g, params, [g.mul(gr, f) for gr in grads])
+    g.output("loss", loss)
+    return compile_graph(g, load_config(cfg_name), CompileOptions(emit_isa=False))
+
+
+def offload_requirements(spec: TransformerSpec, batch: int) -> dict:
+    """Single-machine training with storage offload (fast executor): RAM and storage estimate.
+
+    Calibrated on exact schedule accounting (execution_memory): GPT-100B at seq 128 needs 12.5 GB RAM and
+    2.44 TB storage, i.e. ~24 bytes/parameter on storage plus activations; RAM ~ a few largest kernels.
+    """
+    t = batch * spec.seq
+    acts = 4 * spec.layers * t * spec.d_model * (34 + 5 * spec.heads * spec.seq / spec.d_model)
+    storage = 24.0 * spec.params() + acts + 3 * 4 * t * spec.vocab
+    largest = 4 * max(spec.vocab * spec.d_model, spec.d_model * spec.d_ff)
+    ram = max(2e9, 6 * largest + 4 * t * spec.d_ff * 4)
+    return {"ram_bytes": int(ram), "storage_bytes": int(storage)}

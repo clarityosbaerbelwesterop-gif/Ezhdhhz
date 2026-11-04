@@ -42,10 +42,46 @@ def _c(x, dt: DType):
 
 
 class FastDevice:
-    def __init__(self, cfg="dev"):
+    """Kernel-level executor. With ``offload_dir`` every persistent tensor (weights, optimizer state) and
+    every temporary of at least ``offload_mb`` MiB lives in a memory-mapped file on that storage, so the
+    model size is bounded by the storage, not by RAM (RAM holds the working set of one kernel plus the
+    operating system's page cache)."""
+
+    def __init__(self, cfg="dev", offload_dir=None, offload_mb: float = 64):
         self.cfg = load_config(cfg)
         self.mem: dict[tuple, np.ndarray] = {}
         self._loaded: set[int] = set()
+        self.offload = None
+        if offload_dir:
+            import os
+            from pathlib import Path
+            self.offload = Path(offload_dir)
+            self.offload.mkdir(parents=True, exist_ok=True)
+            self._tag = f"titan-{os.getpid()}-{id(self):x}"
+        self.threshold = int(offload_mb * 2 ** 20)
+        self._temp_files: dict[int, object] = {}
+        self.offloaded_bytes = 0
+
+    def _mmap(self, name: str, like: np.ndarray) -> np.ndarray:
+        path = self.offload / f"{self._tag}-{name}.bin"
+        mm = np.memmap(path, dtype=like.dtype, mode="w+", shape=like.shape)
+        mm[...] = like
+        return mm
+
+    def _persist(self, key, v: np.ndarray) -> None:
+        if self.offload is not None and v.nbytes >= self.threshold:
+            cur = self.mem.get(key)
+            if isinstance(cur, np.memmap) and cur.shape == v.shape and cur.dtype == v.dtype:
+                cur[...] = v                     # in-place update of the file-backed tensor
+                return
+            self.mem[key] = self._mmap("p%d_%s" % (key[0], "x".join(map(str, key[1]))), v)
+            self.offloaded_bytes += v.nbytes
+        else:
+            self.mem[key] = v
+
+    def view(self, exe: Executable, name: str) -> np.ndarray:
+        """Stored tensor without a copy (memory-mapped when offloaded); used for streaming checkpoints."""
+        return self.mem[self._key(exe.buffers[name])]
 
     @staticmethod
     def _key(buf):
@@ -55,6 +91,8 @@ class FastDevice:
         if init:
             for name, v in exe.init.items():
                 self.write(exe, name, v)
+            for name, fn in getattr(exe, "lazy_init", {}).items():
+                self.write(exe, name, fn())      # one parameter at a time, straight into its storage
         self._loaded.add(id(exe))
 
     def write(self, exe: Executable, name: str, value) -> None:
@@ -64,7 +102,7 @@ class FastDevice:
             v = v.reshape(1, -1) if v.ndim == 1 else v.reshape(1, 1)
         if v.shape != b.shape:
             raise ValueError(f"{name}: shape {v.shape} != {b.shape}")
-        self.mem[self._key(b)] = _store(v, b.dtype)
+        self._persist(self._key(b), _store(v, b.dtype))
 
     def read(self, exe: Executable, name: str) -> np.ndarray:
         return self.mem[self._key(exe.buffers[name])].copy()
@@ -81,9 +119,22 @@ class FastDevice:
     def _put(self, env, buf, value):
         v = _store(np.broadcast_to(value, buf.shape), buf.dtype)
         if buf.persistent:
-            self.mem[self._key(buf)] = v
+            self._persist(self._key(buf), v)
+        elif self.offload is not None and v.nbytes >= self.threshold:
+            env[id(buf)] = self._mmap(f"t{id(buf):x}", v)     # spill large temporaries to storage
+            self._temp_files[id(buf)] = env[id(buf)].filename
         else:
             env[id(buf)] = v
+
+    def _drop(self, env, bid) -> None:
+        env.pop(bid, None)
+        f = self._temp_files.pop(bid, None)
+        if f:
+            import os
+            try:
+                os.remove(f)
+            except OSError:
+                pass
 
     @staticmethod
     def _steps(steps, arg):
@@ -192,11 +243,13 @@ class FastDevice:
         for i, K in enumerate(exe.module.kernels):
             self._put(env, K.output, self._kernel(K, env))
             for bid in frees[i]:                      # free temporaries after their last use
-                env.pop(bid, None)
+                self._drop(env, bid)
             if K.kind == "gemm":
                 a = K.inputs[0]
                 kd = a.shape[0] // K.attrs["batch"] if K.attrs["ta"] else a.shape[1]
                 ops += 2 * K.shape[0] * K.shape[1] * kd
+        for bid in list(self._temp_files):
+            self._drop(env, bid)
         t2 = time.perf_counter()
         outs = {k: self.read(exe, k) for k in (exe.outputs if fetch is None else fetch)}
         t3 = time.perf_counter()

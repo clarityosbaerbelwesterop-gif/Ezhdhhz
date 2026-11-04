@@ -15,16 +15,23 @@ from ..dtypes import DType
 class ParamStore:
     """Creates named, deterministically initialized parameters (and reuses them by name)."""
 
-    def __init__(self, g: Graph, seed: int = 0, values: dict | None = None, meta: bool = False):
+    def __init__(self, g: Graph, seed: int = 0, values: dict | None = None, meta: bool = False,
+                 lazy: bool = False):
         self.g, self.rng, self.values = g, np.random.default_rng(seed), values or {}
         self.params: dict[str, Tensor] = {}
         self.meta = meta          # shapes only: define models larger than host memory
+        self.lazy = lazy          # values generated on the device, one parameter at a time
+        self.seed = seed
 
     def get(self, name: str, shape, init: str = "xavier") -> Tensor:
         if name in self.params:
             return self.params[name]
         if self.meta:
             t = self.g.param(name, tuple(shape), meta=True)
+            self.params[name] = t
+            return t
+        if self.lazy:
+            t = self.g.param_lazy(name, tuple(shape), _initializer(self.seed, name, tuple(shape), init))
             self.params[name] = t
             return t
         if init == "xavier":
@@ -41,6 +48,24 @@ class ParamStore:
         t = self.g.param(name, np.asarray(v, dtype=np.float32))   # device precision; halves host memory
         self.params[name] = t
         return t
+
+
+def _initializer(seed: int, name: str, shape: tuple, kind: str):
+    """Deterministic per-parameter initializer (independent of creation order), FP32 throughout."""
+    import zlib
+
+    def make():
+        rng = np.random.default_rng([seed, zlib.crc32(name.encode())])
+        if kind == "xavier":
+            return rng.standard_normal(shape, dtype=np.float32) * np.float32(np.sqrt(2.0 / (shape[0] + shape[1])))
+        if kind == "embed":
+            return rng.standard_normal(shape, dtype=np.float32) * np.float32(0.1)
+        if kind == "zeros":
+            return np.zeros(shape, dtype=np.float32)
+        if kind == "ones":
+            return np.ones(shape, dtype=np.float32)
+        raise ValueError(kind)
+    return make
 
 
 def mm(g: Graph, a: Tensor, b: Tensor, compute: DType = DType.FP32, ta=False, tb=False, batch=1) -> Tensor:
