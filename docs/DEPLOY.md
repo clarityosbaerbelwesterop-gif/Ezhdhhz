@@ -78,6 +78,16 @@ prints the exact requirement and the distributed plan instead. Measured in a 16 
 705 M-parameter transformer (training state larger than the machine's RAM) trained with offload,
 3 steps in 370 s on 4 CPU cores and a network disk.
 
+### LoRA fine-tuning of very large models
+
+`--lora-rank R` freezes every base weight and trains rank-R adapters on the MLPs and the LM head.
+Frozen, lazily initialized base weights are recomputed from their seeds on every use, so memory is
+independent of the base size. Measured in the 16 GB sandbox: a 100.74 B-parameter transformer,
+`titan quickstart --params 100b --lora-rank 8 --seq 32 --batch 1 --eval-every 0 --backend accel`:
+65.6 M trainable parameters, 12.85 Tera-ops and ~22 minutes per training step on 4 CPU cores (each
+step regenerates all base weights twice), peak RAM 7.2 GB. With real pretrained weights, combine
+`--init-from` with `--offload-dir` so the frozen base is read from storage instead of regenerated.
+
 ## 6. Quality controls (defaults for transformers)
 
 GPT-2 initialization for transformers with d_model ≥ 256 (std 0.02, residual projections scaled by

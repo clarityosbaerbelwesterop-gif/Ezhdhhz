@@ -29,6 +29,7 @@ python -m titan quickstart --data my_book.txt  # your own text -> character-leve
 python -m titan quickstart --params 100m       # sized transformer, trained for real on this host
 python -m titan quickstart --params 100b --offload-dir /mnt/nvme   # 100B on ONE machine (needs ~1.7 TB NVMe)
 python -m titan plan --params 100b --single-machine   # compiles the full 100B training step, exact RAM/storage
+python -m titan quickstart --params 100b --lora-rank 8 --seq 32 --batch 1 --eval-every 0   # 100B LoRA on ~8 GB RAM
 python -m titan plan --params 100b --devices 64 --compare-b300
 python -m titan env --path /mnt/storage        # your machine's RAM/GPU/storage limits
 python -m titan prepare-data corpus/*.txt --out corpus.bin   # any-size byte corpus (memory-mapped)
@@ -77,6 +78,7 @@ make lint test                                 # RTL lint (warnings = errors) + 
 | Byte-level pretrain (docs) → fine-tune (code), 150 steps | eval loss 2.01 vs 2.37 from scratch | measured, `accel` backend |
 | Model larger than this host's RAM, trained with storage offload | 705 M parameters on 16 GB RAM, 3 steps in 370 s | measured on the host |
 | GPT-100B training step on one machine (exact, compiled program) | 12.5 GB RAM + 1.63 TB storage | schedule accounting |
+| **100.74 B-parameter transformer trained on this 16 GB host** (LoRA rank 8, frozen base regenerated on demand) | 2 steps, 12.85 Tera-ops and ~22 min per step, peak RAM 7.2 GB | measured on the host (procedural base, not pretrained) |
 | GPT-2 initialization for large transformers (101 M, 12 steps) | eval loss 2.83 vs 3.51 with Xavier | measured, `accel` backend |
 | GPT-100B on 64 × `titan-x1-target` | ~2.2 s/step, ~0.96 M tokens/s, MFU 41 %; 7.0× the same plan on 64 × B300 | analytical planner, assumed links (Mode C) |
 
@@ -90,9 +92,10 @@ make lint test                                 # RTL lint (warnings = errors) + 
   *measured (host)*; accelerator timing is *simulated* or *analytical*, never mixed.
 * B300 figures (`titan/perf/reference.py`) carry sources and retrieval date; the code refuses
   cross-precision, sparse-vs-dense and simulated-vs-peak ratios.
-* 100B parameters need ≈1.6 TB of training state. With `--offload-dir` one machine trains them if its
-  storage holds that (12.5 GB RAM suffice); speed is then bounded by storage bandwidth. This sandbox
-  (16 GB RAM, ~20 GB free disk) cannot hold 100B; the largest model trained here is listed above.
+* 100B parameters: full training needs ≈1.6 TB of state — one machine does it with `--offload-dir`
+  on enough NVMe (12.5 GB RAM suffice), bounded by storage bandwidth; not run here (≈20 GB free disk).
+  LoRA fine-tuning of a 100.7B model ran on this 16 GB host (base frozen and regenerated from seeds,
+  i.e. a procedural base — real pretrained weights would be memory-mapped from storage instead).
 
 Documentation: [Architecture](docs/ARCHITECTURE.md) · [ISA](docs/ISA.md) · [Performance](docs/PERFORMANCE.md) ·
 [Verification](docs/VERIFICATION.md) · [FPGA](docs/FPGA.md) · [Roadmap](docs/ROADMAP.md) ·

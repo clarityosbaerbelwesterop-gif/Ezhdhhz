@@ -22,6 +22,7 @@ estimate as a measurement.
 | Accel executor (PyTorch) | outputs and parameters vs fast executor on 4 programs; training trajectory vs ISA level (rtol 3e-3) | `pytest tests/test_environment.py` |
 | Pretrain / fine-tune / quality | byte corpus memory-mapped; init-from loads all matching weights; frozen weights unchanged; transfer lowers the first loss; mismatched shapes reported; clipped SGD step = lr·clip; cosine schedule; best checkpoint | `pytest tests/test_environment.py` |
 | Beyond-RAM offload | lazy initialization deterministic; offloaded execution bit-identical to in-RAM; spilled temporaries deleted; exact memory accounting; full GPT-100B training step compiles (>350k kernels) within 32 GB RAM / ~2.4 TB storage | `pytest tests/test_offload.py` |
+| LoRA + regenerated base | only adapters change, regenerated base bit-identical each use, never stored, loss decreases, adapter-only checkpoints (fast and accel) | `pytest tests/test_environment.py -k lora` |
 | Large-model accounting | parameter count and forward/training matmul FLOPs of the planner == compiled graphs (exact); 100B-width meta graph | `pytest tests/test_scale.py` |
 | Performance tooling | roofline classes, comparison refusals, verified tuning | `pytest tests/test_perf.py` |
 | Multi-chip | ring all-reduce exactness + traffic, DP ≡ large batch, replicas identical | `pytest tests/test_multichip.py` |

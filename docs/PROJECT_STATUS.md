@@ -41,9 +41,11 @@ Dockerfile (`docs/DEPLOY.md`).
   emulation speed (seconds to minutes), which says nothing about accelerator speed.
 * Multi-chip results use assumed link parameters; there is no die-to-die or network RTL.
 * `titan-x1-target` is an unbuilt design point; its numbers are analytical paper figures.
-* 100B-parameter models: the complete training step compiles and its exact memory is known
-  (12.5 GB RAM + 1.63 TB storage with offload); it runs on any single machine with that storage,
-  but has not been executed in this sandbox (≈20 GB free disk). Speed at that size is storage-bound;
+* 100B-parameter models: the complete full-training step compiles and its exact memory is known
+  (12.5 GB RAM + 1.63 TB storage with offload); full training needs that storage and was not run here
+  (≈20 GB free disk). LoRA fine-tuning of a 100.74B model did run here (2 steps, ~22 min each,
+  7.2 GB RAM) on a procedurally generated frozen base; two steps on different batches do not show
+  learning progress at that scale (learning of the same code path is tested on small models). Speed at that size is storage-bound;
   the distributed planner's assumptions are not validated against real multi-device runs.
 * The accel backend uses one device per process (no multi-GPU / multi-node runtime yet); its CUDA
   path is exercised only where a GPU exists (CI and this sandbox test it on CPU).
