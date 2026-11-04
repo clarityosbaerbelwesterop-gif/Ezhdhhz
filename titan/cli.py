@@ -6,6 +6,8 @@
     titan matmul --m --n --k            vertical slice: graph -> IR -> ISA -> execution -> verification
     titan bench [--suite quick]         reproducible benchmark report (verified / simulated / analytical / measured)
     titan tune --m --n --k              verified tiling search against the compiler baseline
+    titan rtl-verify                    RTL (Verilator) vs emulator bit-exact correspondence
+    titan synth                         Yosys resource estimates (pre-place-and-route)
     titan asm FILE [--run]              assemble (and run) a TITAN assembly program
     titan disasm FILE                   disassemble a TITAN binary
 """
@@ -147,10 +149,22 @@ def cmd_matmul(a) -> int:
         r = out.result.summary()
         r["max_abs_error_vs_reference"] = err
         report[mode] = r
+    if a.rtl:
+        from .rtl.cosim import MXUTileSim, make_matmul_hook
+        if not dt.is_int:
+            print("error: the RTL backend implements the INT8/INT4 matrix engine only", file=sys.stderr)
+            return 2
+        hook = make_matmul_hook(MXUTileSim(8, 8, 8))
+        out = Device(cfg).run(exe, feeds, "functional", matmul_hook=hook)
+        report["rtl_cosim"] = {"bit_exact_vs_reference": bool(np.array_equal(out.outputs["c"], ref["c"])),
+                               "matmuls_on_rtl": hook.stats.get("rtl_matmuls", 0),
+                               "method": "MATMUL executed by the Verilator model of rtl/titan_mxu_tile.sv; "
+                                         "DMA/control in the functional model"}
     report["analytical"] = gemm_roofline(cfg, a.m, a.n, a.k, dt)
     print("\n== results (modes are reported separately) ==")
     print(json.dumps(report, indent=2, default=float))
     ok = report["functional"]["max_abs_error_vs_reference"] <= (0 if dt.is_int else 1e-3 * max(1, a.k ** 0.5))
+    ok = ok and report.get("rtl_cosim", {}).get("bit_exact_vs_reference", True)
     print("\nVERIFICATION:", "PASS" if ok else "FAIL")
     return 0 if ok else 1
 
@@ -177,6 +191,39 @@ def cmd_tune(a) -> int:
           f"{r['candidates_rejected']} rejected)  method: {r['method']}")
     if a.out:
         Path(a.out).write_text(json.dumps(r, indent=2, default=str))
+    return 0
+
+
+# ------------------------------------------------------------------ RTL
+
+def cmd_rtl_verify(a) -> int:
+    from .rtl.cosim import correspondence_test
+    rc = 0
+    for dw in a.data_w:
+        r = correspondence_test(a.cases, a.seed, a.rows, a.cols, dw)
+        print(f"INT{dw} {r['tile']} tile: {r['cases']} random MATMUL cases, {r['mismatches']} mismatches, "
+              f"{r['rtl_jobs']} RTL jobs, {r['rtl_cycles']} RTL cycles  [{r['simulator']}]")
+        rc |= r["mismatches"] != 0
+    print("method: RTL co-simulation (Verilator) vs TITAN functional golden model, bit-exact comparison")
+    return int(rc)
+
+
+def cmd_synth(a) -> int:
+    from .rtl.synth import synthesize, yosys_version
+    rows = []
+    for top, params in (("rtl_mac_array", {}), ("titan_mxu_tile", {"ROWS": 4, "COLS": 4, "DATA_W": 8}),
+                        ("titan_mxu_tile", {"ROWS": 8, "COLS": 8, "DATA_W": 8}),
+                        ("titan_mxu_tile", {"ROWS": 8, "COLS": 8, "DATA_W": 4})):
+        for target in a.targets:
+            r = synthesize(top, params, target, a.out)
+            rows.append(r)
+            print(f"{top:15s} {str(params):40s} {target:8s} cells={r['total_cells']:6d} {r.get('summary', '')}")
+    if a.out:
+        out = Path(a.out)
+        (out / "synth_summary.json").write_text(json.dumps({"tool": yosys_version(), "results": rows}, indent=2))
+        print(f"logs and summary in {out}")
+    print("method: Yosys synthesis + technology mapping, pre-place-and-route (no timing, no power, no FPGA "
+          "measurement)")
     return 0
 
 
@@ -244,6 +291,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--dtype", default="fp32")
     s.add_argument("--arch", default="dev", help=arch_help)
     s.add_argument("--macro", action="store_true", help="lower to the GEMM macro instruction")
+    s.add_argument("--rtl", action="store_true", help="also execute MATMULs on the Verilator RTL model (INT8/INT4)")
     s.add_argument("--show", type=int, default=12, help="instructions to print")
     s.add_argument("--seed", type=int, default=0)
     s.set_defaults(fn=cmd_matmul)
@@ -266,6 +314,19 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--out", default=None)
     s.add_argument("-v", "--verbose", action="store_true")
     s.set_defaults(fn=cmd_tune)
+
+    s = sub.add_parser("rtl-verify", help="RTL vs emulator correspondence (Verilator)")
+    s.add_argument("--cases", type=int, default=20)
+    s.add_argument("--seed", type=int, default=0)
+    s.add_argument("--rows", type=int, default=8)
+    s.add_argument("--cols", type=int, default=8)
+    s.add_argument("--data-w", type=int, nargs="+", default=[8, 4])
+    s.set_defaults(fn=cmd_rtl_verify)
+
+    s = sub.add_parser("synth", help="Yosys resource estimates for the RTL")
+    s.add_argument("--targets", nargs="+", default=["generic", "xc7", "ecp5"])
+    s.add_argument("--out", default="reports/synth")
+    s.set_defaults(fn=cmd_synth)
 
     s = sub.add_parser("asm", help="assemble a TITAN assembly file")
     s.add_argument("file")
