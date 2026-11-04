@@ -15,13 +15,18 @@ from ..dtypes import DType
 class ParamStore:
     """Creates named, deterministically initialized parameters (and reuses them by name)."""
 
-    def __init__(self, g: Graph, seed: int = 0, values: dict | None = None):
+    def __init__(self, g: Graph, seed: int = 0, values: dict | None = None, meta: bool = False):
         self.g, self.rng, self.values = g, np.random.default_rng(seed), values or {}
         self.params: dict[str, Tensor] = {}
+        self.meta = meta          # shapes only: define models larger than host memory
 
     def get(self, name: str, shape, init: str = "xavier") -> Tensor:
         if name in self.params:
             return self.params[name]
+        if self.meta:
+            t = self.g.param(name, tuple(shape), meta=True)
+            self.params[name] = t
+            return t
         if init == "xavier":
             v = self.rng.standard_normal(shape) * np.sqrt(2.0 / (shape[0] + shape[1]))
         elif init == "zeros":
@@ -33,7 +38,7 @@ class ParamStore:
         else:
             raise ValueError(init)
         v = self.values.get(name, v)
-        t = self.g.param(name, np.asarray(v, dtype=np.float64))
+        t = self.g.param(name, np.asarray(v, dtype=np.float32))   # device precision; halves host memory
         self.params[name] = t
         return t
 

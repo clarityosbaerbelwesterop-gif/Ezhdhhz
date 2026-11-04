@@ -24,19 +24,22 @@ def sum_to(g: Graph, t: Tensor, shape) -> Tensor:
     raise GraphError(f"cannot reduce {t.shape} to {shape}")
 
 
-def _mm_rules(g: Graph, n, gy: Tensor):
+def _mm_rules(g: Graph, n, gy: Tensor, need: set):
     a, b = n.inputs
     ta, tb, bt = n.attrs["ta"], n.attrs["tb"], n.attrs["batch"]
     gyc = g.cast(gy, a.dtype)
-    ga = g.bmm(gyc, b, bt, False, not tb) if not ta else g.bmm(b, gyc, bt, tb, True)
-    gb = g.bmm(a, gyc, bt, not ta, False) if not tb else g.bmm(gyc, a, bt, True, ta)
-    return [(a, ga), (b, gb)]
+    out = []
+    if a.id in need:              # only build the products that are needed (e.g. not for one-hot inputs)
+        out.append((a, g.bmm(gyc, b, bt, False, not tb) if not ta else g.bmm(b, gyc, bt, tb, True)))
+    if b.id in need:
+        out.append((b, g.bmm(a, gyc, bt, not ta, False) if not tb else g.bmm(gyc, a, bt, True, ta)))
+    return out
 
 
-def _rules(g: Graph, n, gy: Tensor):
+def _rules(g: Graph, n, gy: Tensor, need: set = frozenset()):
     op, x, y = n.op, n.inputs, n.output
     if op in ("matmul", "bmm"):
-        return _mm_rules(g, n, gy)
+        return _mm_rules(g, n, gy, need)
     if op == "add":
         return [(x[0], sum_to(g, gy, x[0].shape)), (x[1], sum_to(g, gy, x[1].shape))]
     if op == "sub":
@@ -128,7 +131,7 @@ def gradients(g: Graph, loss: Tensor, wrt: list[Tensor]) -> list[Tensor]:
         gy = grads.get(nd.output.id)
         if gy is None:
             continue
-        for inp, gi in _rules(g, nd, gy):
+        for inp, gi in _rules(g, nd, gy, need):
             if inp.id not in need or inp.dtype.is_int:
                 continue
             prev = grads.get(inp.id)

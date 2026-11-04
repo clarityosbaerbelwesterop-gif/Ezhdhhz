@@ -105,13 +105,34 @@ class Graph:
         self._unique(name)
         return self._tensor(shape, dtype, "input", name)
 
-    def param(self, name: str, init, dtype=DType.FP32) -> Tensor:
-        """Persistent device state. ``init`` is an array or a shape (zero init)."""
+    def param(self, name: str, init, dtype=DType.FP32, meta: bool = False) -> Tensor:
+        """Persistent device state. ``init`` is an array or a shape (zero init).
+
+        ``meta=True`` records only the shape (no host memory is allocated); used to define and
+        analyse models far larger than the host can hold (e.g. 100B parameters).
+        """
         self._unique(name)
+        if meta:
+            shape = tuple(int(s) for s in (init if isinstance(init, tuple) else np.shape(init)))
+            return self._tensor(shape, dtype, "param", name, value=None)
         arr = np.zeros(init) if isinstance(init, tuple) else np.asarray(init)
         if arr.ndim == 1:
             arr = arr[None, :]
         return self._tensor(arr.shape, dtype, "param", name, value=arr)
+
+    def matmul_flops(self) -> int:
+        """Exact 2*M*N*K operation count of all (batched) matrix products in the graph."""
+        total = 0
+        for nd in self.nodes:
+            if nd.op in ("matmul", "bmm"):
+                a, b = nd.inputs[0], nd.inputs[1]
+                bt = nd.attrs["batch"]
+                k = a.rows // bt if nd.attrs["ta"] else a.cols
+                total += 2 * nd.output.rows * nd.output.cols * k
+        return total
+
+    def param_count(self) -> int:
+        return sum(t.rows * t.cols for t in self.params())
 
     def const(self, value, dtype=DType.FP32, name: str = "") -> Tensor:
         arr = np.asarray(value, dtype=np.float64 if DType.parse(dtype).is_float else np.int64)

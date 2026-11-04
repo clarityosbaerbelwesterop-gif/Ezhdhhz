@@ -18,6 +18,8 @@ class Backend:
     def status(self) -> tuple[bool, str]:
         if self.key in ("functional", "cycle"):
             return True, "available (software emulation on the host CPU)"
+        if self.key == "fast":
+            return True, "available (host CPU; TITAN IR kernels on whole tensors, limited by host RAM)"
         if self.key == "rtl":
             if not MXU_RTL.exists():
                 return False, "unavailable: rtl/titan_mxu_tile.sv not present"
@@ -33,6 +35,8 @@ class Backend:
 BACKENDS = {
     "functional": Backend("functional", "Functional Emulator", "functional (numerical results, no timing)",
                           "Mode A: architectural semantics of TITAN ISA v1.0"),
+    "fast": Backend("fast", "Fast IR Executor", "functional at TITAN IR level (kernel granularity, no timing)",
+                    "Compiled TITAN kernels executed on whole tensors with TITAN numerics; no ISA emulation"),
     "cycle": Backend("cycle", "Cycle Simulator", "simulated cycles (transaction-level, cycle-approximate)",
                      "Mode B: functional results plus the TITAN-X1 cycle model"),
     "rtl": Backend("rtl", "RTL Simulation", "RTL co-simulation (bit-exact INT8 MXU)",

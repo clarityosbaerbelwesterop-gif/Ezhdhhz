@@ -45,6 +45,7 @@ class CompileOptions:
     resident_b: bool = True           # keep a small B operand resident in LOCAL SRAM
     cores: int | None = None          # restrict the number of cores used
     interleave: bool = True           # round-robin per-core streams to avoid dispatch head-of-line blocking
+    emit_isa: bool = True             # False: stop at TITAN IR (for the kernel-level fast executor)
 
 
 @dataclass
@@ -226,7 +227,10 @@ class Compiler:
 
         def add_step(K: Kernel, nd, ins):
             args = [K.internal[t.id] if t.id in K.internal else add_input(K, t) for t in ins]
-            K.steps.append(Step(nd.op, args, nd.output.dtype, dict(nd.attrs)))
+            attrs = dict(nd.attrs)
+            if nd.op == "cast":
+                attrs["src_dtype"] = ins[0].dtype
+            K.steps.append(Step(nd.op, args, nd.output.dtype, attrs))
             K.internal[nd.output.id] = ("s", len(K.steps) - 1)
             K.head = nd.output
             K.nodes.append(nd.id)
@@ -313,7 +317,8 @@ class Compiler:
         g, C = self.g, self.canon
         bufs: dict[int, Buffer] = {}
         named: dict[str, Buffer] = {}
-        gal = Allocator(self.cfg.global_bytes, 0, 256)
+        cap = self.cfg.global_bytes if self.o.emit_isa else int(self.cfg.global_mem_gib * 2 ** 30)
+        gal = Allocator(cap, 0, 256)
 
         def leaf(t: Tensor) -> Buffer:
             if t.id not in bufs:
@@ -812,22 +817,28 @@ class Compiler:
     # ------------------------------------------------------------ driver
     def compile(self) -> Executable:
         g = self.g
+        if self.o.emit_isa and any(t.value is None for t in g.tensors if t.kind == "param"):
+            raise CompileError("graph contains meta parameters (shape only): compile with "
+                               "CompileOptions(emit_isa=False) for TITAN IR, or plan it with titan.scale")
         kernels = self.form_kernels()
         kernels = self.place_assigns(kernels)
         named, allb = self.plan_memory(kernels)
         em = Emitter(self.n, self.o.barrier_elim)
         gen = {"ewise": self.gen_ewise, "gemm": self.gen_gemm, "rownorm": self.gen_rownorm,
                "reduce": self.gen_reduce, "transpose": self.gen_transpose, "copy": self.gen_copy}
-        for K in kernels:
+        for K in kernels if self.o.emit_isa else ():
             start = len(em.ins)
             gen[K.kind](K, em)
             if self.o.interleave:
                 em.interleave(start)
         meta = {"graph": g.name, "config": self.cfg.name, "config_hash": self.cfg.config_hash(),
                 "isa": "%d.%d" % ISA_VERSION, "options": asdict(self.o)}
-        prog = Program(em.ins, {}, meta).validate(self.cfg)
+        prog = Program(em.ins, {}, meta)
+        if self.o.emit_isa:
+            prog.validate(self.cfg)
         module = Module(g.name, kernels, allb)
-        init = {t.name: np.asarray(t.value) for t in g.tensors if t.kind in ("param", "const") and t.name in named}
+        init = {t.name: np.asarray(t.value) for t in g.tensors
+                if t.kind in ("param", "const") and t.name in named and t.value is not None}
         kinds = Counter(K.kind for K in kernels)
         stats = {
             "graph_nodes": len(g.nodes), "kernels": len(kernels), "kernels_by_kind": dict(kinds),
