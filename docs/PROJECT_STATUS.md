@@ -10,7 +10,10 @@ emulator, synthesis/P&R reports and a multi-chip scaling model.
 
 Since M12: training on your own data (CSV/NPZ/NPY/TXT), a bit-exact replay executor (21× faster
 steps), a fast IR-kernel executor for large models, meta graphs of any size and a distributed
-training planner up to 175B parameters (`titan plan`, `titan quickstart --params`).
+training planner up to 175B parameters (`titan plan`, `titan quickstart --params`). For your own
+environment: `accel` backend (PyTorch GPU/CPU), byte corpora streamed from disk, pretrain / continue /
+fine-tune with freezing, AdamW + cosine + clipping + best checkpoint + early stopping, `titan env`,
+Dockerfile (`docs/DEPLOY.md`).
 
 ## Evidence status
 
@@ -41,6 +44,8 @@ training planner up to 175B parameters (`titan plan`, `titan quickstart --params
 * 100B-parameter models are planned, not trained: numeric training is limited by host RAM
   (255 M parameters measured here). The planner's assumptions (links, GEMM efficiency, no
   communication overlap) are not validated against real distributed runs.
+* The accel backend uses one device per process (no multi-GPU / multi-node runtime yet); its CUDA
+  path is exercised only where a GPU exists (CI and this sandbox test it on CPU).
 * The fast IR executor skips the ISA level; its results agree with ISA-level execution within FP32
   tolerance but are not bit-identical.
 

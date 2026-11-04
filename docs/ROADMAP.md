@@ -27,6 +27,8 @@ stated gaps; **open** = not started. Commit SHAs refer to branch `titan-x1/platf
 | Bit-exact replay executor, cached cycle timing | done | `tests/test_replay.py` (`c43f1e4`) |
 | Fast IR executor, meta graphs, host emulation config | done | `tests/test_scale.py` (`58323ae`) |
 | Distributed planner up to 175B, `titan plan`, `quickstart --params` | done (analytical) | `tests/test_scale.py` (`2eee40f`) |
+| Own environment: accel backend, byte corpora, pretrain/continue/fine-tune, quality controls, `titan env`, Docker | done | `tests/test_environment.py`, `docs/DEPLOY.md` |
+| Multi-GPU / multi-node runtime (data + tensor parallel over real devices) | open | next step for >1 machine |
 
 ## Next gates (in order)
 

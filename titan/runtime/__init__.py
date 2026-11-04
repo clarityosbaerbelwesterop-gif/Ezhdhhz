@@ -6,3 +6,6 @@ __all__ = ["BACKENDS", "Backend", "Device", "RunOutput", "available_backends", "
 from .fast import FastDevice  # noqa: E402
 
 __all__.append("FastDevice")
+from .accel import AccelDevice, torch_available  # noqa: E402
+
+__all__ += ["AccelDevice", "torch_available"]

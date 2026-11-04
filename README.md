@@ -29,8 +29,13 @@ python -m titan quickstart --data my_book.txt  # your own text -> character-leve
 python -m titan quickstart --params 100m       # sized transformer, trained for real on this host
 python -m titan quickstart --params 100b       # too big for any single host -> distributed TITAN plan
 python -m titan plan --params 100b --devices 64 --compare-b300
+python -m titan env --path /mnt/storage        # your machine's RAM/GPU/storage limits
+python -m titan prepare-data corpus/*.txt --out corpus.bin   # any-size byte corpus (memory-mapped)
+python -m titan quickstart --data corpus.bin --params 300m --backend auto        # pretrain
+python -m titan quickstart --data domain.txt --tokenizer byte --params 300m \
+       --init-from runs/.../checkpoints/best.npz --freeze tlm.tok_emb --lr 1e-4  # fine-tune
 python -m titan bench --suite default          # reproducible report (reports/)
-python -m pytest -q                            # 304 tests (RTL tests need Verilator)
+python -m pytest -q                            # 315 tests (RTL tests need Verilator)
 make lint test                                 # RTL lint (warnings = errors) + 4 RTL simulations
 ```
 
@@ -48,6 +53,7 @@ make lint test                                 # RTL lint (warnings = errors) + 
 | Own data | `.csv/.tsv/.npz/.npy` (classification or regression), `.txt` (language model) | format, validation and end-to-end tests |
 | Execution speed | bit-exact replay of the ISA program; `fast` backend runs TITAN IR kernels on whole tensors | replay memory images identical to the reference engine; fast ≈ ISA within FP32 tolerance |
 | Large models | meta graphs of any size, distributed planner (TP×PP×DP, ZeRO, recompute) up to 175B | parameter/FLOP formulas equal compiled graphs exactly |
+| Own environment | `accel` backend (TITAN IR kernels via PyTorch on GPU/CPU), byte corpora memory-mapped from disk, pretrain / continue / fine-tune (`--init-from`, `--freeze`), AdamW + cosine + clipping + best checkpoint + early stopping, `titan env`, Dockerfile | accel ≈ fast executor; fine-tune transfer and freeze tests; see [docs/DEPLOY.md](docs/DEPLOY.md) |
 | Performance | cycle model, roofline, benchmark harness, verified autotuner | `reports/` (method + provenance on every number) |
 | RTL | `rtl/titan_mxu_tile.sv` (MXU tile), `rtl/rtl_mac_array.sv` (D0) | directed + 2000-cycle random TBs; Verilator co-sim 0 mismatches |
 | FPGA prep | Yosys (generic, xc7, ECP5) + nextpnr-ecp5 P&R | `reports/synth/`, `docs/FPGA.md` |
@@ -65,6 +71,8 @@ make lint test                                 # RTL lint (warnings = errors) + 
 | Data parallel, 16 devices (flat ring) | 2.86× speed-up, 63 % time in all-reduce | simulated compute + modelled links (assumed) |
 | MLP training, 300 steps | 5.2 s → 0.24 s (21×), identical loss trajectory | measured on the host (emulator speed) |
 | Largest model trained for real on this 16 GB host | 255 M parameters (transformer, fast backend) | measured on the host |
+| 101 M-parameter transformer step, 4-core host | 7.2 s (`fast`) → 2.7 s (`accel`, CPU), identical loss | measured on the host |
+| Byte-level pretrain (docs) → fine-tune (code), 150 steps | eval loss 2.01 vs 2.37 from scratch | measured, `accel` backend |
 | GPT-100B on 64 × `titan-x1-target` | ~2.2 s/step, ~0.96 M tokens/s, MFU 41 %; 7.0× the same plan on 64 × B300 | analytical planner, assumed links (Mode C) |
 
 ## Performance honesty
@@ -83,4 +91,4 @@ make lint test                                 # RTL lint (warnings = errors) + 
 
 Documentation: [Architecture](docs/ARCHITECTURE.md) · [ISA](docs/ISA.md) · [Performance](docs/PERFORMANCE.md) ·
 [Verification](docs/VERIFICATION.md) · [FPGA](docs/FPGA.md) · [Roadmap](docs/ROADMAP.md) ·
-[Status](docs/PROJECT_STATUS.md) · [M0 audit](docs/AUDIT_M0.md) · [Speed & large models](reports/SPEED_AND_LARGE_MODELS.md)
+[Status](docs/PROJECT_STATUS.md) · [M0 audit](docs/AUDIT_M0.md) · [Speed & large models](reports/SPEED_AND_LARGE_MODELS.md) · [Own environment](docs/DEPLOY.md)

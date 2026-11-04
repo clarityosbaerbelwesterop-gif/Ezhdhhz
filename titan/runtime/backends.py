@@ -18,6 +18,11 @@ class Backend:
     def status(self) -> tuple[bool, str]:
         if self.key in ("functional", "cycle"):
             return True, "available (software emulation on the host CPU)"
+        if self.key == "accel":
+            from .accel import default_device, torch_available
+            if not torch_available():
+                return False, "unavailable: PyTorch not installed (pip install torch)"
+            return True, f"available on {default_device()} via PyTorch (TITAN IR kernels; host accelerator)"
         if self.key == "fast":
             return True, "available (host CPU; TITAN IR kernels on whole tensors, limited by host RAM)"
         if self.key == "rtl":
@@ -37,6 +42,9 @@ BACKENDS = {
                           "Mode A: architectural semantics of TITAN ISA v1.0"),
     "fast": Backend("fast", "Fast IR Executor", "functional at TITAN IR level (kernel granularity, no timing)",
                     "Compiled TITAN kernels executed on whole tensors with TITAN numerics; no ISA emulation"),
+    "accel": Backend("accel", "Host Accelerator (PyTorch)",
+                     "functional at TITAN IR level on a host accelerator (PyTorch CPU/CUDA); not TITAN hardware",
+                     "Compiled TITAN kernels on the strongest local device (GPU if present)"),
     "cycle": Backend("cycle", "Cycle Simulator", "simulated cycles (transaction-level, cycle-approximate)",
                      "Mode B: functional results plus the TITAN-X1 cycle model"),
     "rtl": Backend("rtl", "RTL Simulation", "RTL co-simulation (bit-exact INT8 MXU)",

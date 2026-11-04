@@ -55,6 +55,9 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: Install
         run: pip install -e ".[test]"
+      - name: Install PyTorch (CPU) for the accel backend tests
+        if: matrix.python == '3.13'
+        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
       - name: Unit, integration and end-to-end tests
         run: python -m pytest -q -m "not rtl"
       - name: Vertical slice (graph -> ISA -> execution -> verification)

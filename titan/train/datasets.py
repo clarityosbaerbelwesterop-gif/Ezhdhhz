@@ -313,6 +313,7 @@ def eval_batches(ds: Dataset, batch: int):
     """Fixed evaluation batches ``(x, y, n_valid)``; the last batch is padded and only n_valid rows count."""
     if ds.kind == "lm":
         n = (len(ds.x_test) - 1) // ds.seq
+        n = min(n, getattr(ds, "eval_windows_max", None) or n)
         windows = [np.arange(i * ds.seq, (i + 1) * ds.seq) for i in range(n)]
         for i in range(0, len(windows), batch):
             chunk = windows[i:i + batch]

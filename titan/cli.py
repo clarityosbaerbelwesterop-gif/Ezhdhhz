@@ -1,5 +1,7 @@
 """`titan` command-line interface.
 
+    titan env [--path DIR]              this environment's CPU/RAM/storage/GPUs and training limits
+    titan prepare-data FILES --out X    byte-token corpus (memory-mapped, any size) for pretraining
     titan info [--arch dev]             architecture summary (analytical figures labelled as such)
     titan backends                      execution backends and their real availability
     titan quickstart [...]              one-command training on the virtual accelerator
@@ -85,18 +87,23 @@ def _quickstart_params(a) -> int | None:
     n = parse_count(a.params)
     seq = a.seq or 64
     batch = a.batch or 8
-    vocab = 512 if a.data else 24
+    byte = bool(a.data) and (a.data.lower().endswith(".bin") or a.tokenizer == "byte")
+    vocab = 256 if byte else (512 if a.data else 24)
     small = spec_for_params(n, vocab, seq)
     need, avail = host_training_bytes(small, batch), host_memory_available()
+    if a.memory_gb:
+        avail = int(a.memory_gb * 1e9 / 0.7)
     if avail and need <= 0.7 * avail:
         print(f"{n / 1e6:.1f}M parameters -> transformer L={small.layers} d={small.d_model} heads={small.heads}; "
               f"estimated host memory {need / 1e9:.1f} GB of {avail / 1e9:.1f} GB available: training numerically")
         a.model = "transformer"
         a.overrides = {"seq": seq, "d_model": small.d_model, "heads": small.heads, "d_ff": small.d_ff,
                        "layers": small.layers}
-        if a.backend == "functional" and n > 2e7:
-            a.backend = "fast"
-            print("using the fast backend (TITAN IR kernels) for this size; --backend functional forces ISA level")
+        if a.backend == "auto" or (a.backend == "functional" and n > 2e7):
+            from .runtime.accel import torch_available
+            a.backend = "accel" if torch_available() else "fast"
+            print(f"using the {a.backend} backend (TITAN IR kernels) for this size; --backend functional forces "
+                  "ISA-level execution")
         if a.arch == "dev" and n > 2e6:
             a.arch = "host"
         return None
@@ -146,7 +153,9 @@ def cmd_quickstart(a) -> int:
     tc = TrainConfig(model=a.model, dataset=a.dataset, profile=a.profile, batch=a.batch, precision=a.precision,
                      backend=a.backend, steps=a.steps, lr=a.lr, optimizer=a.optimizer, seed=a.seed,
                      eval_every=a.eval_every, ckpt_every=a.ckpt_every, arch=a.arch, out_dir=a.out,
-                     data=a.data, target=a.target, task=a.task, overrides=a.overrides)
+                     data=a.data, target=a.target, task=a.task, overrides=a.overrides, init_from=a.init_from,
+                     freeze=a.freeze or [], tokenizer=a.tokenizer, schedule=a.schedule, weight_decay=a.weight_decay,
+                     clip_grad=a.clip_grad, early_stop=a.early_stop, warmup=a.warmup)
     try:
         tr = Trainer(tc)
     except (RuntimeError, ValueError) as e:
@@ -161,6 +170,40 @@ def cmd_quickstart(a) -> int:
     print(f"\nexecuted on TITAN: {', '.join(s['placement']['titan'])}")
     print(f"executed on host : {', '.join(s['placement']['host'])}")
     print(f"run directory    : {tr.out}  (config.json, metrics.jsonl, log.txt, checkpoints/, summary.json)")
+    return 0
+
+
+# ------------------------------------------------------------------ environment / data
+
+def cmd_env(a) -> int:
+    from .envinfo import environment
+    e = environment(a.path)
+    h = e["host"]
+    print(f"host        {h['cpu']} ({h['logical_cpus']} logical CPUs), Python {h['python']}, NumPy {h['numpy']}")
+    print(f"RAM         {e['ram_available_gb']:.1f} GB available of {e['ram_total_gb']:.1f} GB")
+    print(f"storage     {e['storage_free_gb']:.1f} GB free of {e['storage_total_gb']:.1f} GB at {e['storage_path']}")
+    print(f"PyTorch     {e['torch'] or 'not installed (pip install torch) - enables the accel backend'}"
+          + (f", {e['torch_threads']} threads" if e["torch"] else ""))
+    for g in e["gpus"]:
+        print(f"GPU {g['index']}       {g['name']}: {g['free_gb']:.1f} GB free of {g['memory_gb']:.1f} GB, "
+              f"bf16 {'yes' if g['bf16'] else 'no'}")
+    if not e["gpus"]:
+        print("GPU         none detected")
+    print(f"backend     recommended: {e['recommended_backend']}")
+    print(f"max trainable parameters (estimate): host RAM {e['max_trainable_params_host_ram'] / 1e6:,.0f} M"
+          + (f", single GPU {e['max_trainable_params_single_gpu'] / 1e6:,.0f} M" if e["gpus"] else ""))
+    print(f"max corpus on storage: {e['max_corpus_tokens_on_storage'] / 1e9:,.1f} G byte tokens")
+    print(e["note"])
+    if a.json:
+        Path(a.json).write_text(json.dumps(e, indent=2, default=str))
+    return 0
+
+
+def cmd_prepare_data(a) -> int:
+    from .train.tokens import prepare_bytes
+    meta = prepare_bytes(a.inputs, a.out)
+    print(f"wrote {a.out}: {meta['tokens']:,} byte tokens from {len(meta['sources'])} file(s), sha256 "
+          f"{meta['sha256'][:16]}...; metadata {Path(a.out).with_suffix('.json')}")
     return 0
 
 
@@ -420,12 +463,23 @@ def build_parser() -> argparse.ArgumentParser:
                                                    "(trains if it fits this host, otherwise plans it on TITAN-X1 target)")
     s.add_argument("--seq", type=int, default=None, help="sequence length for --params")
     s.add_argument("--devices", type=int, nargs="+", default=None, help="devices for the distributed plan")
+    s.add_argument("--memory-gb", type=float, default=None, help="RAM budget for --params (default: 70%% of available)")
+    s.add_argument("--init-from", default=None, help="fine-tune: start from this checkpoint's weights")
+    s.add_argument("--freeze", nargs="+", default=None, help="fine-tune: parameter prefixes/globs to keep fixed")
+    s.add_argument("--tokenizer", default="char", choices=["char", "byte"], help="tokenizer for .txt data")
+    s.add_argument("--schedule", default=None, choices=["constant", "cosine"])
+    s.add_argument("--warmup", type=int, default=None)
+    s.add_argument("--weight-decay", type=float, default=None)
+    s.add_argument("--clip-grad", type=float, default=None)
+    s.add_argument("--early-stop", type=int, default=0, help="stop after N evaluations without improvement")
     s.add_argument("--profile", default="small", choices=["tiny", "small", "medium"])
     s.add_argument("--batch", type=int, default=None)
     s.add_argument("--precision", default="fp32", choices=["fp32", "bf16", "fp16"])
-    s.add_argument("--backend", default="functional", choices=["functional", "fast", "cycle", "rtl", "fpga", "hardware"],
+    s.add_argument("--backend", default="functional",
+                   choices=["functional", "fast", "accel", "auto", "cycle", "rtl", "fpga", "hardware"],
                    help="functional: every TITAN instruction (bit-exact replay); fast: TITAN IR kernels on whole "
-                        "tensors (largest models, fastest); cycle: + simulated timing")
+                        "tensors (NumPy); accel: TITAN IR kernels on GPU/CPU via PyTorch (fastest, largest); "
+                        "auto: best available; cycle: + simulated timing")
     s.add_argument("--steps", type=int, default=None)
     s.add_argument("--lr", type=float, default=None)
     s.add_argument("--optimizer", default="adam", choices=["adam", "sgd"])
@@ -437,6 +491,16 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--resume", default=None, help="checkpoint .npz to resume from")
     s.add_argument("-i", "--interactive", action="store_true", help="guided selection")
     s.set_defaults(fn=cmd_quickstart)
+
+    s = sub.add_parser("env", help="inspect this environment (CPU, RAM, storage, GPUs) and its training limits")
+    s.add_argument("--path", default=".", help="storage location for data and runs")
+    s.add_argument("--json", default=None)
+    s.set_defaults(fn=cmd_env)
+
+    s = sub.add_parser("prepare-data", help="stream text files into a byte-token corpus for pretraining")
+    s.add_argument("inputs", nargs="+")
+    s.add_argument("--out", required=True)
+    s.set_defaults(fn=cmd_prepare_data)
 
     s = sub.add_parser("plan", help="distributed training plan for large models (up to 100B+ parameters)")
     g_ = s.add_mutually_exclusive_group()

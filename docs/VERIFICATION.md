@@ -19,6 +19,8 @@ estimate as a measurement.
 | Replay executor | complete memory images bit-identical to the reference engine (4 programs incl. training step, BF16, INT8); cached cycle timing == full simulation | `pytest tests/test_replay.py` |
 | Fast IR executor | outputs and updated parameters vs ISA level (FP32 1e-4, BF16 2e-3); training trajectories agree | `pytest tests/test_scale.py` |
 | Own data | CSV/TSV/NPZ/NPY/TXT, header and delimiter detection, categorical features, regression, 5 error classes, end-to-end training | `pytest tests/test_data.py` |
+| Accel executor (PyTorch) | outputs and parameters vs fast executor on 4 programs; training trajectory vs ISA level (rtol 3e-3) | `pytest tests/test_environment.py` |
+| Pretrain / fine-tune / quality | byte corpus memory-mapped; init-from loads all matching weights; frozen weights unchanged; transfer lowers the first loss; mismatched shapes reported; clipped SGD step = lr·clip; cosine schedule; best checkpoint | `pytest tests/test_environment.py` |
 | Large-model accounting | parameter count and forward/training matmul FLOPs of the planner == compiled graphs (exact); 100B-width meta graph | `pytest tests/test_scale.py` |
 | Performance tooling | roofline classes, comparison refusals, verified tuning | `pytest tests/test_perf.py` |
 | Multi-chip | ring all-reduce exactness + traffic, DP ≡ large batch, replicas identical | `pytest tests/test_multichip.py` |
