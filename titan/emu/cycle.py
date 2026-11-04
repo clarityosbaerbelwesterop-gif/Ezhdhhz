@@ -8,6 +8,7 @@ and the fill/drain behaviour of the systolic matrix engine.
 from __future__ import annotations
 
 import math
+from bisect import bisect_right
 from collections import defaultdict
 
 from ..hw.memory import L2Cache
@@ -39,13 +40,54 @@ def _overlap(a, b) -> bool:
     return False
 
 
+class Timeline:
+    """Busy calendar of a shared bandwidth resource.
+
+    Requests are placed into the earliest idle gap at or after their ready time,
+    so a reservation made for the future does not block an earlier request
+    (non-preemptive interval packing; approximates arbitration of a shared link).
+    """
+
+    def __init__(self):
+        self.starts: list[float] = []
+        self.ends: list[float] = []
+
+    def reserve(self, t: float, dur: float) -> float:
+        """Reserve ``dur`` cycles starting no earlier than ``t``; return the completion time."""
+        if dur <= 0:
+            return t
+        i = bisect_right(self.ends, t)
+        cur = t
+        while i < len(self.starts) and self.starts[i] < cur + dur:
+            cur = max(cur, self.ends[i])
+            i += 1
+        end = cur + dur
+        if i > 0 and self.ends[i - 1] == cur:          # merge with the left neighbour
+            self.ends[i - 1] = end
+            if i < len(self.starts) and self.starts[i] == end:
+                self.ends[i - 1] = self.ends.pop(i)
+                self.starts.pop(i)
+        elif i < len(self.starts) and self.starts[i] == end:
+            self.starts[i] = cur
+        else:
+            self.starts.insert(i, cur)
+            self.ends.insert(i, end)
+        return end
+
+    def prune(self, watermark: float) -> None:
+        k = bisect_right(self.ends, watermark)
+        if k:
+            del self.starts[:k]
+            del self.ends[:k]
+
+
 class CycleModel:
     def __init__(self, cfg):
         self.cfg = cfg
         n = cfg.cores
         self.unit_free = [defaultdict(float) for _ in range(n)]
         self.dma_free = [[0.0] * cfg.dma_engines for _ in range(n)]
-        self.hbm_free = self.l2_free = self.shared_free = 0.0
+        self.hbm, self.l2_bus, self.shared_bus = Timeline(), Timeline(), Timeline()
         self.l2 = L2Cache(cfg.l2_kib * 1024, cfg.l2_line, cfg.l2_ways)
         self.inflight: list[list] = [[] for _ in range(n)]
         self.last_end = [0.0] * n
@@ -75,30 +117,22 @@ class CycleModel:
             lat = cfg.local_latency
         if src.space == Space.GLOBAL:
             hits, misses = self.l2.access(src, write=False)
-            t = max(start, self.l2_free)
-            self.l2_free = t + nbytes / self.l2_bpc
-            done = max(done, self.l2_free)
+            done = max(done, self.l2_bus.reserve(start, nbytes / self.l2_bpc))
             if misses:
                 mb = misses * cfg.l2_line
                 self.hbm_bytes += mb
-                t = max(start, self.hbm_free)
-                self.hbm_free = t + mb / self.hbm_bpc
-                done = max(done, self.hbm_free)
+                done = max(done, self.hbm.reserve(start, mb / self.hbm_bpc))
                 lat = max(lat, cfg.hbm_latency)
             else:
                 lat = max(lat, cfg.l2_latency)
         if dst.space == Space.GLOBAL:
             self.l2.access(dst, write=True)
             self.hbm_bytes += nbytes
-            t = max(start, self.hbm_free)
-            self.hbm_free = t + nbytes / self.hbm_bpc
-            done = max(done, self.hbm_free)
+            done = max(done, self.hbm.reserve(start, nbytes / self.hbm_bpc))
             lat = max(lat, cfg.l2_latency)
         if Space.SHARED in (src.space, dst.space):
             mult = 2 if src.space == dst.space == Space.SHARED else 1
-            t = max(start, self.shared_free)
-            self.shared_free = t + mult * nbytes / self.shared_bpc
-            done = max(done, self.shared_free)
+            done = max(done, self.shared_bus.reserve(start, mult * nbytes / self.shared_bpc))
             lat = max(lat, cfg.shared_latency)
         return done - start, lat
 
@@ -127,6 +161,11 @@ class CycleModel:
         return 1.0, 0.0
 
     # ------------------------------------------------------------- schedule
+    def advance(self, now: float) -> None:
+        """Events are processed in non-decreasing issue time: history before ``now`` can be dropped."""
+        for tl in (self.hbm, self.l2_bus, self.shared_bus):
+            tl.prune(now)
+
     def schedule(self, core: int, ins: Instruction, t_issue: float) -> tuple[float, float]:
         reads, writes = access_sets(core, ins)
         live = [r for r in self.inflight[core] if r[2] > t_issue]

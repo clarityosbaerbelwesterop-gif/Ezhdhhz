@@ -138,6 +138,20 @@ class Allocator:
                 return start
         raise MemoryError(f"allocator: cannot allocate {n} bytes (capacity {self.size})")
 
+    def reserve(self, addr: int, n: int) -> None:
+        """Mark [addr, addr+n) as used (e.g. buffers owned by another executable)."""
+        n = max(int(n), 1)
+        for i, (lo, hi) in enumerate(self.free):
+            if lo <= addr and addr + n <= hi:
+                pieces = [(lo, addr)] if addr > lo else []
+                if addr + n < hi:
+                    pieces.append((addr + n, hi))
+                self.free[i:i + 1] = pieces
+                self.used[addr] = n
+                self.high_water = max(self.high_water, addr + n)
+                return
+        raise MemoryError(f"allocator: range [{addr}, {addr + n}) is not free")
+
     def release(self, addr: int) -> None:
         n = self.used.pop(addr)
         self.free.append((addr, addr + n))

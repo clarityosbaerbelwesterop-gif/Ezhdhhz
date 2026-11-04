@@ -128,19 +128,29 @@ def test_double_buffering_overlaps_dma_and_compute(tiny):
     assert single.ops == double.ops
 
 
+def _stream(cores):
+    gp = Placer(Space.GLOBAL)
+    out = []
+    for c in cores:
+        for _ in range(4):
+            out.append(B.load(c, TensorRef(Space.LOCAL, 0, 64, 64, DType.FP32), gp(64, 64, DType.FP32)))
+    return Program(out)
+
+
 def test_global_bandwidth_contention(tiny):
-    def prog(cores):
-        gp = Placer(Space.GLOBAL)
-        out = []
-        for c in cores:
-            for _ in range(4):
-                out.append(B.load(c, TensorRef(Space.LOCAL, 0, 64, 64, DType.FP32), gp(64, 64, DType.FP32)))
-        return Program(out)
-    one = run(Machine(tiny), prog([0]), CYCLE)
-    two = run(Machine(tiny), prog([0, 1]), CYCLE)
-    # Two cores move 2x the bytes through one HBM: must take clearly longer than one core alone.
-    assert two.cycles > 1.6 * one.cycles
+    # HBM slower than one core's NoC link: two cores must share HBM and take ~2x as long.
+    cfg = tiny.replace(hbm_gbps=16.0)
+    one = run(Machine(cfg), _stream([0]), CYCLE)
+    two = run(Machine(cfg), _stream([0, 1]), CYCLE)
+    assert two.cycles > 1.8 * one.cycles
     assert two.counters["hbm_bytes"] == 2 * one.counters["hbm_bytes"]
+
+
+def test_no_contention_when_link_bound(tiny):
+    # Default tiny: per-core link (32 B/cycle) is the bottleneck, HBM (64 B/cycle) serves two cores.
+    one = run(Machine(tiny), _stream([0]), CYCLE)
+    two = run(Machine(tiny), _stream([0, 1]), CYCLE)
+    assert two.cycles < 1.05 * one.cycles
 
 
 def test_l2_cache_hits_on_reuse(tiny):

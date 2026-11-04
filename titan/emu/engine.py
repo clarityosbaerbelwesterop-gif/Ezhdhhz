@@ -310,6 +310,7 @@ class Engine:
                             t2 = heapq.heappop(fl)
                             cyc.stall[c]["inflight_limit"] += t2 - t
                             t = t2
+                        cyc.advance(min(t, cp_time))
                         start, end = cyc.schedule(c, ins, t)
                         heapq.heappush(fl, end)
                         core_ready[c] = t + 1
