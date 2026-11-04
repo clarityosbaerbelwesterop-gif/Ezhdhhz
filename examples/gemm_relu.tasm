@@ -1,0 +1,12 @@
+; Hand-written TITAN program: C = relu(A @ B) on core 0, then core 1 doubles it after a signal.
+; A: 16x16 fp32 at G:0x0, B: 16x16 fp32 at G:0x400, C: G:0x800, D: G:0xc00
+load @0 L:0x0:16x16:fp32, G:0x0:16x16:fp32
+load @0 L:0x400:16x16:fp32, G:0x400:16x16:fp32
+matmul @0 L:0x800:16x16:fp32, L:0x0:16x16:fp32, L:0x400:16x16:fp32
+activation.relu @0 L:0x800:16x16:fp32, L:0x800:16x16:fp32
+store @0 +notify G:0x800:16x16:fp32, L:0x800:16x16:fp32
+synchronize.signal @0 # 0, 1
+synchronize.wait @1 # 0, 1
+load @1 L:0x0:16x16:fp32, G:0x800:16x16:fp32
+vector_scale_add @1 L:0x400:16x16:fp32, L:0x0:16x16:fp32 # 2.0, 0.0
+store @1 +notify G:0xc00:16x16:fp32, L:0x400:16x16:fp32

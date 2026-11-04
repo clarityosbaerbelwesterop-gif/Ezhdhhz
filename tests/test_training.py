@@ -85,8 +85,8 @@ def test_cycle_backend_reports_simulated_time(tmp_path):
 @pytest.mark.parametrize("backend,msg", [("fpga", "not operational"), ("hardware", "not operational"),
                                          ("rtl", "INT8")])
 def test_unavailable_backends_are_refused(tmp_path, backend, msg):
-    import shutil
-    if backend == "rtl" and not shutil.which("verilator"):
+    from titan.runtime import BACKENDS
+    if backend == "rtl" and not BACKENDS["rtl"].status()[0]:
         msg = "not operational"
     with pytest.raises(RuntimeError, match=msg):
         make(tmp_path, steps=1, backend=backend)

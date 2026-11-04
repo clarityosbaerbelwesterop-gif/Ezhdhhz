@@ -3,6 +3,9 @@ from __future__ import annotations
 
 import shutil
 from dataclasses import dataclass
+from pathlib import Path
+
+MXU_RTL = Path(__file__).resolve().parent.parent.parent / "rtl" / "titan_mxu_tile.sv"
 
 
 @dataclass(frozen=True)
@@ -16,6 +19,8 @@ class Backend:
         if self.key in ("functional", "cycle"):
             return True, "available (software emulation on the host CPU)"
         if self.key == "rtl":
+            if not MXU_RTL.exists():
+                return False, "unavailable: rtl/titan_mxu_tile.sv not present"
             if shutil.which("verilator"):
                 return True, "available: MATMUL INT8 offloaded to the Verilator model of rtl/titan_mxu_tile.sv; " \
                              "all other instructions execute in the functional model"
