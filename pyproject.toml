@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rouge-titan"
+version = "0.1.0"
+description = "ROUGE TITAN: TITAN-X1 digital AI accelerator (ISA, emulator, compiler, training runtime)"
+requires-python = ">=3.11"
+dependencies = ["numpy>=1.26"]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.scripts]
+titan = "titan.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["titan*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["rtl: requires Verilator", "slow: longer-running end-to-end tests"]

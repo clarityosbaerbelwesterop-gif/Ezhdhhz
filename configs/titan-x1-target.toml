@@ -1,0 +1,36 @@
+# TITAN-X1 "target": RESEARCH DESIGN POINT for analytical studies.
+# Every number below is an ASSUMPTION, not a property of existing hardware.
+# Functional/cycle emulation of this config is possible only for small workloads
+# (the emulator backs at most `emulated_global_mib` of global memory).
+name = "titan-x1-target"
+description = "Research design point toward the 10x-B300 package goal (assumptions, unvalidated)"
+clock_ghz = 2.0
+
+[compute]
+cores = 352
+mxu_rows = 128
+mxu_cols = 128
+mxu_rate_int4 = 4.0
+mxu_rate_int8 = 2.0
+mxu_rate_fp16 = 1.0
+mxu_rate_bf16 = 1.0
+mxu_rate_fp32 = 0.25
+vpu_lanes = 256
+sfu_lanes = 64
+
+[memory]
+local_sram_kib = 8192
+gemm_staging_kib = 1024
+shared_sram_kib = 262144
+l2_kib = 262144
+l2_ways = 16
+l2_gbps = 128000.0
+shared_gbps = 64000.0
+hbm_gbps = 32000.0           # assumes 16 HBM4-class stacks at ~2 TB/s each
+noc_link_gbps = 512.0
+global_mem_gib = 576.0
+emulated_global_mib = 512
+
+[control]
+queue_depth = 128
+semaphores = 255

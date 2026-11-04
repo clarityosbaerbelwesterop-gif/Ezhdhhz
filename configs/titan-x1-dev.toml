@@ -1,0 +1,26 @@
+# TITAN-X1 "dev": default emulation configuration (functional + cycle model).
+name = "titan-x1-dev"
+description = "4 cores, 16x16 MXU; default development configuration"
+clock_ghz = 1.0
+
+[compute]
+cores = 4
+mxu_rows = 16
+mxu_cols = 16
+vpu_lanes = 64
+sfu_lanes = 16
+
+[memory]
+local_sram_kib = 512
+gemm_staging_kib = 128
+shared_sram_kib = 4096
+l2_kib = 1024
+l2_ways = 8
+hbm_gbps = 256.0
+noc_link_gbps = 128.0
+emulated_global_mib = 256
+global_mem_gib = 16.0
+
+[control]
+queue_depth = 64
+semaphores = 64
