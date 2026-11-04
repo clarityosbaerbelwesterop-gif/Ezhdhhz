@@ -82,10 +82,11 @@ def test_full_100b_training_step_compiles_with_exact_memory():
     exe = compile_training_program(preset("gpt-100b", seq=32), 1)
     n = sum(exe.buffers[p].shape[0] * exe.buffers[p].shape[1] for p in exe.params
             if not p.endswith((".adam_m", ".adam_v")))
-    assert 100e9 < n < 103e9 and len(exe.module.kernels) > 400_000
+    assert 100e9 < n < 103e9 and len(exe.module.kernels) > 350_000
     m = execution_memory(exe, 4)
     assert m["ram_bytes"] < 32e9                                 # fits an ordinary server's RAM
-    assert 1.6e12 < m["storage_bytes"] < 3.5e12                  # ~24 bytes/parameter on storage
+    assert 1.5e12 < m["storage_bytes"] < 1.8e12                  # ~16 bytes/parameter: p, m, v + gradients
+    assert exe.stats["kernels_by_kind"].get("copy", 0) == 0      # all optimizer updates in place
 
 
 def test_quickstart_offload_paths(tmp_path, capsys):

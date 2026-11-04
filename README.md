@@ -27,7 +27,8 @@ python -m titan quickstart                     # train an MLP on TITAN (or: -i f
 python -m titan quickstart --data examples/data/machines.csv --target status   # your own data
 python -m titan quickstart --data my_book.txt  # your own text -> character-level transformer
 python -m titan quickstart --params 100m       # sized transformer, trained for real on this host
-python -m titan quickstart --params 100b       # too big for any single host -> distributed TITAN plan
+python -m titan quickstart --params 100b --offload-dir /mnt/nvme   # 100B on ONE machine (needs ~1.7 TB NVMe)
+python -m titan plan --params 100b --single-machine   # compiles the full 100B training step, exact RAM/storage
 python -m titan plan --params 100b --devices 64 --compare-b300
 python -m titan env --path /mnt/storage        # your machine's RAM/GPU/storage limits
 python -m titan prepare-data corpus/*.txt --out corpus.bin   # any-size byte corpus (memory-mapped)
@@ -53,6 +54,7 @@ make lint test                                 # RTL lint (warnings = errors) + 
 | Own data | `.csv/.tsv/.npz/.npy` (classification or regression), `.txt` (language model) | format, validation and end-to-end tests |
 | Execution speed | bit-exact replay of the ISA program; `fast` backend runs TITAN IR kernels on whole tensors | replay memory images identical to the reference engine; fast ≈ ISA within FP32 tolerance |
 | Large models | meta graphs of any size, distributed planner (TP×PP×DP, ZeRO, recompute) up to 175B | parameter/FLOP formulas equal compiled graphs exactly |
+| Beyond RAM | lazy initialization + storage offload (weights, Adam state, large temporaries memory-mapped on NVMe); full GPT-100B training step compiles (380k kernels, 35 s) and needs 12.5 GB RAM + 1.63 TB storage | offloaded == in-RAM bit for bit; exact schedule accounting |
 | Own environment | `accel` backend (TITAN IR kernels via PyTorch on GPU/CPU), byte corpora memory-mapped from disk, pretrain / continue / fine-tune (`--init-from`, `--freeze`), AdamW + cosine + clipping + best checkpoint + early stopping, `titan env`, Dockerfile | accel ≈ fast executor; fine-tune transfer and freeze tests; see [docs/DEPLOY.md](docs/DEPLOY.md) |
 | Performance | cycle model, roofline, benchmark harness, verified autotuner | `reports/` (method + provenance on every number) |
 | RTL | `rtl/titan_mxu_tile.sv` (MXU tile), `rtl/rtl_mac_array.sv` (D0) | directed + 2000-cycle random TBs; Verilator co-sim 0 mismatches |
@@ -85,9 +87,9 @@ make lint test                                 # RTL lint (warnings = errors) + 
   *measured (host)*; accelerator timing is *simulated* or *analytical*, never mixed.
 * B300 figures (`titan/perf/reference.py`) carry sources and retrieval date; the code refuses
   cross-precision, sparse-vs-dense and simulated-vs-peak ratios.
-* 100B parameters cannot be trained numerically on a single host (≈1.6 TB of weights, gradients
-  and Adam states). Models up to that size and beyond are defined (meta graphs), compiled to TITAN IR
-  and planned for the distributed target system; numeric training here is limited by host RAM.
+* 100B parameters need ≈1.6 TB of training state. With `--offload-dir` one machine trains them if its
+  storage holds that (12.5 GB RAM suffice); speed is then bounded by storage bandwidth. This sandbox
+  (16 GB RAM, ~20 GB free disk) cannot hold 100B; the largest model trained here is listed above.
 
 Documentation: [Architecture](docs/ARCHITECTURE.md) · [ISA](docs/ISA.md) · [Performance](docs/PERFORMANCE.md) ·
 [Verification](docs/VERIFICATION.md) · [FPGA](docs/FPGA.md) · [Roadmap](docs/ROADMAP.md) ·

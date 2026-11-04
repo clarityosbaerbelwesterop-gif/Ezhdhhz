@@ -86,3 +86,13 @@ tested for exact equality with compiled TITAN graphs.
 Ratio 7.0× under identical assumptions, below the 10.25× BF16 paper-peak ratio because the target
 design point has 4× (not 10×) the memory bandwidth. Full table 1.3B-175B:
 `reports/SPEED_AND_LARGE_MODELS.md`. The planner is not validated against real distributed runs.
+
+## 8. Single-machine 100B (exact, from the compiled program)
+
+`titan plan --params 100b --single-machine` builds and compiles the complete GPT-100B training step
+(forward, loss, backward, global-norm clipping, AdamW) to TITAN IR: 101.70 B parameters, 433,137
+kernels, 78,978 lazily initialized tensors, 34.7 s and 1.5 GB of host memory to compile. Exact
+accounting of its kernel schedule with the FP32 executor: 1.63 TB in RAM without offload; with
+storage offload (tensors ≥ 4 MiB) **12.5 GB RAM + 1.63 TB storage**. A single server with a
+multi-terabyte NVMe can therefore run the 100B training step; it is storage-bandwidth bound
+(each step streams the full optimizer state), which is why many devices remain the route to speed.

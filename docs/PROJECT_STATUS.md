@@ -41,9 +41,10 @@ Dockerfile (`docs/DEPLOY.md`).
   emulation speed (seconds to minutes), which says nothing about accelerator speed.
 * Multi-chip results use assumed link parameters; there is no die-to-die or network RTL.
 * `titan-x1-target` is an unbuilt design point; its numbers are analytical paper figures.
-* 100B-parameter models are planned, not trained: numeric training is limited by host RAM
-  (255 M parameters measured here). The planner's assumptions (links, GEMM efficiency, no
-  communication overlap) are not validated against real distributed runs.
+* 100B-parameter models: the complete training step compiles and its exact memory is known
+  (12.5 GB RAM + 1.63 TB storage with offload); it runs on any single machine with that storage,
+  but has not been executed in this sandbox (≈20 GB free disk). Speed at that size is storage-bound;
+  the distributed planner's assumptions are not validated against real multi-device runs.
 * The accel backend uses one device per process (no multi-GPU / multi-node runtime yet); its CUDA
   path is exercised only where a GPU exists (CI and this sandbox test it on CPU).
 * The fast IR executor skips the ISA level; its results agree with ISA-level execution within FP32

@@ -59,22 +59,39 @@ titan quickstart --data /mnt/data/domain.txt --tokenizer byte --params 300m --ba
 Byte tokens (vocabulary 256) make every byte-level checkpoint transferable to any other byte
 corpus. Weights whose name or shape differ are re-initialized and listed in `config.json`.
 
-## 5. Quality controls (defaults for transformers)
+## 5. Beyond RAM: storage offload (up to 100B+ on one machine)
+
+```bash
+titan plan --params 100b --single-machine          # compiles the full training step, exact RAM/storage
+titan quickstart --data /mnt/data/corpus.bin --params 100b --offload-dir /mnt/nvme/titan \
+    --steps 1000 --ckpt-every 100 --out /mnt/runs/pre-100b
+```
+
+With `--offload-dir`, weights, Adam state and every tensor of at least `--offload-mb` (default 4 MiB)
+live in memory-mapped files on that storage; parameters are initialized lazily, one tensor at a
+time, directly into those files. RAM holds the working set of one kernel plus the page cache.
+Exact accounting of the compiled GPT-100B training step (101.7 B parameters, 380,485 kernels,
+sequence 128): **12.5 GB RAM and 1.63 TB storage**. That is ~16 bytes per parameter: FP32 weights, Adam m and v (all
+updated in place, no copies) plus gradients. Use NVMe: every step reads and writes the optimizer
+state, so storage bandwidth sets the speed. If the storage is too small, `quickstart`
+prints the exact requirement and the distributed plan instead.
+
+## 6. Quality controls (defaults for transformers)
 
 AdamW (decoupled weight decay 0.1 on matrices), linear warmup + cosine decay to 10 % of the
 learning rate, global gradient-norm clipping at 1.0 computed on TITAN (logged as `grad_norm`),
 best-checkpoint saving (`checkpoints/best.npz`) and optional early stopping. Override with
 `--schedule`, `--warmup`, `--weight-decay`, `--clip-grad`, `--early-stop`, `--lr`.
 
-## 6. Limits, honestly
+## 7. Limits, honestly
 
 | Resource | Limit it sets |
 |---|---|
-| host RAM / GPU memory | trainable parameters ≈ memory / 24 bytes (minus activations) |
-| storage | corpus size (1 byte per token) and checkpoints (16 bytes per parameter) |
+| host RAM / GPU memory | in-memory training: parameters ≈ memory / 24 bytes (minus activations) |
+| storage | with `--offload-dir`: parameters ≈ storage / 16 bytes (100B ≈ 1.63 TB); corpus (1 byte/token); checkpoints (16 bytes/parameter) |
 | GPU / cores | speed; `accel` uses one GPU per process |
 
-Multi-GPU and multi-node training are not implemented in the runtime; models beyond a single
-machine (e.g. 100 B parameters ≈ 1.6 TB of weights, gradients and Adam states) are planned with
-`titan plan` for the TITAN-X1 target system. Host speed is the speed of the host hardware running
+Multi-GPU and multi-node training are not implemented in the runtime: one machine trains models up
+to its storage (offload) — 100B needs ~1.7 TB of NVMe and is storage-bandwidth bound; faster
+large-scale training needs many devices, which `titan plan` models for the TITAN-X1 target system. Host speed is the speed of the host hardware running
 TITAN's compiled program, not of TITAN silicon (which does not exist yet).

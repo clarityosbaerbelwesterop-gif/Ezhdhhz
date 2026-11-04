@@ -309,8 +309,20 @@ class Compiler:
         return out[::-1]
 
     def place_assigns(self, kernels):
-        """Parameter updates: write element-wise results in place when provably safe, else copy at the end."""
+        """Parameter updates without extra copies whenever provably safe.
+
+        1. in place, at its natural position: an element-wise producer may write straight into the
+           parameter if no kernel after it reads the parameter's OLD value (other consumers of the new
+           value then read the parameter buffer) -- e.g. Adam's m/v updates, used twice;
+        2. in place, moved to the end: single-use producers whose parameter is read later;
+        3. otherwise a copy at the end of the program.
+        """
         out_ids = {self.canon(t).id for t in self.g.outputs.values()}
+        pos = {id(K): i for i, K in enumerate(kernels)}
+        last_read: dict[int, int] = {}
+        for i, K in enumerate(kernels):
+            for t in K.in_tensors:
+                last_read[t.id] = i
         inplace, copies = [], []
 
         def copy_of(value, target):
@@ -318,15 +330,42 @@ class Compiler:
             ck.in_tensors, ck.modes, ck.head = [value], ["full"], value
             return ck
 
-        for target, value in self.g.assigns:
+        cls = {}                                    # assign index -> "stay" | "move" | "copy"
+        info = []
+        for i, (target, value) in enumerate(self.g.assigns):
             v = self.canon(value)
             K = self.producer.get(v.id)
-            if (K is not None and K.kind == "ewise" and K.head is v and self.uses[v.id] == 1
-                    and v.id not in out_ids and K not in inplace):
-                K.attrs["target"] = target
-                inplace.append(K)
+            ok = K is not None and K.kind == "ewise" and K.head is v and v.id not in out_ids
+            info.append((target, v, K, ok))
+            if ok and last_read.get(target.id, -1) <= pos[id(K)]:
+                cls[i] = "stay"
+            elif ok and self.uses[v.id] == 1:
+                cls[i] = "move"
             else:
+                cls[i] = "copy"
+        used = {}
+        for i, (_, _, K, _) in enumerate(info):     # one assignment per producer kernel
+            if cls[i] != "copy" and id(K) in used:
+                cls[i] = "copy"
+            elif cls[i] != "copy":
+                used[id(K)] = i
+        while True:                                 # kernels that run later must not see an early overwrite
+            late_reads = {t.id for i, (_, _, K, _) in enumerate(info) if cls[i] == "move" for t in K.in_tensors}
+            late_reads |= {v.id for i, (_, v, _, _) in enumerate(info) if cls[i] == "copy"}
+            changed = False
+            for i, (target, v, K, ok) in enumerate(info):
+                if cls[i] == "stay" and target.id in late_reads:
+                    cls[i] = "move" if self.uses[v.id] == 1 else "copy"
+                    changed = True
+            if not changed:
+                break
+        for i, (target, v, K, ok) in enumerate(info):
+            if cls[i] == "copy":
                 copies.append(copy_of(v, target))
+            else:
+                K.attrs["target"] = target
+                if cls[i] == "move":
+                    inplace.append(K)
         copy_inputs = {id(x) for ck in copies for x in ck.in_tensors}
         later: set[int] = set()                     # tensors read by in-place kernels that run later
         demote = []

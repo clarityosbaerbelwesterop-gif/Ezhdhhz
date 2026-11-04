@@ -345,11 +345,12 @@ def offload_requirements(spec: TransformerSpec, batch: int) -> dict:
     """Single-machine training with storage offload (fast executor): RAM and storage estimate.
 
     Calibrated on exact schedule accounting (execution_memory): GPT-100B at seq 128 needs 12.5 GB RAM and
-    2.44 TB storage, i.e. ~24 bytes/parameter on storage plus activations; RAM ~ a few largest kernels.
+    1.63 TB storage, i.e. ~16 bytes/parameter on storage (FP32 weights, Adam m and v, gradients) plus
+    activations; RAM ~ a few of the largest kernels.
     """
     t = batch * spec.seq
     acts = 4 * spec.layers * t * spec.d_model * (34 + 5 * spec.heads * spec.seq / spec.d_model)
-    storage = 24.0 * spec.params() + acts + 3 * 4 * t * spec.vocab
+    storage = 16.5 * spec.params() + acts + 3 * 4 * t * spec.vocab
     largest = 4 * max(spec.vocab * spec.d_model, spec.d_model * spec.d_ff)
     ram = max(2e9, 6 * largest + 4 * t * spec.d_ff * 4)
     return {"ram_bytes": int(ram), "storage_bytes": int(storage)}
