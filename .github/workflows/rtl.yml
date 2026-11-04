@@ -1,0 +1,24 @@
+name: RTL verification
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verilator:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Verilator
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y verilator make
+      - name: Show tool version
+        run: verilator --version
+      - name: Lint RTL
+        run: make lint
+      - name: Run directed simulation
+        run: make test
+      - name: Check performance model
+        run: python3 scripts/perf_model.py --macs 16 --clock-mhz 100
