@@ -116,10 +116,10 @@ class DataParallelTrainer:
         g.output("logits", logits)
         exe = compile_graph(g, self.cfg, share_with=self.grad_exe)
         self.devs[0].load(exe, init=False)
-        for xb, yb in eval_batches(self.ds, self.local_batch):
-            lg = self.devs[0].run(exe, {"x": xb}).outputs["logits"]
-            correct += int((lg.argmax(1) == yb).sum())
-            total += len(yb)
+        for xb, yb, nv in eval_batches(self.ds, self.local_batch):
+            lg = self.devs[0].run(exe, {"x": xb}).outputs["logits"][:nv]
+            correct += int((lg.argmax(1) == np.asarray(yb)[:nv]).sum())
+            total += nv
         return correct / total if total else float("nan")
 
 

@@ -44,7 +44,7 @@ def test_quickstart_refuses_unavailable_backend(tmp_path, capsys):
 
 
 def test_quickstart_interactive(tmp_path, monkeypatch, capsys):
-    answers = iter(["mlp", "xor", "tiny", "16", "fp32", "functional", "y"])
+    answers = iter(["mlp", "", "xor", "tiny", "16", "fp32", "functional", "y"])
     monkeypatch.setattr("builtins.input", lambda *_: next(answers))
     rc = main(["quickstart", "-i", "--steps", "5", "--arch", "tiny", "--out", str(tmp_path / "i")])
     assert rc == 0

@@ -84,9 +84,15 @@ def cmd_quickstart(a) -> int:
     from .train.datasets import DATASETS
     if a.interactive:
         print("ROUGE TITAN QuickStart\n")
-        a.model = _ask("1. model", sorted(PROFILES), a.model)
+        a.model = _ask("1. model", sorted(PROFILES), a.model or "mlp")
         ds_opts = ["text"] if a.model == "transformer" else [d for d in sorted(DATASETS) if d != "text"]
-        a.dataset = _ask("2. dataset", ds_opts, ds_opts[0] if a.dataset is None else a.dataset)
+        own = input("2. own data file (.csv/.npz/.npy/.txt, empty = built-in dataset): ").strip()
+        if own:
+            a.data = own
+            if not own.lower().endswith((".txt", ".text", ".md")):
+                a.target = input("   target column (empty = last column): ").strip() or None
+        else:
+            a.dataset = _ask("   built-in dataset", ds_opts, ds_opts[0] if a.dataset is None else a.dataset)
         a.profile = _ask("3. training profile", sorted(PROFILES[a.model]), a.profile)
         b = input(f"4. batch size (default {PROFILES[a.model][a.profile]['batch']}): ").strip()
         a.batch = int(b) if b else None
@@ -99,7 +105,8 @@ def cmd_quickstart(a) -> int:
             return 0
     tc = TrainConfig(model=a.model, dataset=a.dataset, profile=a.profile, batch=a.batch, precision=a.precision,
                      backend=a.backend, steps=a.steps, lr=a.lr, optimizer=a.optimizer, seed=a.seed,
-                     eval_every=a.eval_every, ckpt_every=a.ckpt_every, arch=a.arch, out_dir=a.out)
+                     eval_every=a.eval_every, ckpt_every=a.ckpt_every, arch=a.arch, out_dir=a.out,
+                     data=a.data, target=a.target, task=a.task)
     try:
         tr = Trainer(tc)
     except (RuntimeError, ValueError) as e:
@@ -316,8 +323,12 @@ def build_parser() -> argparse.ArgumentParser:
     s.set_defaults(fn=cmd_backends)
 
     s = sub.add_parser("quickstart", help="train a model on the virtual accelerator")
-    s.add_argument("--model", default="mlp", choices=["mlp", "transformer"])
-    s.add_argument("--dataset", default=None)
+    s.add_argument("--model", default=None, choices=["mlp", "transformer"],
+                   help="default: transformer for text data, otherwise mlp")
+    s.add_argument("--dataset", default=None, help="built-in dataset: spirals, blobs, xor, digits, text")
+    s.add_argument("--data", default=None, help="your own data: .csv/.tsv/.npz/.npy (tabular) or .txt (text)")
+    s.add_argument("--target", default=None, help="target column name or index (default: last column)")
+    s.add_argument("--task", default="auto", choices=["auto", "classification", "regression"])
     s.add_argument("--profile", default="small", choices=["tiny", "small", "medium"])
     s.add_argument("--batch", type=int, default=None)
     s.add_argument("--precision", default="fp32", choices=["fp32", "bf16", "fp16"])

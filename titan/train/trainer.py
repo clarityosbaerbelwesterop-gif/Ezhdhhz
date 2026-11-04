@@ -23,7 +23,7 @@ from ..nn.layers import ParamStore
 from ..nn.models import MLPClassifier, TinyTransformerLM, param_count
 from ..provenance import provenance
 from ..runtime import BACKENDS, Device
-from .datasets import Sampler, eval_batches, load_dataset
+from .datasets import Sampler, eval_batches, load_dataset, load_file
 from .optim import make_optimizer
 
 PROFILES = {
@@ -51,7 +51,7 @@ PLACEMENT = {
 
 @dataclass
 class TrainConfig:
-    model: str = "mlp"
+    model: str | None = None          # mlp | transformer (default: transformer for text data, else mlp)
     dataset: str | None = None
     profile: str = "small"
     batch: int | None = None
@@ -66,8 +66,20 @@ class TrainConfig:
     arch: str = "dev"
     out_dir: str | None = None
     overrides: dict = field(default_factory=dict)
+    data: str | None = None           # path to your own data (.csv/.tsv/.npz/.npy/.txt)
+    target: str | None = None         # target column (name or index) for tabular data
+    task: str = "auto"                # auto | classification | regression
 
     def resolve(self) -> "TrainConfig":
+        if self.data:
+            text = Path(self.data).suffix.lower() in (".txt", ".text", ".md")
+            self.model = self.model or ("transformer" if text else "mlp")
+            if (self.model == "transformer") != text:
+                raise ValueError("text files (.txt) train the transformer; tabular files (.csv/.npz/.npy) the mlp")
+            self.dataset = Path(self.data).stem
+        self.model = self.model or "mlp"
+        if self.task not in ("auto", "classification", "regression"):
+            raise ValueError(f"task must be auto, classification or regression, not {self.task!r}")
         if self.model not in PROFILES:
             raise ValueError(f"unknown model {self.model!r}; choose from {sorted(PROFILES)}")
         if self.profile not in PROFILES[self.model]:
@@ -107,15 +119,19 @@ class Trainer:
         check_backend(tc.backend)
         self.log_fn = log
         self.cfg = load_config(tc.arch)
-        lm = tc.dataset == "text"
-        if (tc.model == "transformer") != lm:
-            raise ValueError(f"model {tc.model!r} is incompatible with dataset {tc.dataset!r} "
-                             "(transformer <-> text; mlp <-> classification datasets)")
-        self.ds = load_dataset(tc.dataset, tc.seed, **({"seq": tc.overrides["seq"]} if lm else {}))
+        if tc.data:
+            self.ds = load_file(tc.data, tc.target, tc.task, tc.seed,
+                                **({"seq": tc.overrides["seq"]} if tc.model == "transformer" else {}))
+        else:
+            lm = tc.dataset == "text"
+            if (tc.model == "transformer") != lm:
+                raise ValueError(f"model {tc.model!r} is incompatible with dataset {tc.dataset!r} "
+                                 "(transformer <-> text; mlp <-> classification datasets)")
+            self.ds = load_dataset(tc.dataset, tc.seed, **({"seq": tc.overrides["seq"]} if lm else {}))
         if tc.model == "mlp":
-            if self.ds.kind != "classification":
-                raise ValueError("model 'mlp' needs a classification dataset")
-            self.model = MLPClassifier(self.ds.in_dim, self.ds.classes, list(tc.overrides["hidden"]))
+            if self.ds.kind not in ("classification", "regression"):
+                raise ValueError("model 'mlp' needs a classification or regression dataset")
+            self.model = MLPClassifier(self.ds.in_dim, self.ds.outputs, list(tc.overrides["hidden"]))
         else:
             if self.ds.kind != "lm":
                 raise ValueError("model 'transformer' needs the 'text' dataset")
@@ -146,7 +162,10 @@ class Trainer:
         ps = ParamStore(g, self.tc.seed)
         _, logits = self.model.build(g, ps, self.tc.batch, self.compute)
         y = g.input("y", logits.shape)
-        loss = g.xent(logits, y)
+        if self.ds.kind == "regression":
+            loss = g.mean(g.square(g.sub(logits, y)), 2)          # mean squared error, on TITAN
+        else:
+            loss = g.xent(logits, y)
         params = list(ps.params.values())
         self.opt.apply(g, params, gradients(g, loss, params))
         g.output("loss", loss)
@@ -197,18 +216,26 @@ class Trainer:
         return rec
 
     def evaluate(self) -> dict:
-        losses, correct, total = [], 0, 0
-        for xb, yb in eval_batches(self.ds, self.eval_batch):
-            logits = self.dev.run(self.eval_exe, {"x": xb}, FUNCTIONAL).outputs["logits"].astype(np.float64)
-            z = logits - logits.max(1, keepdims=True)
-            logp = z - np.log(np.exp(z).sum(1, keepdims=True))
-            losses.append(-logp[np.arange(len(yb)), yb].mean())
-            correct += int((logits.argmax(1) == yb).sum())
-            total += len(yb)
-        if not total:
+        preds, targets = [], []
+        for xb, yb, nv in eval_batches(self.ds, self.eval_batch):
+            out = self.dev.run(self.eval_exe, {"x": xb}, FUNCTIONAL).outputs["logits"].astype(np.float64)
+            preds.append(out[:nv])
+            targets.append(np.asarray(yb)[:nv])
+        if not preds:
             return {}
-        return {"eval_loss": float(np.mean(losses)), "eval_accuracy": correct / total, "eval_examples": total,
-                "eval_mode": "functional (TITAN logits, host metrics)"}
+        P, Y = np.vstack(preds), np.concatenate(targets)
+        res = {"eval_examples": int(len(Y)), "eval_mode": "functional (TITAN outputs, host metrics)"}
+        if self.ds.kind == "regression":
+            err = P[:, 0] - Y
+            mse = float((err ** 2).mean())
+            res.update({"eval_loss": mse, "eval_rmse": float(np.sqrt(mse) * self.ds.y_std),
+                        "eval_r2": float(1 - mse / max(float(Y.var()), 1e-12))})
+            return res
+        z = P - P.max(1, keepdims=True)
+        logp = z - np.log(np.exp(z).sum(1, keepdims=True))
+        res.update({"eval_loss": float(-logp[np.arange(len(Y)), Y].mean()),
+                    "eval_accuracy": float((P.argmax(1) == Y).mean())})
+        return res
 
     def save_checkpoint(self) -> Path:
         arrays = {n: self.dev.read(self.train_exe, n) for n in self.train_exe.params}
@@ -253,7 +280,9 @@ class Trainer:
                 rec.update(ev)
                 msg = f"step {self.step:5d} loss {rec['loss']:.4f}"
                 if ev:
-                    msg += f" | eval loss {ev['eval_loss']:.4f} acc {ev['eval_accuracy']:.3f}"
+                    msg += f" | eval loss {ev['eval_loss']:.4f}"
+                    msg += (f" acc {ev['eval_accuracy']:.3f}" if "eval_accuracy" in ev else
+                            f" rmse {ev['eval_rmse']:.4g} r2 {ev['eval_r2']:.3f}")
                 if "simulated_cycles" in rec:
                     msg += f" | {rec['simulated_cycles']:.0f} simulated cycles/step"
                 self.log(msg)
