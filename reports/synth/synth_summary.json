@@ -1,0 +1,410 @@
+{
+  "tool": "Yosys 0.33 (git sha1 2584903a060)",
+  "results": [
+    {
+      "top": "rtl_mac_array",
+      "params": {},
+      "target": "generic",
+      "total_cells": 11663,
+      "cells": {
+        "$_ANDNOT_": 3939,
+        "$_AND_": 722,
+        "$_DFFE_PN0P_": 512,
+        "$_NAND_": 561,
+        "$_NOR_": 368,
+        "$_NOT_": 447,
+        "$_ORNOT_": 577,
+        "$_OR_": 1266,
+        "$_XNOR_": 690,
+        "$_XOR_": 2581
+      },
+      "tool": "Yosys 0.33 (git sha1 2584903a060)",
+      "script": "read_verilog -sv /home/user/Ezhdhhz/rtl/rtl_mac_array.sv; synth -top rtl_mac_array -flatten; stat",
+      "method": "Yosys logic synthesis + technology mapping (pre-place-and-route; no timing, no power)"
+    },
+    {
+      "top": "rtl_mac_array",
+      "params": {},
+      "target": "xc7",
+      "total_cells": 2325,
+      "cells": {
+        "BUFG": 1,
+        "DSP48E1": 16,
+        "FDCE": 512,
+        "IBUF": 260,
+        "INV": 512,
+        "LUT4": 512,
+        "OBUF": 512
+      },
+      "tool": "Yosys 0.33 (git sha1 2584903a060)",
+      "script": "read_verilog -sv /home/user/Ezhdhhz/rtl/rtl_mac_array.sv; synth_xilinx -top rtl_mac_array -family xc7 -flatten; stat",
+      "method": "Yosys logic synthesis + technology mapping (pre-place-and-route; no timing, no power)",
+      "summary": {
+        "LUT": 512,
+        "FF": 512,
+        "DSP48E1": 16,
+        "CARRY4": 0
+      }
+    },
+    {
+      "top": "rtl_mac_array",
+      "params": {},
+      "target": "ecp5",
+      "total_cells": 1809,
+      "cells": {
+        "CCU2C": 256,
+        "LUT4": 1025,
+        "MULT18X18D": 16,
+        "TRELLIS_FF": 512
+      },
+      "tool": "Yosys 0.33 (git sha1 2584903a060)",
+      "script": "read_verilog -sv /home/user/Ezhdhhz/rtl/rtl_mac_array.sv; synth_ecp5 -top rtl_mac_array; stat",
+      "method": "Yosys logic synthesis + technology mapping (pre-place-and-route; no timing, no power)",
+      "summary": {
+        "LUT4": 1025,
+        "FF": 512,
+        "MULT18X18D": 16,
+        "CCU2C": 256
+      }
+    },
+    {
+      "top": "titan_mxu_tile",
+      "params": {
+        "ROWS": 4,
+        "COLS": 4,
+        "DATA_W": 8
+      },
+      "target": "generic",
+      "total_cells": 12214,
+      "cells": {
+        "$_ANDNOT_": 3730,
+        "$_AND_": 791,
+        "$_DFFE_PN0P_": 512,
+        "$_MUX_": 528,
+        "$_NAND_": 494,
+        "$_NOR_": 602,
+        "$_NOT_": 290,
+        "$_ORNOT_": 575,
+        "$_OR_": 1346,
+        "$_XNOR_": 688,
+        "$_XOR_": 2658
+      },
+      "tool": "Yosys 0.33 (git sha1 2584903a060)",
+      "script": "read_verilog -sv /home/user/Ezhdhhz/rtl/titan_mxu_tile.sv; chparam -set ROWS 4 -set COLS 4 -set DATA_W 8 titan_mxu_tile; synth -top titan_mxu_tile -flatten; stat",
+      "method": "Yosys logic synthesis + technology mapping (pre-place-and-route; no timing, no power)"
+    },
+    {
+      "top": "titan_mxu_tile",
+      "params": {
+        "ROWS": 4,
+        "COLS": 4,
+        "DATA_W": 8
+      },
+      "target": "xc7",
+      "total_cells": 2646,
+      "cells": {
+        "BUFG": 1,
+        "DSP48E1": 16,
+        "FDCE": 512,
+        "IBUF": 581,
+        "INV": 512,
+        "LUT6": 512,
+        "OBUF": 512
+      },
+      "tool": "Yosys 0.33 (git sha1 2584903a060)",
+      "script": "read_verilog -sv /home/user/Ezhdhhz/rtl/titan_mxu_tile.sv; chparam -set ROWS 4 -set COLS 4 -set DATA_W 8 titan_mxu_tile; synth_xilinx -top titan_mxu_tile -family xc7 -flatten; stat",
+      "method": "Yosys logic synthesis + technology mapping (pre-place-and-route; no timing, no power)",
+      "summary": {
+        "LUT": 512,
+        "FF": 512,
+        "DSP48E1": 16,
+        "CARRY4": 0
+      }
+    },
+    {
+      "top": "titan_mxu_tile",
+      "params": {
+        "ROWS": 4,
+        "COLS": 4,
+        "DATA_W": 8
+      },
+      "target": "ecp5",
+      "total_cells": 1809,
+      "cells": {
+        "CCU2C": 256,
+        "LUT4": 1025,
+        "MULT18X18D": 16,
+        "TRELLIS_FF": 512
+      },
+      "tool": "Yosys 0.33 (git sha1 2584903a060)",
+      "script": "read_verilog -sv /home/user/Ezhdhhz/rtl/titan_mxu_tile.sv; chparam -set ROWS 4 -set COLS 4 -set DATA_W 8 titan_mxu_tile; synth_ecp5 -top titan_mxu_tile; stat",
+      "method": "Yosys logic synthesis + technology mapping (pre-place-and-route; no timing, no power)",
+      "summary": {
+        "LUT4": 1025,
+        "FF": 512,
+        "MULT18X18D": 16,
+        "CCU2C": 256
+      }
+    },
+    {
+      "top": "titan_mxu_tile",
+      "params": {
+        "ROWS": 8,
+        "COLS": 8,
+        "DATA_W": 8
+      },
+      "target": "generic",
+      "total_cells": 48888,
+      "cells": {
+        "$_ANDNOT_": 14844,
+        "$_AND_": 3068,
+        "$_DFFE_PN0P_": 2048,
+        "$_MUX_": 2112,
+        "$_NAND_": 2046,
+        "$_NOR_": 2432,
+        "$_NOT_": 1108,
+        "$_ORNOT_": 2236,
+        "$_OR_": 5568,
+        "$_XNOR_": 2682,
+        "$_XOR_": 10744
+      },
+      "tool": "Yosys 0.33 (git sha1 2584903a060)",
+      "script": "read_verilog -sv /home/user/Ezhdhhz/rtl/titan_mxu_tile.sv; chparam -set ROWS 8 -set COLS 8 -set DATA_W 8 titan_mxu_tile; synth -top titan_mxu_tile -flatten; stat",
+      "method": "Yosys logic synthesis + technology mapping (pre-place-and-route; no timing, no power)"
+    },
+    {
+      "top": "titan_mxu_tile",
+      "params": {
+        "ROWS": 8,
+        "COLS": 8,
+        "DATA_W": 8
+      },
+      "target": "xc7",
+      "total_cells": 10438,
+      "cells": {
+        "BUFG": 1,
+        "DSP48E1": 64,
+        "FDCE": 2048,
+        "IBUF": 2181,
+        "INV": 2048,
+        "LUT6": 2048,
+        "OBUF": 2048
+      },
+      "tool": "Yosys 0.33 (git sha1 2584903a060)",
+      "script": "read_verilog -sv /home/user/Ezhdhhz/rtl/titan_mxu_tile.sv; chparam -set ROWS 8 -set COLS 8 -set DATA_W 8 titan_mxu_tile; synth_xilinx -top titan_mxu_tile -family xc7 -flatten; stat",
+      "method": "Yosys logic synthesis + technology mapping (pre-place-and-route; no timing, no power)",
+      "summary": {
+        "LUT": 2048,
+        "FF": 2048,
+        "DSP48E1": 64,
+        "CARRY4": 0
+      }
+    },
+    {
+      "top": "titan_mxu_tile",
+      "params": {
+        "ROWS": 8,
+        "COLS": 8,
+        "DATA_W": 8
+      },
+      "target": "ecp5",
+      "total_cells": 7233,
+      "cells": {
+        "CCU2C": 1024,
+        "LUT4": 4097,
+        "MULT18X18D": 64,
+        "TRELLIS_FF": 2048
+      },
+      "tool": "Yosys 0.33 (git sha1 2584903a060)",
+      "script": "read_verilog -sv /home/user/Ezhdhhz/rtl/titan_mxu_tile.sv; chparam -set ROWS 8 -set COLS 8 -set DATA_W 8 titan_mxu_tile; synth_ecp5 -top titan_mxu_tile; stat",
+      "method": "Yosys logic synthesis + technology mapping (pre-place-and-route; no timing, no power)",
+      "summary": {
+        "LUT4": 4097,
+        "FF": 2048,
+        "MULT18X18D": 64,
+        "CCU2C": 1024
+      }
+    },
+    {
+      "top": "titan_mxu_tile",
+      "params": {
+        "ROWS": 8,
+        "COLS": 8,
+        "DATA_W": 4
+      },
+      "target": "generic",
+      "total_cells": 26366,
+      "cells": {
+        "$_ANDNOT_": 7488,
+        "$_AND_": 580,
+        "$_DFFE_PN0P_": 2048,
+        "$_MUX_": 2048,
+        "$_NAND_": 574,
+        "$_NOR_": 1920,
+        "$_NOT_": 640,
+        "$_ORNOT_": 1598,
+        "$_OR_": 3456,
+        "$_XNOR_": 896,
+        "$_XOR_": 5118
+      },
+      "tool": "Yosys 0.33 (git sha1 2584903a060)",
+      "script": "read_verilog -sv /home/user/Ezhdhhz/rtl/titan_mxu_tile.sv; chparam -set ROWS 8 -set COLS 8 -set DATA_W 4 titan_mxu_tile; synth -top titan_mxu_tile -flatten; stat",
+      "method": "Yosys logic synthesis + technology mapping (pre-place-and-route; no timing, no power)"
+    },
+    {
+      "top": "titan_mxu_tile",
+      "params": {
+        "ROWS": 8,
+        "COLS": 8,
+        "DATA_W": 4
+      },
+      "target": "xc7",
+      "total_cells": 15615,
+      "cells": {
+        "BUFG": 1,
+        "CARRY4": 640,
+        "FDCE": 2048,
+        "IBUF": 2117,
+        "INV": 2048,
+        "LUT1": 4,
+        "LUT2": 2112,
+        "LUT3": 65,
+        "LUT4": 264,
+        "LUT5": 259,
+        "LUT6": 3086,
+        "MUXF7": 658,
+        "MUXF8": 265,
+        "OBUF": 2048
+      },
+      "tool": "Yosys 0.33 (git sha1 2584903a060)",
+      "script": "read_verilog -sv /home/user/Ezhdhhz/rtl/titan_mxu_tile.sv; chparam -set ROWS 8 -set COLS 8 -set DATA_W 4 titan_mxu_tile; synth_xilinx -top titan_mxu_tile -family xc7 -flatten; stat",
+      "method": "Yosys logic synthesis + technology mapping (pre-place-and-route; no timing, no power)",
+      "summary": {
+        "LUT": 5790,
+        "FF": 2048,
+        "DSP48E1": 0,
+        "CARRY4": 640
+      }
+    },
+    {
+      "top": "titan_mxu_tile",
+      "params": {
+        "ROWS": 8,
+        "COLS": 8,
+        "DATA_W": 4
+      },
+      "target": "ecp5",
+      "total_cells": 7233,
+      "cells": {
+        "CCU2C": 1024,
+        "LUT4": 4097,
+        "MULT18X18D": 64,
+        "TRELLIS_FF": 2048
+      },
+      "tool": "Yosys 0.33 (git sha1 2584903a060)",
+      "script": "read_verilog -sv /home/user/Ezhdhhz/rtl/titan_mxu_tile.sv; chparam -set ROWS 8 -set COLS 8 -set DATA_W 4 titan_mxu_tile; synth_ecp5 -top titan_mxu_tile; stat",
+      "method": "Yosys logic synthesis + technology mapping (pre-place-and-route; no timing, no power)",
+      "summary": {
+        "LUT4": 4097,
+        "FF": 2048,
+        "MULT18X18D": 64,
+        "CCU2C": 1024
+      }
+    }
+  ],
+  "place_and_route": [
+    {
+      "top": "titan_mxu_tile",
+      "params": {
+        "ROWS": 4,
+        "COLS": 4,
+        "DATA_W": 8
+      },
+      "device": "LFE5U-25K CABGA381",
+      "status": "routed",
+      "utilization": {
+        "MULT18X18D": {
+          "available": 28,
+          "used": 16
+        },
+        "TRELLIS_COMB": {
+          "available": 24288,
+          "used": 1603
+        },
+        "TRELLIS_FF": {
+          "available": 24288,
+          "used": 512
+        }
+      },
+      "fmax_mhz": {
+        "clk": 182.55
+      },
+      "constraint_mhz": 100.0,
+      "seed": 1,
+      "tool": "\"nextpnr-ecp5\" -- Next Generation Place and Route (Version 0.6-3build5)",
+      "method": "nextpnr-ecp5 out-of-context place & route; Fmax = post-route static timing estimate (not measured on hardware)"
+    },
+    {
+      "top": "titan_mxu_tile",
+      "params": {
+        "ROWS": 8,
+        "COLS": 8,
+        "DATA_W": 8
+      },
+      "device": "LFE5U-85K CABGA381",
+      "status": "routed",
+      "utilization": {
+        "MULT18X18D": {
+          "available": 156,
+          "used": 64
+        },
+        "TRELLIS_COMB": {
+          "available": 83640,
+          "used": 6403
+        },
+        "TRELLIS_FF": {
+          "available": 83640,
+          "used": 2048
+        }
+      },
+      "fmax_mhz": {
+        "clk": 179.76
+      },
+      "constraint_mhz": 100.0,
+      "seed": 1,
+      "tool": "\"nextpnr-ecp5\" -- Next Generation Place and Route (Version 0.6-3build5)",
+      "method": "nextpnr-ecp5 out-of-context place & route; Fmax = post-route static timing estimate (not measured on hardware)"
+    },
+    {
+      "top": "titan_mxu_tile",
+      "params": {
+        "ROWS": 8,
+        "COLS": 8,
+        "DATA_W": 4
+      },
+      "device": "LFE5U-85K CABGA381",
+      "status": "routed",
+      "utilization": {
+        "MULT18X18D": {
+          "available": 156,
+          "used": 64
+        },
+        "TRELLIS_COMB": {
+          "available": 83640,
+          "used": 6403
+        },
+        "TRELLIS_FF": {
+          "available": 83640,
+          "used": 2048
+        }
+      },
+      "fmax_mhz": {
+        "clk": 172.35
+      },
+      "constraint_mhz": 100.0,
+      "seed": 1,
+      "tool": "\"nextpnr-ecp5\" -- Next Generation Place and Route (Version 0.6-3build5)",
+      "method": "nextpnr-ecp5 out-of-context place & route; Fmax = post-route static timing estimate (not measured on hardware)"
+    }
+  ]
+}

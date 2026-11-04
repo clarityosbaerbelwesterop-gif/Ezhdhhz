@@ -218,12 +218,23 @@ def cmd_synth(a) -> int:
             r = synthesize(top, params, target, a.out)
             rows.append(r)
             print(f"{top:15s} {str(params):40s} {target:8s} cells={r['total_cells']:6d} {r.get('summary', '')}")
+    pnr = []
+    if a.pnr:
+        from .rtl.synth import place_and_route_ecp5
+        for params, dev in (({"ROWS": 4, "COLS": 4, "DATA_W": 8}, "25k"), ({"ROWS": 8, "COLS": 8, "DATA_W": 8}, "85k"),
+                            ({"ROWS": 8, "COLS": 8, "DATA_W": 4}, "85k")):
+            r = place_and_route_ecp5("titan_mxu_tile", params, dev, out_dir=a.out)
+            pnr.append(r)
+            print(f"P&R titan_mxu_tile {params} on {r['device']}: {r['status']} "
+                  f"Fmax(STA) {r.get('fmax_mhz')} util {r.get('utilization', r.get('reason'))}")
     if a.out:
         out = Path(a.out)
-        (out / "synth_summary.json").write_text(json.dumps({"tool": yosys_version(), "results": rows}, indent=2))
+        (out / "synth_summary.json").write_text(json.dumps({"tool": yosys_version(), "results": rows,
+                                                            "place_and_route": pnr}, indent=2))
         print(f"logs and summary in {out}")
-    print("method: Yosys synthesis + technology mapping, pre-place-and-route (no timing, no power, no FPGA "
-          "measurement)")
+    print("method: Yosys synthesis + technology mapping (cell counts, pre-place-and-route)" +
+          ("; nextpnr-ecp5 out-of-context P&R, Fmax = post-route static timing estimate" if a.pnr else "") +
+          ". No power figures and no FPGA measurement.")
     return 0
 
 
@@ -325,6 +336,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     s = sub.add_parser("synth", help="Yosys resource estimates for the RTL")
     s.add_argument("--targets", nargs="+", default=["generic", "xc7", "ecp5"])
+    s.add_argument("--pnr", action="store_true", help="also place & route on Lattice ECP5 with nextpnr")
     s.add_argument("--out", default="reports/synth")
     s.set_defaults(fn=cmd_synth)
 

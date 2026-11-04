@@ -74,3 +74,13 @@ def test_synthesis_resource_report(tmp_path):
     assert s["DSP48E1"] == 4 and s["FF"] == 4 * 32
     assert "pre-place-and-route" in r["method"]
     assert list(tmp_path.glob("*.log"))
+
+
+@pytest.mark.skipif(not (shutil.which("yosys") and shutil.which("nextpnr-ecp5")), reason="nextpnr-ecp5 not installed")
+def test_place_and_route_ecp5():
+    from titan.rtl.synth import place_and_route_ecp5
+    r = place_and_route_ecp5("titan_mxu_tile", {"ROWS": 2, "COLS": 2, "DATA_W": 8}, "25k")
+    assert r["status"] == "routed"
+    assert r["utilization"]["MULT18X18D"]["used"] == 4
+    assert r["fmax_mhz"]["clk"] > 50
+    assert "not measured on hardware" in r["method"]
