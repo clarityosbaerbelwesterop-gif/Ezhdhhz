@@ -314,9 +314,11 @@ def eval_batches(ds: Dataset, batch: int):
     if ds.kind == "lm":
         n = (len(ds.x_test) - 1) // ds.seq
         windows = [np.arange(i * ds.seq, (i + 1) * ds.seq) for i in range(n)]
-        for i in range(0, len(windows) - batch + 1, batch):
-            idx = np.stack(windows[i:i + batch])
-            yield onehot(ds.x_test[idx].ravel(), ds.classes), ds.x_test[idx + 1].ravel(), batch * ds.seq
+        for i in range(0, len(windows), batch):
+            chunk = windows[i:i + batch]
+            nv = len(chunk) * ds.seq
+            idx = np.stack(chunk + [chunk[-1]] * (batch - len(chunk)))
+            yield onehot(ds.x_test[idx].ravel(), ds.classes), ds.x_test[idx + 1].ravel(), nv
         return
     n = len(ds.x_test)
     for i in range(0, n, batch):

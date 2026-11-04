@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -78,10 +79,49 @@ def _ask(prompt: str, options: list[str], default: str) -> str:
         print(f"  please choose one of: {opts}")
 
 
+def _quickstart_params(a) -> int | None:
+    """--params N: train numerically if it fits this host, otherwise produce the distributed plan."""
+    from .scale import (DeviceSpec, host_memory_available, host_training_bytes, parse_count, plan, spec_for_params)
+    n = parse_count(a.params)
+    seq = a.seq or 64
+    batch = a.batch or 8
+    vocab = 512 if a.data else 24
+    small = spec_for_params(n, vocab, seq)
+    need, avail = host_training_bytes(small, batch), host_memory_available()
+    if avail and need <= 0.7 * avail:
+        print(f"{n / 1e6:.1f}M parameters -> transformer L={small.layers} d={small.d_model} heads={small.heads}; "
+              f"estimated host memory {need / 1e9:.1f} GB of {avail / 1e9:.1f} GB available: training numerically")
+        a.model = "transformer"
+        a.overrides = {"seq": seq, "d_model": small.d_model, "heads": small.heads, "d_ff": small.d_ff,
+                       "layers": small.layers}
+        if a.backend == "functional" and n > 2e7:
+            a.backend = "fast"
+            print("using the fast backend (TITAN IR kernels) for this size; --backend functional forces ISA level")
+        if a.arch == "dev" and n > 2e6:
+            a.arch = "host"
+        return None
+    spec = spec_for_params(n, 50304, 2048)
+    print(f"A {n / 1e9:.3g}B-parameter model needs about {16 * spec.params() / 1e12:.2f} TB just for weights, "
+          f"gradients and Adam states (plus activations). This host has {avail / 1e9:.1f} GB RAM, so it cannot be "
+          f"trained numerically here. Distributed training plan on the TITAN-X1 target system instead:\n")
+    dev = DeviceSpec.from_arch(load_config("target"))
+    for d in (a.devices or [None]):
+        r0 = plan(spec, dev, 1)
+        nd = d or max(64, 1 << math.ceil(math.log2(r0["min_devices_for_model_states"])))
+        _print_plan(plan(spec, dev, nd, 1024), "TITAN")
+    print("\nmethod: analytical estimate (Mode C); run `titan plan --params ... --compare-b300` for details")
+    return 0
+
+
 def cmd_quickstart(a) -> int:
     from .runtime import BACKENDS, backend_status
     from .train import PROFILES, TrainConfig, Trainer
     from .train.datasets import DATASETS
+    a.overrides = {}
+    if a.params:
+        rc = _quickstart_params(a)
+        if rc is not None:
+            return rc
     if a.interactive:
         print("ROUGE TITAN QuickStart\n")
         a.model = _ask("1. model", sorted(PROFILES), a.model or "mlp")
@@ -106,7 +146,7 @@ def cmd_quickstart(a) -> int:
     tc = TrainConfig(model=a.model, dataset=a.dataset, profile=a.profile, batch=a.batch, precision=a.precision,
                      backend=a.backend, steps=a.steps, lr=a.lr, optimizer=a.optimizer, seed=a.seed,
                      eval_every=a.eval_every, ckpt_every=a.ckpt_every, arch=a.arch, out_dir=a.out,
-                     data=a.data, target=a.target, task=a.task)
+                     data=a.data, target=a.target, task=a.task, overrides=a.overrides)
     try:
         tr = Trainer(tc)
     except (RuntimeError, ValueError) as e:
@@ -121,6 +161,53 @@ def cmd_quickstart(a) -> int:
     print(f"\nexecuted on TITAN: {', '.join(s['placement']['titan'])}")
     print(f"executed on host : {', '.join(s['placement']['host'])}")
     print(f"run directory    : {tr.out}  (config.json, metrics.jsonl, log.txt, checkpoints/, summary.json)")
+    return 0
+
+
+# ------------------------------------------------------------------ large models
+
+def _print_plan(r: dict, title: str) -> None:
+    m, b = r["model"], r["best"]
+    print(f"{title}: {m['name']} {m['params'] / 1e9:.2f}B params (L={m['layers']}, d={m['d_model']}, "
+          f"heads={m['heads']}, seq={m['seq']}) on {r['devices']} x {r['device']['name']}, "
+          f"global batch {r['global_batch']} sequences = {r['tokens_per_step']:,} tokens/step")
+    if not b:
+        print(f"  NOT FEASIBLE: model states alone need >= {r['min_devices_for_model_states']} devices "
+              f"({r['plans_rejected_memory']} plans rejected for memory)")
+        return
+    t, mem = b["time_s"], b["memory_gb"]
+    print(f"  best plan: TP={b['tp']} PP={b['pp']} DP={b['dp']} micro-batch={b['micro_batch']} ZeRO-{b['zero']} "
+          f"recompute={'full' if b['recompute'] else 'off'}")
+    print(f"  memory/device: {mem['total']:.1f} of {mem['capacity_usable']:.0f} GB (weights {mem['weights']:.1f}, "
+          f"grads {mem['grads']:.1f}, optimizer {mem['optimizer']:.1f}, activations {mem['activations']:.1f})")
+    print(f"  step time {t['step']:.3f} s (pipeline compute {t['pipeline_compute']:.3f}, DP comm "
+          f"{t['data_parallel_comm']:.3f}, bubble {100 * t['pipeline_bubble_fraction']:.1f}%) -> "
+          f"{b['tokens_per_s']:,.0f} tokens/s, MFU {100 * b['mfu']:.1f}%")
+
+
+def cmd_plan(a) -> int:
+    from .scale import DeviceSpec, Links, compare_devices, plan, preset, spec_for_params
+    spec = preset(a.preset, a.vocab, a.seq) if a.preset else spec_for_params(a.params, a.vocab, a.seq)
+    dev = DeviceSpec.from_arch(load_config(a.arch))
+    links = Links(tp_gbps=a.tp_gbps, dp_gbps=a.dp_gbps, gemm_efficiency=a.gemm_eff)
+    out = []
+    for n in a.devices:
+        if a.compare_b300:
+            c = compare_devices(spec, dev, DeviceSpec.b300(), n, a.global_batch, links)
+            _print_plan(c["a"], "TITAN")
+            _print_plan(c["b"], "B300 ")
+            if c["speedup_a_over_b"]:
+                print(f"  -> TITAN / B300 step-time ratio: {c['speedup_a_over_b']:.2f}x (same model and assumptions)")
+            out.append(c)
+        else:
+            r = plan(spec, dev, n, a.global_batch, links)
+            _print_plan(r, "TITAN")
+            out.append(r)
+        print()
+    print("method: analytical estimate (Mode C) with ASSUMED links "
+          f"(TP {a.tp_gbps:g} GB/s, DP/PP {a.dp_gbps:g} GB/s) and GEMM efficiency {a.gemm_eff:g}; not a measurement")
+    if a.out:
+        Path(a.out).write_text(json.dumps(out, indent=2, default=str))
     return 0
 
 
@@ -329,10 +416,16 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--data", default=None, help="your own data: .csv/.tsv/.npz/.npy (tabular) or .txt (text)")
     s.add_argument("--target", default=None, help="target column name or index (default: last column)")
     s.add_argument("--task", default="auto", choices=["auto", "classification", "regression"])
+    s.add_argument("--params", default=None, help="size a transformer by parameter count, e.g. 20m, 100m, 100b "
+                                                   "(trains if it fits this host, otherwise plans it on TITAN-X1 target)")
+    s.add_argument("--seq", type=int, default=None, help="sequence length for --params")
+    s.add_argument("--devices", type=int, nargs="+", default=None, help="devices for the distributed plan")
     s.add_argument("--profile", default="small", choices=["tiny", "small", "medium"])
     s.add_argument("--batch", type=int, default=None)
     s.add_argument("--precision", default="fp32", choices=["fp32", "bf16", "fp16"])
-    s.add_argument("--backend", default="functional", choices=["functional", "cycle", "rtl", "fpga", "hardware"])
+    s.add_argument("--backend", default="functional", choices=["functional", "fast", "cycle", "rtl", "fpga", "hardware"],
+                   help="functional: every TITAN instruction (bit-exact replay); fast: TITAN IR kernels on whole "
+                        "tensors (largest models, fastest); cycle: + simulated timing")
     s.add_argument("--steps", type=int, default=None)
     s.add_argument("--lr", type=float, default=None)
     s.add_argument("--optimizer", default="adam", choices=["adam", "sgd"])
@@ -344,6 +437,22 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--resume", default=None, help="checkpoint .npz to resume from")
     s.add_argument("-i", "--interactive", action="store_true", help="guided selection")
     s.set_defaults(fn=cmd_quickstart)
+
+    s = sub.add_parser("plan", help="distributed training plan for large models (up to 100B+ parameters)")
+    g_ = s.add_mutually_exclusive_group()
+    g_.add_argument("--params", default="100b", help="parameter count, e.g. 7b, 70b, 100b")
+    g_.add_argument("--preset", default=None, help="gpt-125m ... gpt-175b")
+    s.add_argument("--devices", type=int, nargs="+", default=[8, 64, 256])
+    s.add_argument("--global-batch", type=int, default=1024, help="sequences per step")
+    s.add_argument("--seq", type=int, default=2048)
+    s.add_argument("--vocab", type=int, default=50304)
+    s.add_argument("--arch", default="target", help=arch_help)
+    s.add_argument("--compare-b300", action="store_true", help="apply the same model to NVIDIA B300")
+    s.add_argument("--tp-gbps", type=float, default=900.0, help="ASSUMED tensor-parallel link bandwidth")
+    s.add_argument("--dp-gbps", type=float, default=400.0, help="ASSUMED data/pipeline-parallel link bandwidth")
+    s.add_argument("--gemm-eff", type=float, default=0.8, help="ASSUMED achievable GEMM efficiency")
+    s.add_argument("--out", default=None)
+    s.set_defaults(fn=cmd_plan)
 
     s = sub.add_parser("matmul", help="vertical slice: compile and execute one matrix multiplication")
     s.add_argument("--m", type=int, default=64)

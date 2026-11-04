@@ -15,14 +15,14 @@ from pathlib import Path
 
 import numpy as np
 
-from ..compiler import Graph, compile_graph, gradients
+from ..compiler import CompileOptions, Graph, compile_graph, gradients
 from ..config import load_config
 from ..dtypes import DType
 from ..emu.engine import FUNCTIONAL
 from ..nn.layers import ParamStore
 from ..nn.models import MLPClassifier, TinyTransformerLM, param_count
 from ..provenance import provenance
-from ..runtime import BACKENDS, Device
+from ..runtime import BACKENDS, Device, FastDevice
 from .datasets import Sampler, eval_batches, load_dataset, load_file
 from .optim import make_optimizer
 
@@ -69,6 +69,7 @@ class TrainConfig:
     data: str | None = None           # path to your own data (.csv/.tsv/.npz/.npy/.txt)
     target: str | None = None         # target column (name or index) for tabular data
     task: str = "auto"                # auto | classification | regression
+    warmup: int | None = None         # Adam learning-rate warmup steps (default: transformers 10% of steps)
 
     def resolve(self) -> "TrainConfig":
         if self.data:
@@ -89,14 +90,22 @@ class TrainConfig:
                              f"{sorted(PRECISION)} (INT8/INT4 are inference-only)")
         p = dict(PROFILES[self.model][self.profile])
         p.update(self.overrides)
+        if self.data and self.model == "transformer":
+            p.setdefault("seq", PROFILES["transformer"][self.profile]["seq"])
         self.dataset = self.dataset or DEFAULT_DATASET[self.model]
         self.batch = self.batch or p.pop("batch")
         p.pop("batch", None)
         self.steps = self.steps if self.steps is not None else p.pop("steps")
         p.pop("steps", None)
+        if self.lr is None and self.model == "transformer":
+            d = p.get("d_model", 32)
+            if d > 128:                            # larger transformers need smaller steps (standard practice)
+                p["lr"] = 1e-3 if d <= 512 else 3e-4
         self.lr = self.lr or p.pop("lr")
         p.pop("lr", None)
         self.overrides = p
+        if self.warmup is None:
+            self.warmup = max(1, min(200, self.steps // 10)) if self.model == "transformer" else 0
         if self.out_dir is None:
             self.out_dir = f"runs/{self.model}-{self.dataset}-{self.profile}-{self.precision}-{self.backend}-s{self.seed}"
         return self
@@ -138,15 +147,16 @@ class Trainer:
             o = tc.overrides
             self.model = TinyTransformerLM(self.ds.classes, o["seq"], o["d_model"], o["heads"], o["d_ff"], o["layers"])
         self.compute = PRECISION[tc.precision]
-        self.opt = make_optimizer(tc.optimizer, tc.lr)
+        self.opt = make_optimizer(tc.optimizer, tc.lr, tc.warmup)
         t0 = time.perf_counter()
         self.train_exe, self.n_params = self._build_train()
         self.eval_batch = tc.batch
         self.eval_exe = self._build_eval()
         self.compile_s = time.perf_counter() - t0
-        self.dev = Device(self.cfg)
+        self.dev = FastDevice(self.cfg) if tc.backend == "fast" else Device(self.cfg)
         self.dev.load(self.train_exe)
         self.dev.load(self.eval_exe, init=False)
+        self._release_host_init()
         self.sampler = Sampler(self.ds, tc.batch, tc.seed + 1)
         self.step = 0
         self.history: list[dict] = []
@@ -170,14 +180,26 @@ class Trainer:
         self.opt.apply(g, params, gradients(g, loss, params))
         g.output("loss", loss)
         self.model_params = [p.name for p in params]
-        return compile_graph(g, self.cfg), param_count(ps)
+        return compile_graph(g, self.cfg, self._opts()), param_count(ps)
+
+    def _opts(self) -> CompileOptions:
+        return CompileOptions(emit_isa=self.tc.backend != "fast")
 
     def _build_eval(self):
         g = Graph(f"{self.model.name}-eval")
         ps = ParamStore(g, self.tc.seed)
         _, logits = self.model.build(g, ps, self.eval_batch, self.compute)
         g.output("logits", logits)
-        return compile_graph(g, self.cfg, share_with=self.train_exe)
+        return compile_graph(g, self.cfg, self._opts(), share_with=self.train_exe)
+
+    def _release_host_init(self) -> None:
+        """Initial values now live on the device; drop the host copies (matters for large models)."""
+        for exe in (self.train_exe, self.eval_exe):
+            for K in exe.module.kernels:
+                for t in K.in_tensors:
+                    if t.kind == "param":
+                        t.value = None
+            exe.init = {k: v for k, v in exe.init.items() if k not in exe.params}
 
     def _write_config(self):
         info = {"train_config": asdict(self.tc), "arch": self.cfg.to_dict(), "arch_hash": self.cfg.config_hash(),
@@ -198,8 +220,8 @@ class Trainer:
     def train_step(self) -> dict:
         feeds = self.sampler.next()
         feeds.update(self.opt.host_feeds(self.step))
-        out = self.dev.run(self.train_exe, feeds, self.tc.backend if self.tc.backend != "rtl" else FUNCTIONAL,
-                           fetch=["loss"])
+        mode = {"rtl": FUNCTIONAL, "fast": "fast"}.get(self.tc.backend, self.tc.backend)
+        out = self.dev.run(self.train_exe, feeds, mode, fetch=["loss"])
         r = out.result
         rec = {"step": self.step, "loss": float(out.outputs["loss"][0, 0]), "titan_instructions": r.instructions,
                "titan_ops": r.ops, "host_execute_s": round(out.timings["execute_s"], 6),
@@ -218,7 +240,8 @@ class Trainer:
     def evaluate(self) -> dict:
         preds, targets = [], []
         for xb, yb, nv in eval_batches(self.ds, self.eval_batch):
-            out = self.dev.run(self.eval_exe, {"x": xb}, FUNCTIONAL).outputs["logits"].astype(np.float64)
+            ev_mode = "fast" if self.tc.backend == "fast" else FUNCTIONAL
+            out = self.dev.run(self.eval_exe, {"x": xb}, ev_mode).outputs["logits"].astype(np.float64)
             preds.append(out[:nv])
             targets.append(np.asarray(yb)[:nv])
         if not preds:

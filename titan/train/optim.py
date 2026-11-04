@@ -22,7 +22,7 @@ class SGD:
             if self.wd:
                 gr = g.add(gr, g.scale(p, self.wd))
             if self.momentum:
-                v = g.param(f"{p.name}.momentum", np.zeros(p.shape))
+                v = g.param(f"{p.name}.momentum", np.zeros(p.shape, dtype=np.float32))
                 gr = g.add(g.scale(v, self.momentum), gr)
                 g.assign(v, gr)
             g.assign(p, g.sub(p, g.scale(gr, self.lr)))
@@ -37,14 +37,15 @@ class SGD:
 class Adam:
     host_inputs = ("opt.lr_t",)
 
-    def __init__(self, lr: float = 3e-3, beta1: float = 0.9, beta2: float = 0.999, eps: float = 1e-8):
-        self.lr, self.b1, self.b2, self.eps = lr, beta1, beta2, eps
+    def __init__(self, lr: float = 3e-3, beta1: float = 0.9, beta2: float = 0.999, eps: float = 1e-8,
+                 warmup: int = 0):
+        self.lr, self.b1, self.b2, self.eps, self.warmup = lr, beta1, beta2, eps, warmup
 
     def apply(self, g: Graph, params: list[Tensor], grads: list[Tensor]) -> None:
         lr_t = g.input("opt.lr_t", (1, 1))
         for p, gr in zip(params, grads):
-            m = g.param(f"{p.name}.adam_m", np.zeros(p.shape))
-            v = g.param(f"{p.name}.adam_v", np.zeros(p.shape))
+            m = g.param(f"{p.name}.adam_m", np.zeros(p.shape, dtype=np.float32))
+            v = g.param(f"{p.name}.adam_v", np.zeros(p.shape, dtype=np.float32))
             m_new = g.add(g.scale(m, self.b1), g.scale(gr, 1 - self.b1))
             v_new = g.add(g.scale(v, self.b2), g.scale(g.square(gr), 1 - self.b2))
             g.assign(m, m_new)
@@ -54,15 +55,17 @@ class Adam:
 
     def host_feeds(self, step: int) -> dict:
         t = step + 1
-        return {"opt.lr_t": np.array([[self.lr * math.sqrt(1 - self.b2 ** t) / (1 - self.b1 ** t)]])}
+        ramp = min(1.0, t / self.warmup) if self.warmup else 1.0
+        return {"opt.lr_t": np.array([[ramp * self.lr * math.sqrt(1 - self.b2 ** t) / (1 - self.b1 ** t)]])}
 
     def describe(self) -> dict:
-        return {"name": "adam", "lr": self.lr, "beta1": self.b1, "beta2": self.b2, "eps": self.eps}
+        return {"name": "adam", "lr": self.lr, "beta1": self.b1, "beta2": self.b2, "eps": self.eps,
+                "warmup_steps": self.warmup}
 
 
-def make_optimizer(name: str, lr: float):
+def make_optimizer(name: str, lr: float, warmup: int = 0):
     if name == "sgd":
         return SGD(lr)
     if name == "adam":
-        return Adam(lr)
+        return Adam(lr, warmup=warmup)
     raise KeyError(f"unknown optimizer {name!r}")
