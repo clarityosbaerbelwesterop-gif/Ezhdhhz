@@ -6,6 +6,7 @@
     titan matmul --m --n --k            vertical slice: graph -> IR -> ISA -> execution -> verification
     titan bench [--suite quick]         reproducible benchmark report (verified / simulated / analytical / measured)
     titan tune --m --n --k              verified tiling search against the compiler baseline
+    titan scale / dp-train              multi-device scaling study / data-parallel training
     titan rtl-verify                    RTL (Verilator) vs emulator bit-exact correspondence
     titan synth                         Yosys resource estimates (pre-place-and-route)
     titan asm FILE [--run]              assemble (and run) a TITAN assembly program
@@ -194,6 +195,44 @@ def cmd_tune(a) -> int:
     return 0
 
 
+# ------------------------------------------------------------------ multi-chip
+
+def cmd_scale(a) -> int:
+    from .multichip import scaling_study
+    r = scaling_study(tuple(a.devices), a.topology, a.arch, a.global_batch, tuple(a.hidden),
+                      chiplets_per_package=a.chiplets, link_gbps=a.link_gbps, latency_us=a.latency_us)
+    print(r["workload"], "on", r["arch"])
+    print(f"{'devices':>7} {'system':>22} {'compute us':>11} {'comm us':>9} {'step us':>9} {'speedup':>8} "
+          f"{'efficiency':>10} {'comm %':>7}")
+    for x in r["rows"]:
+        print(f"{x['devices']:>7} {x['system']:>22} {x['sim_compute_s'] * 1e6:>11.2f} {x['model_comm_s'] * 1e6:>9.2f} "
+              f"{x['step_s'] * 1e6:>9.2f} {x['speedup']:>8.2f} {100 * x['efficiency']:>9.1f}% "
+              f"{100 * x['comm_fraction']:>6.1f}%")
+    print("method:", r["method"])
+    if a.out:
+        Path(a.out).write_text(json.dumps(r, indent=2, default=str))
+    return 0
+
+
+def cmd_dp_train(a) -> int:
+    from .multichip import DataParallelTrainer
+    tr = DataParallelTrainer(a.devices, arch=a.arch, dataset=a.dataset, global_batch=a.global_batch, lr=a.lr,
+                             seed=a.seed, mode=a.mode)
+    for i in range(a.steps):
+        r = tr.step()
+        if not r["replicas_identical"]:
+            print(f"error: replicas diverged at step {i}", file=sys.stderr)
+            return 1
+        if (i + 1) % max(1, a.steps // 5) == 0:
+            msg = f"step {i + 1:4d} loss {r['loss']:.4f} replicas identical"
+            if "step_s" in r:
+                msg += (f" | simulated step {r['step_s'] * 1e6:.1f} us (compute {r['sim_compute_s'] * 1e6:.1f}, "
+                        f"all-reduce {r['model_comm_s'] * 1e6:.1f} modelled)")
+            print(msg)
+    print(f"eval accuracy (device 0): {tr.evaluate():.3f}   devices={a.devices} system={tr.sys.name}")
+    return 0
+
+
 # ------------------------------------------------------------------ RTL
 
 def cmd_rtl_verify(a) -> int:
@@ -325,6 +364,29 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--out", default=None)
     s.add_argument("-v", "--verbose", action="store_true")
     s.set_defaults(fn=cmd_tune)
+
+    s = sub.add_parser("scale", help="multi-device strong-scaling study (cycle model + link model)")
+    s.add_argument("--devices", type=int, nargs="+", default=[1, 2, 4, 8, 16])
+    s.add_argument("--topology", default="ring", choices=["ring", "fully_connected", "mesh2d", "switch"])
+    s.add_argument("--chiplets", type=int, default=0, help="chiplets per package (hierarchical system)")
+    s.add_argument("--link-gbps", type=float, default=900.0, help="ASSUMED inter-package link bandwidth")
+    s.add_argument("--latency-us", type=float, default=2.0, help="ASSUMED per-hop latency")
+    s.add_argument("--global-batch", type=int, default=256)
+    s.add_argument("--hidden", type=int, nargs="+", default=[256, 256])
+    s.add_argument("--arch", default="dev", help=arch_help)
+    s.add_argument("--out", default=None)
+    s.set_defaults(fn=cmd_scale)
+
+    s = sub.add_parser("dp-train", help="data-parallel training over N virtual devices")
+    s.add_argument("--devices", type=int, default=4)
+    s.add_argument("--steps", type=int, default=100)
+    s.add_argument("--global-batch", type=int, default=64)
+    s.add_argument("--lr", type=float, default=0.05)
+    s.add_argument("--dataset", default="spirals")
+    s.add_argument("--mode", default="cycle", choices=["functional", "cycle"])
+    s.add_argument("--arch", default="dev", help=arch_help)
+    s.add_argument("--seed", type=int, default=0)
+    s.set_defaults(fn=cmd_dp_train)
 
     s = sub.add_parser("rtl-verify", help="RTL vs emulator correspondence (Verilator)")
     s.add_argument("--cases", type=int, default=20)

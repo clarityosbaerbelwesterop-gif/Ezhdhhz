@@ -66,3 +66,11 @@ def test_bench_and_tune_commands(tmp_path, capsys):
     assert main(["tune", "--m", "32", "--n", "32", "--k", "32", "--dtype", "fp32", "--arch", "tiny",
                  "--candidates", "4"]) == 0
     assert "speed-up vs baseline" in capsys.readouterr().out
+
+
+def test_multichip_commands(capsys):
+    assert main(["scale", "--devices", "1", "2", "4", "--arch", "tiny", "--global-batch", "32", "--hidden", "32"]) == 0
+    out = capsys.readouterr().out
+    assert "efficiency" in out and "ASSUMED" in out
+    assert main(["dp-train", "--devices", "2", "--steps", "10", "--arch", "tiny", "--global-batch", "16"]) == 0
+    assert "replicas identical" in capsys.readouterr().out
