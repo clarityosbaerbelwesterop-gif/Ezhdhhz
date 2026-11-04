@@ -32,6 +32,11 @@ class Memory:
         base = self.buf[ref.addr:ref.end]
         return as_strided(base, (ref.rows, rb), (sb, 1), writeable=True)
 
+    def raw_view(self, ref: TensorRef) -> np.ndarray:
+        """Writable view of the stored bits (INT4: packed bytes per row). Used by DMA."""
+        self._check(ref)
+        return self._int4_rows(ref) if ref.dtype == DType.INT4 else self._view(ref)
+
     def read(self, ref: TensorRef) -> np.ndarray:
         """Return a copy of the logical values (see titan.dtypes)."""
         self._check(ref)

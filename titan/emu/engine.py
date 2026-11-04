@@ -19,7 +19,7 @@ from ..isa.spec import (SPEC, ErrorCode, Flag, Instruction, ISAError, Opcode, Pr
                         barrier_range, validate)
 from ..hw.memory import Memory
 from .cycle import CycleModel
-from .semantics import execute
+from .semantics import OpStats, dma_copy, execute, stats_of
 from .sequencer import expand_gemm
 
 FUNCTIONAL, CYCLE = "functional", "cycle"
@@ -166,6 +166,8 @@ class Engine:
             raise ValueError(f"unknown mode {mode!r}")
         self.m, self.cfg, self.mode, self.trace = machine, machine.cfg, mode, trace
         self.matmul_hook = matmul_hook   # optional callable(core, ins, read, write) -> bool (RTL offload)
+        self.record: list | None = None  # if a list: (core, instruction) of every data instruction in order
+        self.execute_data = True         # False: schedule only (used to build replay programs)
 
     # ---------------------------------------------------------- command processor
     def expand(self, prog: Program):
@@ -291,17 +293,22 @@ class Engine:
                         sync_stall += end - t
                         core_ready[c] = end + (1 if cyc else 0)
                 else:
-                    read, write = self.m.reader(c), self.m.writer(c)
+                    if self.record is not None:
+                        self.record.append((c, ins))
                     handled = False
-                    if self.matmul_hook is not None and ins.opcode == Opcode.MATMUL:
-                        handled = self.matmul_hook(c, ins, read, write)
-                    if handled:
-                        from .semantics import OpStats
-                        from ..isa.spec import mm_dims
-                        mm, nn, kk = mm_dims(ins)
-                        stt = OpStats(ops=2 * mm * nn * kk, mxu_macs=mm * nn * kk)
+                    if not self.execute_data:
+                        stt = stats_of(ins)
                     else:
-                        stt = execute(read, write, ins)
+                        read, write = self.m.reader(c), self.m.writer(c)
+                        if self.matmul_hook is not None and ins.opcode == Opcode.MATMUL:
+                            handled = self.matmul_hook(c, ins, read, write)
+                        if handled:
+                            stt = stats_of(ins)
+                        elif ins.opcode in (Opcode.LOAD, Opcode.STORE, Opcode.COPY):
+                            src, dst = ins.operands[1], ins.operands[0]
+                            stt = dma_copy(self.m.mem(c, src.space), self.m.mem(c, dst.space), ins)
+                        else:
+                            stt = execute(read, write, ins)
                     ops += stt.ops
                     macs += stt.mxu_macs
                     dbytes += stt.bytes

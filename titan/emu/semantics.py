@@ -83,8 +83,38 @@ def matmul_values(a: np.ndarray, b: np.ndarray, dt: DType, ta: bool, tb: bool,
     return r.astype(np.float32)
 
 
-def _operand(mem_read, ref, flags, which):
-    return to_compute(mem_read(ref), ref.dtype)
+def stats_of(ins: Instruction) -> OpStats:
+    """Work done by one data instruction (depends on shapes only)."""
+    op, o = ins.opcode, ins.operands
+    st = OpStats()
+    if op in (Opcode.LOAD, Opcode.STORE, Opcode.COPY):
+        st.bytes = o[1].nbytes
+    elif op == Opcode.MATMUL:
+        m, n, k = mm_dims(ins)
+        st.mxu_macs, st.ops = m * n * k, 2 * m * n * k
+    elif op in (Opcode.VECTOR_ADD, Opcode.VECTOR_MULTIPLY, Opcode.VECTOR_SUB, Opcode.VECTOR_MAX,
+                Opcode.VECTOR_DIV, Opcode.VECTOR_SCALE_ADD):
+        st.elems = o[0].numel
+        st.ops = o[0].numel * (3 if op == Opcode.VECTOR_SCALE_ADD else 1)
+    elif op == Opcode.REDUCE:
+        st.elems = st.ops = o[1].numel
+    elif op in (Opcode.ACCUMULATE, Opcode.ACTIVATION, Opcode.CONVERT):
+        st.elems = st.ops = o[0].numel
+    elif op == Opcode.NORMALIZATION:
+        st.elems, st.ops = o[0].numel, 5 * o[0].numel
+    return st
+
+
+def dma_copy(src_mem, dst_mem, ins: Instruction) -> OpStats:
+    """LOAD / STORE / COPY: copy the stored bits (optionally transposed). DMA never converts."""
+    dst, src = ins.operands
+    d, s = dst_mem.raw_view(dst), src_mem.raw_view(src)
+    if ins.has(Flag.TRANSPOSE):
+        s = s.T
+    if src_mem is dst_mem and dst.addr < src.end and src.addr < dst.end:
+        s = s.copy()
+    np.copyto(d, s)
+    return OpStats(bytes=src.nbytes)
 
 
 def execute(read, write, ins: Instruction) -> OpStats:
@@ -177,5 +207,3 @@ def execute(read, write, ins: Instruction) -> OpStats:
     raise ISAError(ErrorCode.ILLEGAL_OPCODE, f"{op.name} is not a data instruction")
 
 
-def reference_round(dt: DType, x: np.ndarray) -> np.ndarray:
-    return round_to(dt, x) if dt.is_float else x

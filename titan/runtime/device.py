@@ -10,6 +10,7 @@ from ..compiler.lower import Executable
 from ..config import load_config
 from ..dtypes import DType
 from ..emu.engine import CYCLE, FUNCTIONAL, Engine, Machine, RunResult
+from ..emu.replay import ReplayProgram
 
 
 @dataclass
@@ -27,6 +28,9 @@ class Device:
         self.cfg = load_config(cfg)
         self.machine = Machine(self.cfg)
         self._loaded: set[int] = set()
+        self._replay: dict[int, ReplayProgram] = {}
+        self._cycle: dict[int, RunResult] = {}
+        self.fast_paths = True   # replay for functional runs; cached timing for cycle runs
 
     def load(self, exe: Executable, init: bool = True) -> None:
         """Write initial param/const values of ``exe`` into global memory."""
@@ -68,12 +72,34 @@ class Device:
         for k, v in feeds.items():
             self.write(exe, k, v)
         t1 = time.perf_counter()
-        res = Engine(self.machine, mode, trace=trace, matmul_hook=matmul_hook).run(exe.program, validate_program=False)
+        res = self._execute(exe, mode, trace, matmul_hook)
         t2 = time.perf_counter()
         outs = {k: self.read(exe, k) for k in (exe.outputs if fetch is None else fetch)}
         t3 = time.perf_counter()
         return RunOutput(outs, res, (t1 - t0) + (t3 - t2), {"host_write_s": t1 - t0, "execute_s": t2 - t1,
                                                             "host_read_s": t3 - t2})
+
+    def _execute(self, exe: Executable, mode: str, trace: bool, matmul_hook) -> RunResult:
+        """Functional runs use the bit-exact replay executor. The cycle model's timing depends only on
+        the instruction stream and addresses (never on data), so it is simulated once per executable
+        and reused, while the data path runs through replay."""
+        if not self.fast_paths or trace or matmul_hook is not None:
+            return Engine(self.machine, mode, trace=trace, matmul_hook=matmul_hook).run(exe.program,
+                                                                                         validate_program=False)
+        key = id(exe)
+        if mode == CYCLE and key not in self._cycle:
+            res = Engine(self.machine, CYCLE).run(exe.program, validate_program=False)
+            self._cycle[key] = res
+            return res
+        rp = self._replay.get(key)
+        if rp is None:
+            rp = self._replay[key] = ReplayProgram(self.machine, exe.program)
+        res = rp.run()
+        if mode == CYCLE:
+            c = self._cycle[key]
+            res.mode, res.cycles, res.counters = CYCLE, c.cycles, c.counters
+            res.completions = list(c.completions)
+        return res
 
     def params(self, exe: Executable) -> dict[str, np.ndarray]:
         return {p: self.read(exe, p) for p in exe.params}
