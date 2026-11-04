@@ -24,6 +24,9 @@ class ParamStore:
         self.seed = seed
         self.scheme = "xavier"    # xavier | gpt2 (std 0.02; residual projections / sqrt(2 * layers))
         self.layers = 1
+        self.lora_rank = 0        # > 0: add trainable low-rank adapters to linear layers (LoRA)
+        self.lora_alpha = 16.0
+        self.fast_init = False    # lazy initializers use PyTorch's (multi-threaded) generator when available
 
     def get(self, name: str, shape, init: str = "xavier") -> Tensor:
         if name in self.params:
@@ -36,7 +39,8 @@ class ParamStore:
             resid = name.endswith((".ff2.w",)) or ".attn.o" in name
             init = ("normal", 0.02 / np.sqrt(2 * self.layers) if resid else 0.02)
         if self.lazy:
-            t = self.g.param_lazy(name, tuple(shape), _initializer(self.seed, name, tuple(shape), init))
+            fast = self.fast_init and ".lora_" not in name
+            t = self.g.param_lazy(name, tuple(shape), _initializer(self.seed, name, tuple(shape), init, fast))
             self.params[name] = t
             return t
         if isinstance(init, tuple):
@@ -57,9 +61,22 @@ class ParamStore:
         return t
 
 
-def _initializer(seed: int, name: str, shape: tuple, kind: str):
-    """Deterministic per-parameter initializer (independent of creation order), FP32 throughout."""
+def _initializer(seed: int, name: str, shape: tuple, kind: str, fast: bool = False):
+    """Deterministic per-parameter initializer (independent of creation order), FP32 throughout.
+
+    ``fast=True`` uses PyTorch's multi-threaded generator (5x faster here) when installed; used for
+    frozen base weights that are regenerated on demand instead of stored.
+    """
     import zlib
+
+    def make_fast():
+        import torch
+        g = torch.Generator().manual_seed(seed * 1_000_003 + zlib.crc32(name.encode()))
+        if isinstance(kind, tuple) or kind in ("xavier", "embed"):
+            std = kind[1] if isinstance(kind, tuple) else (np.sqrt(2.0 / (shape[0] + shape[1])) if kind == "xavier"
+                                                            else 0.1)
+            return (torch.randn(shape, generator=g) * float(std)).numpy()
+        return make()
 
     def make():
         rng = np.random.default_rng([seed, zlib.crc32(name.encode())])
@@ -74,6 +91,12 @@ def _initializer(seed: int, name: str, shape: tuple, kind: str):
         if kind == "ones":
             return np.ones(shape, dtype=np.float32)
         raise ValueError(kind)
+    if fast:
+        try:
+            import torch  # noqa: F401
+            return make_fast
+        except Exception:
+            pass
     return make
 
 
@@ -89,6 +112,11 @@ def linear(g: Graph, ps: ParamStore, x: Tensor, dout: int, name: str, bias: bool
     y = mm(g, x, w, compute)
     if bias:
         y = g.add(y, ps.get(f"{name}.b", (1, dout), "zeros"))
+    if ps.lora_rank:
+        r = ps.lora_rank
+        a = ps.get(f"{name}.lora_a", (x.cols, r), ("normal", 1.0 / np.sqrt(x.cols)))
+        b = ps.get(f"{name}.lora_b", (r, dout), "zeros")       # zero: training starts from the base model
+        y = g.add(y, g.scale(mm(g, mm(g, x, a, compute), b, compute), ps.lora_alpha / r))
     return y
 
 

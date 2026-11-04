@@ -83,7 +83,8 @@ def _ask(prompt: str, options: list[str], default: str) -> str:
 
 def _quickstart_params(a) -> int | None:
     """--params N: train numerically if it fits this host, otherwise produce the distributed plan."""
-    from .scale import (DeviceSpec, host_memory_available, host_training_bytes, parse_count, plan, spec_for_params)
+    from .scale import (DeviceSpec, TransformerSpec, host_memory_available, host_training_bytes, parse_count, plan,
+                        spec_for_params)
     n = parse_count(a.params)
     seq = a.seq or 64
     batch = a.batch or 8
@@ -93,6 +94,27 @@ def _quickstart_params(a) -> int | None:
     need, avail = host_training_bytes(small, batch), host_memory_available()
     if a.memory_gb:
         avail = int(a.memory_gb * 1e9 / 0.7)
+    if a.lora_rank:
+        big = spec_for_params(n, vocab, a.seq or 64)
+        r = a.lora_rank
+        adapters = big.layers * r * 2 * (big.d_model + big.d_ff) + r * (big.d_model + big.vocab)
+        largest = 4 * max(big.vocab * big.d_model, big.d_model * big.d_ff)
+        lora_need = 24 * adapters + 4 * largest + host_training_bytes(TransformerSpec("a", big.layers, big.d_model,
+                                                                                       big.heads, big.d_ff, big.vocab,
+                                                                                       big.seq), batch) * 0
+        if not avail or lora_need <= 0.7 * avail:
+            print(f"LoRA fine-tuning of a {big.params() / 1e9:.2f}B-parameter transformer (L={big.layers}, "
+                  f"d={big.d_model}, heads={big.heads}): {adapters / 1e6:.1f}M trainable adapter parameters; the "
+                  f"{big.params() / 1e9:.1f}B frozen base weights are regenerated from their seeds on every use "
+                  f"(procedural base, not a pretrained model); host memory ~{lora_need / 1e9:.1f} GB")
+            a.model = "transformer"
+            a.overrides = {"seq": a.seq or 64, "d_model": big.d_model, "heads": big.heads, "d_ff": big.d_ff,
+                           "layers": big.layers}
+            if a.backend in ("functional", "cycle"):
+                from .runtime.accel import torch_available
+                a.backend = "accel" if torch_available() else "fast"
+            a.arch = "target" if a.arch == "dev" else a.arch
+            return None
     if avail and need <= 0.7 * avail:
         print(f"{n / 1e6:.1f}M parameters -> transformer L={small.layers} d={small.d_model} heads={small.heads}; "
               f"estimated host memory {need / 1e9:.1f} GB of {avail / 1e9:.1f} GB available: training numerically")
@@ -181,7 +203,8 @@ def cmd_quickstart(a) -> int:
                      data=a.data, target=a.target, task=a.task, overrides=a.overrides, init_from=a.init_from,
                      freeze=a.freeze or [], tokenizer=a.tokenizer, schedule=a.schedule, weight_decay=a.weight_decay,
                      clip_grad=a.clip_grad, early_stop=a.early_stop, warmup=a.warmup,
-                     offload_dir=a.offload_dir, offload_mb=a.offload_mb, init_scheme=a.init)
+                     offload_dir=a.offload_dir, offload_mb=a.offload_mb, init_scheme=a.init,
+                     lora_rank=a.lora_rank, lora_alpha=a.lora_alpha)
     try:
         tr = Trainer(tc)
     except (RuntimeError, ValueError) as e:
@@ -519,6 +542,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="storage (NVMe/SSD) for weights, optimizer state and large temporaries: model size is then "
                         "limited by storage instead of RAM")
     s.add_argument("--offload-mb", type=float, default=4.0, help="offload tensors of at least this many MiB")
+    s.add_argument("--lora-rank", type=int, default=0,
+                   help="LoRA fine-tuning: train rank-R adapters, base weights frozen (regenerated, never stored)")
+    s.add_argument("--lora-alpha", type=float, default=16.0)
     s.add_argument("--init", default="auto", choices=["auto", "xavier", "gpt2"],
                    help="weight initialization (auto: GPT-2 scheme for transformers with d_model >= 256)")
     s.add_argument("--profile", default="small", choices=["tiny", "small", "medium"])

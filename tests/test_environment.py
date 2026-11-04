@@ -144,3 +144,23 @@ def test_gpt2_initialization_for_large_transformers(tmp_path):
     w = tr.dev.read(tr.train_exe, "tlm.b0.ff1.w")
     r = tr.dev.read(tr.train_exe, "tlm.b0.ff2.w")
     assert abs(w.std() - 0.02) < 0.002 and abs(r.std() - 0.02 / np.sqrt(8)) < 0.001   # residual scaling
+
+
+@pytest.mark.parametrize("backend", ["fast", pytest.param("accel", marks=needs_torch)])
+def test_lora_with_regenerated_frozen_base(tmp_path, backend):
+    tr = Trainer(_cfg(tmp_path, backend, model="transformer", profile="small", steps=30, backend=backend,
+                      lora_rank=4, lr=3e-3, ckpt_every=30,
+                      overrides={"d_model": 64, "heads": 2, "d_ff": 128, "layers": 2, "seq": 16}), log=None)
+    assert tr.regenerated and all(".lora_" not in n for n in tr.regenerated)
+    assert not any(k[0] == tr.train_exe.buffers[tr.regenerated[0]].addr for k in tr.dev.mem)   # never stored
+    base0 = tr.dev.read(tr.train_exe, "tlm.b0.ff1.w")
+    lora0 = tr.dev.read(tr.train_exe, "tlm.b0.ff1.lora_b")
+    assert np.all(lora0 == 0)
+    s = tr.run()
+    np.testing.assert_array_equal(tr.dev.read(tr.train_exe, "tlm.b0.ff1.w"), base0)      # frozen + deterministic
+    assert np.abs(tr.dev.read(tr.train_exe, "tlm.b0.ff1.lora_b")).max() > 0              # adapters trained
+    assert s["final_loss_avg10"] < s["initial_loss"]
+    ck = np.load(tmp_path / backend / "checkpoints" / "step_000030.npz")
+    assert all(".lora_" in n or n.startswith("opt") for n in ck.files)
+    cfg = json.loads((tmp_path / backend / "config.json").read_text())
+    assert 0 < cfg["lora"]["trainable_parameters"] < tr.n_params / 3

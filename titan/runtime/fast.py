@@ -87,11 +87,20 @@ class FastDevice:
     def _key(buf):
         return (buf.addr, buf.shape, int(buf.dtype))
 
-    def load(self, exe: Executable, init: bool = True) -> None:
+    def load(self, exe: Executable, init: bool = True, regenerate=()) -> None:
+        """``regenerate``: frozen lazily-initialized parameters that are recomputed from their seed on every
+        use instead of being stored (memory independent of their size)."""
+        regen = getattr(self, "regen", None)
+        if regen is None:
+            regen = self.regen = {}
+        for name in regenerate:
+            regen[self._key(exe.buffers[name])] = exe.lazy_init[name]
         if init:
             for name, v in exe.init.items():
                 self.write(exe, name, v)
             for name, fn in getattr(exe, "lazy_init", {}).items():
+                if name in regenerate:
+                    continue
                 self.write(exe, name, fn())      # one parameter at a time, straight into its storage
         self._loaded.add(id(exe))
 
@@ -105,7 +114,9 @@ class FastDevice:
         self._persist(self._key(b), _store(v, b.dtype))
 
     def read(self, exe: Executable, name: str) -> np.ndarray:
-        return self.mem[self._key(exe.buffers[name])].copy()
+        k = self._key(exe.buffers[name])
+        fn = getattr(self, "regen", {}).get(k)
+        return fn() if fn is not None else self.mem[k].copy()
 
     def params(self, exe: Executable) -> dict:
         return {p: self.read(exe, p) for p in exe.params}
@@ -113,7 +124,9 @@ class FastDevice:
     # ------------------------------------------------------------------ kernels
     def _get(self, env, buf):
         if buf.persistent:
-            return self.mem[self._key(buf)]
+            k = self._key(buf)
+            fn = getattr(self, "regen", {}).get(k)
+            return fn() if fn is not None else self.mem[k]
         return env[id(buf)]
 
     def _put(self, env, buf, value):

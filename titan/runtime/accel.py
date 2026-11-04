@@ -89,11 +89,20 @@ class AccelDevice:
             a = a.copy()
         return self._round(t.as_tensor(a, device=self.device), dt)
 
-    def load(self, exe: Executable, init: bool = True) -> None:
+    def load(self, exe: Executable, init: bool = True, regenerate=()) -> None:
+        """``regenerate``: frozen lazily-initialized parameters that are recomputed from their seed on every
+        use instead of being stored (memory independent of their size)."""
+        regen = getattr(self, "regen", None)
+        if regen is None:
+            regen = self.regen = {}
+        for name in regenerate:
+            regen[self._key(exe.buffers[name])] = exe.lazy_init[name]
         if init:
             for name, v in exe.init.items():
                 self.write(exe, name, v)
             for name, fn in getattr(exe, "lazy_init", {}).items():
+                if name in regenerate:
+                    continue
                 self.write(exe, name, fn())
         self._loaded.add(id(exe))
 
@@ -111,6 +120,9 @@ class AccelDevice:
             self.mem[self._key(b)] = self._to_dev(v, b.dtype)
 
     def read(self, exe: Executable, name: str) -> np.ndarray:
+        fn = getattr(self, "regen", {}).get(self._key(exe.buffers[name]))
+        if fn is not None:
+            return fn()
         x = self.mem[self._key(exe.buffers[name])]
         return x.copy() if isinstance(x, np.ndarray) else x.detach().to("cpu").numpy().copy()
 
@@ -119,7 +131,11 @@ class AccelDevice:
 
     # ------------------------------------------------------------------ kernels
     def _get(self, env, buf):
-        return self.mem[self._key(buf)] if buf.persistent else env[id(buf)]
+        if buf.persistent:
+            k = self._key(buf)
+            fn = getattr(self, "regen", {}).get(k)
+            return self._to_dev(fn(), buf.dtype) if fn is not None else self.mem[k]
+        return env[id(buf)]
 
     def _put(self, env, buf, value):
         t = self.torch
