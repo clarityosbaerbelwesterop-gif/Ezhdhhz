@@ -1,0 +1,8 @@
+build/
+obj_dir/
+*.vcd
+*.fst
+*.log
+__pycache__/
+.venv/
+*.pyc
