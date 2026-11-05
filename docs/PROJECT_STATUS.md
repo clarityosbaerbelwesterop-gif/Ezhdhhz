@@ -15,6 +15,14 @@ environment: `accel` backend (PyTorch GPU/CPU), byte corpora streamed from disk,
 fine-tune with freezing, AdamW + cosine + clipping + best checkpoint + early stopping, `titan env`,
 Dockerfile (`docs/DEPLOY.md`).
 
+Bring your own architecture and tokenizer (`docs/CUSTOMIZE.md`): configurable decoder transformer
+(LayerNorm/RMSNorm, GELU/ReLU/SiLU/SwiGLU/GeGLU, learned/RoPE/sinusoidal/no positions, MHA/GQA/MQA,
+pre/post-LN, tied embeddings, bias switches) from JSON/TOML/`--set`, model plugins in Python, and
+tokenizers (char, byte, own byte-level BPE trainer, Hugging Face `tokenizer.json`, SentencePiece,
+plugins) with fingerprinted uint16/uint32 token corpora. Training is 2–4× faster for small and medium
+models (compiled execution plans, fused multi-head attention, gather embeddings) and the GPT-100B
+step compiles 23× faster (14,647 instead of 380,485 kernels) — `docs/PERFORMANCE.md` §9.
+
 ## Evidence status
 
 | Item | Status |
@@ -42,7 +50,7 @@ Dockerfile (`docs/DEPLOY.md`).
 * Multi-chip results use assumed link parameters; there is no die-to-die or network RTL.
 * `titan-x1-target` is an unbuilt design point; its numbers are analytical paper figures.
 * 100B-parameter models: the complete full-training step compiles and its exact memory is known
-  (12.5 GB RAM + 1.63 TB storage with offload); full training needs that storage and was not run here
+  (10.4 GB RAM + 1.63 TB storage with offload); full training needs that storage and was not run here
   (≈20 GB free disk). LoRA fine-tuning of a 100.74B model did run here (2 steps, ~22 min each,
   7.2 GB RAM) on a procedurally generated frozen base; two steps on different batches do not show
   learning progress at that scale (learning of the same code path is tested on small models). Speed at that size is storage-bound;
@@ -50,7 +58,11 @@ Dockerfile (`docs/DEPLOY.md`).
 * The accel backend uses one device per process (no multi-GPU / multi-node runtime yet); its CUDA
   path is exercised only where a GPU exists (CI and this sandbox test it on CPU).
 * The fast IR executor skips the ISA level; its results agree with ISA-level execution within FP32
-  tolerance but are not bit-identical.
+  tolerance but are not bit-identical. The compiled plans are bit-identical to the IR interpreters.
+* Custom models must be expressible in TITAN graph ops (2-D tensors, decoder-only LM interface);
+  encoder-decoder models, convolutions and mixture-of-experts routing are not supported yet.
+  Tokenizer plugins run in Python on the host (pre-tokenize big corpora with `prepare-data`).
+* `--backend auto` measured its crossover on one CPU host; GPU speed is untested here (no GPU).
 
 ## Performance honesty
 

@@ -18,6 +18,10 @@ UNARY = {"relu": Act.RELU, "gelu": Act.GELU, "sigmoid": Act.SIGMOID, "tanh": Act
 BINARY = ("add", "sub", "mul", "div", "maximum")
 EWISE = set(UNARY) | set(BINARY) | {"scale", "cast", "broadcast"}
 ROWNORM = {"softmax": Norm.SOFTMAX, "layernorm": Norm.LAYERNORM, "rmsnorm": Norm.RMSNORM}
+# ops with two lowerings: the last input is an exact decomposition into primitives (used for TITAN ISA);
+# IR-level executors run them as dedicated kernels (gather / scatter-add / one-hot).
+DUAL = {"onehot", "embedding", "embedding_grad"}
+HEADS = {"split_heads", "merge_heads", "repeat_heads", "sum_head_groups"}
 
 
 class GraphError(ValueError):
@@ -136,7 +140,7 @@ class Graph:
         """Exact 2*M*N*K operation count of all (batched) matrix products in the graph."""
         total = 0
         for nd in self.nodes:
-            if nd.op in ("matmul", "bmm"):
+            if nd.op in ("matmul", "bmm") and not nd.attrs.get("impl"):
                 a, b = nd.inputs[0], nd.inputs[1]
                 bt = nd.attrs["batch"]
                 k = a.rows // bt if nd.attrs["ta"] else a.cols
@@ -265,6 +269,56 @@ class Graph:
 
     def transpose(self, x: Tensor) -> Tensor:
         return self._op("transpose", [x], (x.cols, x.rows), x.dtype)
+
+    # ------------------------------------------------------------ tokens and attention heads
+    def onehot(self, ids: Tensor, n: int) -> Tensor:
+        """ids [N,1] INT32 -> one-hot [N,n] FP32 (no gradient)."""
+        if ids.cols != 1 or not ids.dtype.is_int:
+            raise GraphError("onehot expects integer ids of shape [N,1]")
+        iota = self.const(np.arange(n)[None, :], name=f"iota{n}_{len(self.tensors)}")
+        d = self.sub(self.cast(ids, DType.FP32), iota)
+        impl = self.step(self.scale(self.square(d), -1.0, 0.25))          # 1 exactly where id == column
+        return self._op("onehot", [ids, impl], (ids.rows, n), DType.FP32, n=n)
+
+    def embedding(self, ids: Tensor, table: Tensor) -> Tensor:
+        """Row lookup table[ids] -> [N, d] (gather on IR executors; one-hot product on TITAN ISA)."""
+        oh = self.onehot(ids, table.rows)
+        impl = self.matmul(oh, table)
+        impl.node.attrs["impl"] = True
+        return self._op("embedding", [ids, table, impl], (ids.rows, table.cols), table.dtype)
+
+    def embedding_grad(self, ids: Tensor, dy: Tensor, vocab: int) -> Tensor:
+        """Scatter-add of dy rows into a [vocab, d] gradient."""
+        oh = self.onehot(ids, vocab)
+        impl = self.matmul(oh, dy, ta=True)
+        impl.node.attrs["impl"] = True
+        return self._op("embedding_grad", [ids, dy, impl], (vocab, dy.cols), DType.FP32, vocab=vocab)
+
+    def split_heads(self, x: Tensor, batch: int, heads: int) -> Tensor:
+        """[B*T, H*dh] -> [B*H*T, dh] (head-major rows, for batched attention)."""
+        if x.rows % batch or x.cols % heads:
+            raise GraphError("split_heads: shape not divisible")
+        return self._op("split_heads", [x], (x.rows * heads, x.cols // heads), x.dtype, batch=batch, heads=heads)
+
+    def merge_heads(self, x: Tensor, batch: int, heads: int) -> Tensor:
+        """[B*H*T, dh] -> [B*T, H*dh]."""
+        if x.rows % (batch * heads):
+            raise GraphError("merge_heads: shape not divisible")
+        return self._op("merge_heads", [x], (x.rows // heads, x.cols * heads), x.dtype, batch=batch, heads=heads)
+
+    def repeat_heads(self, x: Tensor, batch: int, kv_heads: int, groups: int) -> Tensor:
+        """[B*KV*T, dh] -> [B*KV*G*T, dh]: each key/value head serves G query heads (grouped-query attention)."""
+        if groups == 1:
+            return x
+        return self._op("repeat_heads", [x], (x.rows * groups, x.cols), x.dtype, batch=batch, heads=kv_heads,
+                        groups=groups)
+
+    def sum_head_groups(self, x: Tensor, batch: int, kv_heads: int, groups: int) -> Tensor:
+        """Inverse reduction of repeat_heads (its gradient): [B*KV*G*T, dh] -> [B*KV*T, dh]."""
+        if groups == 1:
+            return x
+        return self._op("sum_head_groups", [x], (x.rows // groups, x.cols), x.dtype, batch=batch, heads=kv_heads,
+                        groups=groups)
 
     def xent(self, logits: Tensor, onehot: Tensor) -> Tensor:
         """Mean softmax cross-entropy over rows -> [1,1].

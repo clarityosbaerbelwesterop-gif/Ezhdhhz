@@ -25,13 +25,15 @@ class OpStats:
 
 
 def _gelu(x):
-    return 0.5 * x * (1.0 + np.tanh(_SQRT_2_PI * (x + np.float32(0.044715) * x ** 3)))
+    x2 = x * x                       # x*x*x, not x**3: NumPy evaluates float powers element-wise via powf (~20x slower)
+    return 0.5 * x * (1.0 + np.tanh(_SQRT_2_PI * (x + np.float32(0.044715) * (x2 * x))))
 
 
 def _gelu_grad(x):
-    u = _SQRT_2_PI * (x + np.float32(0.044715) * x ** 3)
+    x2 = x * x
+    u = _SQRT_2_PI * (x + np.float32(0.044715) * (x2 * x))
     t = np.tanh(u)
-    du = _SQRT_2_PI * (1.0 + np.float32(3 * 0.044715) * x ** 2)
+    du = _SQRT_2_PI * (1.0 + np.float32(3 * 0.044715) * x2)
     return 0.5 * (1.0 + t) + 0.5 * x * (1.0 - t * t) * du
 
 

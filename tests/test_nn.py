@@ -77,7 +77,7 @@ def test_tiny_lm_forward(tiny, rng):
     m = TinyTransformerLM(vocab=12, seq=6, d_model=16, heads=2, d_ff=32, layers=2)
     x, logits = m.build(g, ps, 3, DType.FP32)
     g.output("logits", logits)
-    X = np.eye(12)[rng.integers(0, 12, 18)]
+    X = rng.integers(0, 12, (18, 1))                     # token ids; embedding = row gather (ISA: one-hot GEMM)
     out, _ = run_titan(g, {"x": X}, tiny)
     ref, _ = run_reference(g, {"x": X})
     np.testing.assert_allclose(out["logits"], ref["logits"], rtol=1e-4, atol=1e-5)

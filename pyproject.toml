@@ -12,6 +12,7 @@ dependencies = ["numpy>=1.26"]
 [project.optional-dependencies]
 test = ["pytest>=7"]
 accel = ["torch>=2.1"]
+tokenizers = ["tokenizers>=0.15", "sentencepiece>=0.1.99"]   # Hugging Face tokenizer.json, SentencePiece .model
 
 [project.scripts]
 titan = "titan.cli:main"

@@ -284,11 +284,11 @@ class Sampler:
 
     def next(self) -> dict:
         ds, b = self.ds, self.batch
-        if ds.kind == "lm":
+        if ds.kind == "lm":                       # token ids; one-hot targets are built on the device
             starts = self.rng.integers(0, len(ds.x_train) - ds.seq - 1, b)
             idx = starts[:, None] + np.arange(ds.seq)[None, :]
-            return {"x": onehot(ds.x_train[idx].ravel(), ds.classes), "y": onehot(ds.x_train[idx + 1].ravel(),
-                                                                                  ds.classes)}
+            return {"x": np.asarray(ds.x_train[idx]).reshape(-1, 1).astype(np.int32),
+                    "y": np.asarray(ds.x_train[idx + 1]).reshape(-1, 1).astype(np.int32)}
         if b > len(ds.x_train):
             raise DataError(f"batch size {b} exceeds the {len(ds.x_train)} training examples")
         if self._perm is None or self._pos + b > len(self._perm):
@@ -319,7 +319,8 @@ def eval_batches(ds: Dataset, batch: int):
             chunk = windows[i:i + batch]
             nv = len(chunk) * ds.seq
             idx = np.stack(chunk + [chunk[-1]] * (batch - len(chunk)))
-            yield onehot(ds.x_test[idx].ravel(), ds.classes), ds.x_test[idx + 1].ravel(), nv
+            yield (np.asarray(ds.x_test[idx]).reshape(-1, 1).astype(np.int32),
+                   np.asarray(ds.x_test[idx + 1]).ravel(), nv)
         return
     n = len(ds.x_test)
     for i in range(0, n, batch):

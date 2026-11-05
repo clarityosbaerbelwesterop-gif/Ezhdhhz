@@ -21,8 +21,9 @@ import numpy as np
 from ..dtypes import DType, accum_dtype, nbytes
 from ..hw.memory import Allocator
 from ..isa import build as B
+from ..isa import build as B_
 from ..isa.spec import ISA_VERSION, Act, Axis, Norm, Opcode, Program, ReduceOp, Space, TensorRef
-from .graph import BINARY, EWISE, ROWNORM, UNARY, Graph, Tensor
+from .graph import BINARY, DUAL, EWISE, HEADS, ROWNORM, UNARY, Graph, Tensor
 from .ir import Buffer, Kernel, Module, Step
 
 _VEC = {"add": Opcode.VECTOR_ADD, "sub": Opcode.VECTOR_SUB, "mul": Opcode.VECTOR_MULTIPLY,
@@ -208,11 +209,16 @@ class Compiler:
         self.budget = cfg.staging_base
 
     # ------------------------------------------------------------ helpers
-    @staticmethod
-    def canon(t: Tensor) -> Tensor:
-        while t.node is not None and t.node.op == "xent":
-            t = t.node.inputs[2]
+    def canon(self, t: Tensor) -> Tensor:
+        """Resolve composite ops: xent always to its primitives; gather-style ops to their exact
+        primitive decomposition when generating TITAN ISA, to dedicated kernels otherwise."""
+        while t.node is not None and (t.node.op == "xent" or (t.node.op in DUAL and self.o.emit_isa)):
+            t = t.node.inputs[-1]
         return t
+
+    @staticmethod
+    def _prim(nd):
+        return nd.inputs[:-1] if nd.op in DUAL else nd.inputs
 
     def _sig(self, m: int):
         return ("rows", m, self.n)
@@ -226,11 +232,11 @@ class Compiler:
             t = stack.pop()
             if t.node is not None and t.node.id not in live:
                 live.add(t.node.id)
-                stack.extend(C(i) for i in t.node.inputs)
+                stack.extend(C(i) for i in self._prim(t.node))
         uses = Counter()
         for nd in g.nodes:
             if nd.id in live:
-                for i in nd.inputs:
+                for i in self._prim(nd):
                     uses[C(i).id] += 1
         for r in roots:
             uses[r.id] += 1
@@ -259,7 +265,7 @@ class Compiler:
         for nd in g.nodes:
             if nd.id not in live or nd.op == "xent":
                 continue
-            ins = [C(i) for i in nd.inputs]
+            ins = [C(i) for i in self._prim(nd)]
             if nd.op in EWISE:
                 K = None
                 if self.o.fuse:
@@ -293,6 +299,13 @@ class Compiler:
                     attrs = {"rop": ReduceOp(nd.attrs["rop"]), "axis": nd.attrs["axis"]}
                 K = Kernel(kind, nd.output.shape, attrs=attrs)
                 K.in_tensors, K.modes = [ins[0]], ["full"]
+                K.head = nd.output
+                K.nodes.append(nd.id)
+                kernels.append(K)
+                producer[nd.output.id] = K
+            elif nd.op in DUAL or nd.op in HEADS:
+                K = Kernel(nd.op, nd.output.shape, attrs=dict(nd.attrs))
+                K.in_tensors, K.modes = list(ins), ["full"] * len(ins)
                 K.head = nd.output
                 K.nodes.append(nd.id)
                 kernels.append(K)
@@ -876,6 +889,52 @@ class Compiler:
                 em.emit(B.load(core, li, x.ref.sub(r0, c0, rc, cc)), B.copy(core, lo, li, transpose=True),
                         B.store(core, out.ref.sub(c0, r0, cc, rc), lo))
 
+    def gen_heads(self, K: Kernel, em: Emitter):
+        """Head layout permutations as DMA copies between strided views (static addresses)."""
+        x, out = K.inputs[0], K.output
+        a = K.attrs
+        B, H = a["batch"], a["heads"]
+        em.sync([_acc(x, False, None), _acc(out, True, None)])
+        k = 0
+        if K.kind in ("split_heads", "merge_heads"):
+            rows = (x.shape[0] if K.kind == "split_heads" else out.shape[0]) // B
+            dh = x.shape[1] // H if K.kind == "split_heads" else x.shape[1]
+            for b in range(B):
+                for h in range(H):
+                    flat = x.ref.sub(b * rows, h * dh, rows, dh) if K.kind == "split_heads" else \
+                        out.ref.sub(b * rows, h * dh, rows, dh)
+                    blk = (out if K.kind == "split_heads" else x).ref.sub((b * H + h) * rows, 0, rows, dh)
+                    dst, src = (blk, flat) if K.kind == "split_heads" else (flat, blk)
+                    em.emit(B_.copy(k % self.n, dst, src))
+                    k += 1
+            return
+        G = a["groups"]
+        T, dh = (x.shape[0] // (B * H), x.shape[1]) if K.kind == "repeat_heads" else \
+            (out.shape[0] // (B * H), out.shape[1])
+        if K.kind == "repeat_heads":
+            for b in range(B):
+                for h in range(H):
+                    src = x.ref.sub((b * H + h) * T, 0, T, dh)
+                    for gi in range(G):
+                        em.emit(B_.copy(k % self.n, out.ref.sub(((b * H + h) * G + gi) * T, 0, T, dh), src))
+                        k += 1
+            return
+        loc = _Local(self.cfg)
+        rc = max(1, min(T, int(self.budget // (2 * 4 * dh + 64))))
+        acc_a, tmp_a = loc.take(4 * rc * dh), loc.take(4 * rc * dh)
+        for b in range(B):
+            for h in range(H):
+                core = k % self.n
+                k += 1
+                for r0 in range(0, T, rc):
+                    r = min(rc, T - r0)
+                    acc, tmp = _L(acc_a, r, dh, x.dtype), _L(tmp_a, r, dh, x.dtype)
+                    base = (b * H + h) * G * T + r0
+                    em.emit(B_.load(core, acc, x.ref.sub(base, 0, r, dh)))
+                    for gi in range(1, G):
+                        em.emit(B_.load(core, tmp, x.ref.sub(base + gi * T, 0, r, dh)), B_.accumulate(core, acc, tmp))
+                    em.emit(B_.store(core, out.ref.sub((b * H + h) * T + r0, 0, r, dh), acc))
+
     def gen_copy(self, K: Kernel, em: Emitter):
         x, out = K.inputs[0], K.output
         M, N = x.shape
@@ -895,7 +954,8 @@ class Compiler:
         named, allb = self.plan_memory(kernels)
         em = Emitter(self.n, self.o.barrier_elim)
         gen = {"ewise": self.gen_ewise, "gemm": self.gen_gemm, "rownorm": self.gen_rownorm,
-               "reduce": self.gen_reduce, "transpose": self.gen_transpose, "copy": self.gen_copy}
+               "reduce": self.gen_reduce, "transpose": self.gen_transpose, "copy": self.gen_copy,
+               **{h: self.gen_heads for h in HEADS}}
         for K in kernels if self.o.emit_isa else ():
             start = len(em.ins)
             gen[K.kind](K, em)

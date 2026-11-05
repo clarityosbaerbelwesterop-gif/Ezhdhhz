@@ -37,24 +37,49 @@ class TransformerSpec:
     d_ff: int
     vocab: int
     seq: int
+    kv_heads: int = 0          # 0 = heads (multi-head attention)
+    gated: bool = False        # SwiGLU / GeGLU MLP (three matrices)
+    tie_embeddings: bool = False
+    bias: bool = True
+    qkv_bias: bool = False
+    norm: str = "layernorm"
+    position: str = "learned"
+
+    @classmethod
+    def from_config(cls, c) -> "TransformerSpec":
+        return cls(c.name, c.layers, c.d_model, c.heads, c.d_ff, c.vocab, c.seq, c.kv_heads, c.gated,
+                   c.tie_embeddings, c.bias, c.qkv_bias, c.norm, c.position)
+
+    @property
+    def kvd(self) -> int:
+        return (self.kv_heads or self.heads) * (self.d_model // self.heads)
 
     def layer_params(self) -> int:
-        d, f = self.d_model, self.d_ff
-        return 4 * d * d + d + 4 * d + d * f + f + f * d + d
+        d, f, kvd = self.d_model, self.d_ff, self.kvd
+        attn = 2 * d * d + 2 * d * kvd + (d if self.bias else 0) + ((d + 2 * kvd) if self.qkv_bias else 0)
+        mlp = (3 if self.gated else 2) * d * f + (((2 if self.gated else 1) * f + d) if self.bias else 0)
+        norms = 2 * (2 * d if self.norm == "layernorm" else d)
+        return attn + mlp + norms
 
     def params(self) -> int:
         d, V = self.d_model, self.vocab
-        return self.layers * self.layer_params() + V * d + self.seq * d + 2 * d + d * V + V
+        emb = V * d + (self.seq * d if self.position == "learned" else 0)
+        head = (0 if self.tie_embeddings else d * V) + (V if self.bias else 0)
+        return self.layers * self.layer_params() + emb + (2 * d if self.norm == "layernorm" else d) + head
 
     def fwd_flops_per_seq(self) -> int:
-        """Matmul FLOPs of one forward pass over one sequence (embeddings as gathers)."""
-        T, d, f = self.seq, self.d_model, self.d_ff
-        per_layer = 2 * T * (4 * d * d + 2 * d * f) + 2 * 2 * T * T * d
+        """Matmul FLOPs of one forward pass over one sequence (embeddings are gathers)."""
+        T, d, f, kvd = self.seq, self.d_model, self.d_ff, self.kvd
+        dh = d // self.heads
+        per_layer = 2 * T * (2 * d * d + 2 * d * kvd + (3 if self.gated else 2) * d * f) + 2 * 2 * T * T * d
+        if self.position == "rope":
+            per_layer += 2 * T * dh * (d + kvd)
         return self.layers * per_layer + 2 * T * d * self.vocab
 
     def onehot_embedding_flops_per_seq(self) -> int:
-        """Extra FLOPs when embeddings are one-hot matmuls (as in the small titan.nn graphs)."""
-        return 2 * self.seq * self.vocab * self.d_model + 2 * self.seq * self.seq * self.d_model
+        """Extra FLOPs if embeddings were one-hot matmuls (TITAN ISA lowering of the gathers)."""
+        return 2 * self.seq * self.vocab * self.d_model + (2 * self.seq * self.seq * self.d_model
+                                                           if self.position == "learned" else 0)
 
     def describe(self) -> dict:
         return {**asdict(self), "params": self.params(), "fwd_gflops_per_token": self.fwd_flops_per_seq() / self.seq / 1e9}
@@ -326,7 +351,7 @@ def compile_training_program(spec: TransformerSpec, batch: int = 1, cfg_name: st
     ps = ParamStore(g, 0, lazy=True)
     m = TinyTransformerLM(spec.vocab, spec.seq, spec.d_model, spec.heads, spec.d_ff, spec.layers)
     _, logits = m.build(g, ps, batch, DType.FP32)
-    loss = g.xent(logits, g.input("y", logits.shape))
+    loss = g.xent(logits, g.onehot(g.input("y", (logits.rows, 1), DType.INT32), spec.vocab))
     params = list(ps.params.values())
     grads = gradients(g, loss, params)
     sq = None

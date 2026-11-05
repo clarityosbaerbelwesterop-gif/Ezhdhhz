@@ -20,7 +20,7 @@ def _lm_graph(spec: TransformerSpec, batch: int, meta: bool, train: bool):
     _, logits = m.build(g, ps, batch, DType.FP32)
     g.output("logits", logits)
     if train:
-        loss = g.xent(logits, g.input("y", logits.shape))
+        loss = g.xent(logits, g.onehot(g.input("y", (logits.rows, 1), DType.INT32), spec.vocab))
         gradients(g, loss, list(ps.params.values()))
     return g
 
@@ -31,10 +31,9 @@ def test_spec_accounting_matches_compiled_graph(L, d, h, V, T):
     B = 3
     fwd = _lm_graph(spec, B, meta=True, train=False)
     assert fwd.param_count() == spec.params()
-    assert fwd.matmul_flops() == B * (spec.fwd_flops_per_seq() + spec.onehot_embedding_flops_per_seq())
+    assert fwd.matmul_flops() == B * spec.fwd_flops_per_seq()          # embeddings are gathers, not GEMMs
     trn = _lm_graph(spec, B, meta=True, train=True)
-    # backward = 2x every matmul except the one-hot embeddings (inputs need no gradient)
-    assert trn.matmul_flops() == B * (3 * spec.fwd_flops_per_seq() + 2 * spec.onehot_embedding_flops_per_seq())
+    assert trn.matmul_flops() == 3 * B * spec.fwd_flops_per_seq()      # backward = 2x every matrix product
 
 
 def test_100b_width_meta_graph_without_memory():
@@ -48,7 +47,9 @@ def test_100b_width_meta_graph_without_memory():
         compile_graph(g, load_config("target"))
     ir = compile_graph(g, load_config("target"), CompileOptions(emit_isa=False))   # IR at 100B width
     gemms = [k for k in ir.module.kernels if k.kind == "gemm"]
-    assert len(gemms) >= 2 * (4 * full.heads + 2) and "tlm.b0.attn.q0" not in ir.init
+    # per layer: q, k, v, o, ff1, ff2 + 2 head-batched attention products (fused across heads); + LM head
+    assert len(gemms) == 2 * 8 + 1 and "tlm.b0.attn.q.w" not in ir.init
+    assert sum(k.attrs["batch"] == full.heads for k in gemms) == 4
 
 
 def test_spec_for_params():

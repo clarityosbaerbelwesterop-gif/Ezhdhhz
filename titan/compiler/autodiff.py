@@ -8,7 +8,7 @@ BF16/FP16 operands, FP32 accumulation).
 from __future__ import annotations
 
 from ..dtypes import DType
-from .graph import Graph, GraphError, Tensor
+from .graph import DUAL, Graph, GraphError, Tensor
 
 
 def sum_to(g: Graph, t: Tensor, shape) -> Tensor:
@@ -107,6 +107,19 @@ def _rules(g: Graph, n, gy: Tensor, need: set = frozenset()):
         return [(x[0], g.mul(g.sub(gy, g.mul(y, g.mean(g.mul(gy, y), 1))), r))]
     if op == "transpose":
         return [(x[0], g.transpose(gy))]
+    if op == "embedding":
+        return [(x[1], g.embedding_grad(x[0], gy, x[1].rows))]
+    if op in ("onehot", "embedding_grad"):
+        return []
+    a = n.attrs
+    if op == "split_heads":
+        return [(x[0], g.merge_heads(gy, a["batch"], a["heads"]))]
+    if op == "merge_heads":
+        return [(x[0], g.split_heads(gy, a["batch"], a["heads"]))]
+    if op == "repeat_heads":
+        return [(x[0], g.sum_head_groups(gy, a["batch"], a["heads"], a["groups"]))]
+    if op == "sum_head_groups":
+        return [(x[0], g.repeat_heads(gy, a["batch"], a["heads"], a["groups"]))]
     if op == "xent":
         z, onehot = x[0], x[1]
         d = g.scale(g.sub(g.softmax(z), onehot), 1.0 / z.rows)
@@ -120,8 +133,8 @@ def gradients(g: Graph, loss: Tensor, wrt: list[Tensor]) -> list[Tensor]:
         raise GraphError("loss must be a [1,1] tensor")
     need = {t.id for t in wrt}
     for nd in g.nodes:
-        if any(i.id in need for i in nd.inputs[:2] if nd.op == "xent") or \
-                (nd.op != "xent" and any(i.id in need for i in nd.inputs)):
+        prim = nd.inputs[:2] if nd.op == "xent" else nd.inputs[:-1] if nd.op in DUAL else nd.inputs
+        if any(i.id in need for i in prim):
             need.add(nd.output.id)
     if loss.id not in need:
         raise GraphError("loss does not depend on any requested tensor")

@@ -30,6 +30,8 @@ stated gaps; **open** = not started. Commit SHAs refer to branch `titan-x1/platf
 | Own environment: accel backend, byte corpora, pretrain/continue/fine-tune, quality controls, `titan env`, Docker | done | `tests/test_environment.py`, `docs/DEPLOY.md` |
 | Beyond RAM: lazy init + storage offload; full 100B training step compiles with exact memory plan | done | `tests/test_offload.py` (`c835b90`) |
 | LoRA with regenerated frozen base; 100.74B-parameter LoRA training run on a 16 GB host | done | `tests/test_environment.py`, `docs/DEPLOY.md` (`92d8639`) |
+| Bring your own transformer (config/plugins) and tokenizer (BPE/HF/SentencePiece/plugins); compiled execution plans; fused attention | done | `tests/test_customize.py`, `docs/CUSTOMIZE.md`, `docs/PERFORMANCE.md` §9 |
+| CUDA graphs / `torch.compile` for the accel plan; in-place element-wise chains | open | next host-speed step (GPU launch overhead, memory-bound optimizer passes) |
 | Multi-GPU / multi-node runtime (data + tensor parallel over real devices) | open | next step for speed at 100B scale |
 
 ## Next gates (in order)

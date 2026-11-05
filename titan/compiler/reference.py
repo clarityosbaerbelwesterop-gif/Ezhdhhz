@@ -47,6 +47,23 @@ def _row(fn, x, eps):
     return x / np.sqrt((x * x).mean(1, keepdims=True) + eps)
 
 
+def head_layout(op: str, x, a: dict, xp=np):
+    """Reference semantics of the head layout ops (NumPy; also used by the IR executors)."""
+    B, H = a["batch"], a["heads"]
+    if op == "split_heads":
+        T, dh = x.shape[0] // B, x.shape[1] // H
+        return xp.ascontiguousarray(x.reshape(B, T, H, dh).transpose(0, 2, 1, 3)).reshape(B * H * T, dh)
+    if op == "merge_heads":
+        T, dh = x.shape[0] // (B * H), x.shape[1]
+        return xp.ascontiguousarray(x.reshape(B, H, T, dh).transpose(0, 2, 1, 3)).reshape(B * T, H * dh)
+    G = a["groups"]
+    if op == "repeat_heads":
+        T, dh = x.shape[0] // (B * H), x.shape[1]
+        return xp.repeat(x.reshape(B, H, T, dh), G, axis=1).reshape(B * H * G * T, dh)
+    T, dh = x.shape[0] // (B * H * G), x.shape[1]
+    return x.reshape(B, H, G, T, dh).sum(axis=2).reshape(B * H * T, dh)
+
+
 def evaluate(g: Graph, feeds: dict, params: dict | None = None) -> dict[int, np.ndarray]:
     """Return {tensor id: value} for every tensor of the graph."""
     env: dict[int, np.ndarray] = {}
@@ -106,6 +123,15 @@ def evaluate(g: Graph, feeds: dict, params: dict | None = None) -> dict[int, np.
                 r = _row(op, x[0], a["eps"])
             elif op == "transpose":
                 r = x[0].T
+            elif op == "onehot":
+                r = (x[0].reshape(-1)[:, None] == np.arange(a["n"])[None, :]).astype(np.float64)
+            elif op == "embedding":
+                r = x[1][x[0].reshape(-1).astype(np.int64)]
+            elif op == "embedding_grad":
+                r = np.zeros(n.output.shape)
+                np.add.at(r, x[0].reshape(-1).astype(np.int64), x[1])
+            elif op in ("split_heads", "merge_heads", "repeat_heads", "sum_head_groups"):
+                r = head_layout(op, x[0], a)
             elif op == "xent":
                 z, y = x[0], x[1]
                 zc = z - z.max(1, keepdims=True)

@@ -90,6 +90,11 @@ def _quickstart_params(a) -> int | None:
     batch = a.batch or 8
     byte = bool(a.data) and (a.data.lower().endswith(".bin") or a.tokenizer == "byte")
     vocab = 256 if byte else (512 if a.data else 24)
+    if a.data and a.data.lower().endswith(".bin") and Path(a.data).with_suffix(".json").exists():
+        vocab = int(json.loads(Path(a.data).with_suffix(".json").read_text()).get("vocab", vocab))
+    elif a.data and a.tokenizer not in ("char", "byte"):
+        from .train.tokenizers import load_tokenizer
+        vocab = load_tokenizer(a.tokenizer).vocab_size
     small = spec_for_params(n, vocab, seq)
     need, avail = host_training_bytes(small, batch), host_memory_available()
     if a.memory_gb:
@@ -167,6 +172,26 @@ def _quickstart_params(a) -> int | None:
     return 0
 
 
+def _parse_set(items) -> dict:
+    out = {}
+    for it in items:
+        k, sep, v = it.partition("=")
+        if not sep:
+            raise SystemExit(f"--set expects KEY=VALUE, got {it!r}")
+        low = v.lower()
+        if low in ("true", "false"):
+            out[k] = low == "true"
+        else:
+            try:
+                out[k] = int(v)
+            except ValueError:
+                try:
+                    out[k] = float(v)
+                except ValueError:
+                    out[k] = v
+    return out
+
+
 def cmd_quickstart(a) -> int:
     from .runtime import BACKENDS, backend_status
     from .train import PROFILES, TrainConfig, Trainer
@@ -197,6 +222,10 @@ def cmd_quickstart(a) -> int:
         a.backend = _ask("   backend", list(BACKENDS), a.backend)
         if input("6. QuickStart now? [Y/n]: ").strip().lower() in ("n", "no"):
             return 0
+    if a.set:
+        a.overrides = {**a.overrides, **_parse_set(a.set)}
+    if a.model_config or a.model_file:
+        a.model = "transformer"
     tc = TrainConfig(model=a.model, dataset=a.dataset, profile=a.profile, batch=a.batch, precision=a.precision,
                      backend=a.backend, steps=a.steps, lr=a.lr, optimizer=a.optimizer, seed=a.seed,
                      eval_every=a.eval_every, ckpt_every=a.ckpt_every, arch=a.arch, out_dir=a.out,
@@ -204,10 +233,11 @@ def cmd_quickstart(a) -> int:
                      freeze=a.freeze or [], tokenizer=a.tokenizer, schedule=a.schedule, weight_decay=a.weight_decay,
                      clip_grad=a.clip_grad, early_stop=a.early_stop, warmup=a.warmup,
                      offload_dir=a.offload_dir, offload_mb=a.offload_mb, init_scheme=a.init,
-                     lora_rank=a.lora_rank, lora_alpha=a.lora_alpha)
+                     lora_rank=a.lora_rank, lora_alpha=a.lora_alpha, model_config=a.model_config,
+                     model_file=a.model_file)
     try:
         tr = Trainer(tc)
-    except (RuntimeError, ValueError) as e:
+    except (RuntimeError, ValueError, FileNotFoundError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
     if a.resume:
@@ -249,10 +279,40 @@ def cmd_env(a) -> int:
 
 
 def cmd_prepare_data(a) -> int:
-    from .train.tokens import prepare_bytes
-    meta = prepare_bytes(a.inputs, a.out)
-    print(f"wrote {a.out}: {meta['tokens']:,} byte tokens from {len(meta['sources'])} file(s), sha256 "
+    from .train.tokens import prepare_bytes, prepare_tokens
+    if a.tokenizer == "byte":
+        meta = prepare_bytes(a.inputs, a.out)
+        kind = "byte"
+    else:
+        from .train.tokenizers import load_tokenizer
+        tok = load_tokenizer(a.tokenizer)
+        meta = prepare_tokens(a.inputs, a.out, tok)
+        kind = f"{tok.kind} (vocab {tok.vocab_size:,}, {meta['dtype']})"
+    print(f"wrote {a.out}: {meta['tokens']:,} {kind} tokens from {len(meta['sources'])} file(s), sha256 "
           f"{meta['sha256'][:16]}...; metadata {Path(a.out).with_suffix('.json')}")
+    return 0
+
+
+def cmd_tokenizer_train(a) -> int:
+    import time as _t
+    from .train.tokenizers import BPETokenizer
+    t0 = _t.perf_counter()
+    texts = [Path(f).read_text(encoding="utf-8", errors="replace") for f in a.inputs]
+    tok = BPETokenizer.train(texts, a.vocab, a.min_frequency)
+    tok.save(a.out)
+    n_chars = sum(len(t) for t in texts)
+    n_tok = sum(len(tok.encode(t)) for t in texts)
+    print(f"trained byte-level BPE: vocab {tok.vocab_size:,} ({len(tok.merges):,} merges) on {n_chars:,} characters "
+          f"in {_t.perf_counter() - t0:.1f} s; {n_chars / max(1, n_tok):.2f} characters/token; wrote {a.out}")
+    return 0
+
+
+def cmd_tokenizer_info(a) -> int:
+    from .train.tokenizers import load_tokenizer
+    tok = load_tokenizer(a.spec, fit_text=a.text)
+    ids = tok.encode(a.text)
+    print(json.dumps({**tok.describe(), "fingerprint": tok.fingerprint[:16], "sample_ids": ids[:32],
+                      "roundtrip": tok.decode(ids) == a.text}, default=str))
     return 0
 
 
@@ -532,7 +592,16 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--memory-gb", type=float, default=None, help="RAM budget for --params (default: 70%% of available)")
     s.add_argument("--init-from", default=None, help="fine-tune: start from this checkpoint's weights")
     s.add_argument("--freeze", nargs="+", default=None, help="fine-tune: parameter prefixes/globs to keep fixed")
-    s.add_argument("--tokenizer", default="char", choices=["char", "byte"], help="tokenizer for .txt data")
+    s.add_argument("--tokenizer", default="char",
+                   help="tokenizer for .txt data: char | byte | titan-bpe.json (titan tokenizer train) | Hugging Face "
+                        "tokenizer.json | SentencePiece .model | file.py:Factory")
+    s.add_argument("--model-config", default=None,
+                   help="your transformer architecture (JSON/TOML): norm, activation, position, heads, kv_heads, "
+                        "d_model, d_ff, layers, seq, tie_embeddings, bias, prenorm, ... (docs/CUSTOMIZE.md)")
+    s.add_argument("--model-file", default=None,
+                   help="your own model code: file.py:factory or package.module:factory (docs/CUSTOMIZE.md)")
+    s.add_argument("--set", nargs="+", default=None, metavar="KEY=VALUE",
+                   help="architecture settings, e.g. --set norm=rmsnorm activation=swiglu position=rope kv_heads=2")
     s.add_argument("--schedule", default=None, choices=["constant", "cosine"])
     s.add_argument("--warmup", type=int, default=None)
     s.add_argument("--weight-decay", type=float, default=None)
@@ -550,11 +619,12 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--profile", default="small", choices=["tiny", "small", "medium"])
     s.add_argument("--batch", type=int, default=None)
     s.add_argument("--precision", default="fp32", choices=["fp32", "bf16", "fp16"])
-    s.add_argument("--backend", default="functional",
+    s.add_argument("--backend", default="auto",
                    choices=["functional", "fast", "accel", "auto", "cycle", "rtl", "fpga", "hardware"],
-                   help="functional: every TITAN instruction (bit-exact replay); fast: TITAN IR kernels on whole "
-                        "tensors (NumPy); accel: TITAN IR kernels on GPU/CPU via PyTorch (fastest, largest); "
-                        "auto: best available; cycle: + simulated timing")
+                   help="auto (default): fastest executor for this host (accel on a GPU or for d_model >= 128, "
+                        "else fast); fast: the compiled TITAN program as one NumPy function; accel: the same on "
+                        "GPU/CPU via PyTorch; functional: every TITAN instruction (ISA level, bit-exact replay); "
+                        "cycle: + simulated timing")
     s.add_argument("--steps", type=int, default=None)
     s.add_argument("--lr", type=float, default=None)
     s.add_argument("--optimizer", default="adam", choices=["adam", "sgd"])
@@ -572,10 +642,24 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--json", default=None)
     s.set_defaults(fn=cmd_env)
 
-    s = sub.add_parser("prepare-data", help="stream text files into a byte-token corpus for pretraining")
+    s = sub.add_parser("prepare-data", help="stream text files into a memory-mapped token corpus for pretraining")
     s.add_argument("inputs", nargs="+")
     s.add_argument("--out", required=True)
+    s.add_argument("--tokenizer", default="byte", help="byte (default) or any tokenizer spec (see quickstart)")
     s.set_defaults(fn=cmd_prepare_data)
+
+    s = sub.add_parser("tokenizer", help="train or inspect tokenizers")
+    tsub = s.add_subparsers(dest="tcmd", required=True)
+    t = tsub.add_parser("train", help="train a byte-level BPE tokenizer on your text")
+    t.add_argument("inputs", nargs="+")
+    t.add_argument("--vocab", type=int, default=4096)
+    t.add_argument("--min-frequency", type=int, default=2)
+    t.add_argument("--out", required=True)
+    t.set_defaults(fn=cmd_tokenizer_train)
+    t = tsub.add_parser("info", help="load any tokenizer spec and encode a sample")
+    t.add_argument("spec")
+    t.add_argument("--text", default="Hello TITAN.")
+    t.set_defaults(fn=cmd_tokenizer_info)
 
     s = sub.add_parser("plan", help="distributed training plan for large models (up to 100B+ parameters)")
     g_ = s.add_mutually_exclusive_group()

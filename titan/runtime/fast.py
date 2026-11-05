@@ -11,6 +11,10 @@ What differs
     matrix products and reductions differs (results agree within FP32 tolerance; tests);
   * no ISA program, no cycle timing, no emulated memory limit (host RAM is the limit).
 Label: "functional at TITAN IR level (kernel granularity, no timing)".
+
+Programs run as compiled execution plans (one generated function per program, runtime/plan.py),
+bit-identical to the kernel interpreter below, which remains in use for storage offload and
+regenerated weights.
 """
 from __future__ import annotations
 
@@ -28,6 +32,27 @@ from ..compiler.graph import UNARY
 from .device import RunOutput
 
 MODE = "fast"
+TOKEN_HEAD_KINDS = {"onehot", "embedding", "embedding_grad", "split_heads", "merge_heads", "repeat_heads",
+                    "sum_head_groups"}
+
+
+def token_head_kernel(K, xs):
+    """Gather / scatter-add / one-hot / head layouts on whole tensors (NumPy)."""
+    from ..compiler.reference import head_layout
+    if K.kind == "onehot":
+        ids = np.asarray(xs[0]).reshape(-1)
+        return (ids[:, None] == np.arange(K.attrs["n"])[None, :]).astype(np.float32)
+    if K.kind == "embedding":
+        return np.asarray(xs[1])[np.asarray(xs[0]).reshape(-1).astype(np.int64)]
+    if K.kind == "embedding_grad":
+        ids = np.asarray(xs[0]).reshape(-1).astype(np.int64)
+        dy = np.asarray(xs[1], dtype=np.float32)
+        out = np.zeros(K.output.shape, dtype=np.float32)
+        order = np.argsort(ids, kind="stable")
+        uniq, starts = np.unique(ids[order], return_index=True)
+        out[uniq] = np.add.reduceat(dy[order], starts, axis=0)
+        return out
+    return head_layout(K.kind, np.asarray(xs[0]), K.attrs)
 
 
 def _store(x: np.ndarray, dt: DType) -> np.ndarray:
@@ -47,7 +72,7 @@ class FastDevice:
     model size is bounded by the storage, not by RAM (RAM holds the working set of one kernel plus the
     operating system's page cache)."""
 
-    def __init__(self, cfg="dev", offload_dir=None, offload_mb: float = 64):
+    def __init__(self, cfg="dev", offload_dir=None, offload_mb: float = 64, compiled: bool = True):
         self.cfg = load_config(cfg)
         self.mem: dict[tuple, np.ndarray] = {}
         self._loaded: set[int] = set()
@@ -61,6 +86,8 @@ class FastDevice:
         self.threshold = int(offload_mb * 2 ** 20)
         self._temp_files: dict[int, object] = {}
         self.offloaded_bytes = 0
+        self.compiled = compiled           # run whole programs as one generated function (runtime/plan.py)
+        self._plans: dict[int, tuple] = {}
 
     def _mmap(self, name: str, like: np.ndarray) -> np.ndarray:
         path = self.offload / f"{self._tag}-{name}.bin"
@@ -201,6 +228,8 @@ class FastDevice:
             def arg(x, vals):
                 return self._get(env, K.inputs[x[1]]) if x[0] == "in" else vals[x[1]]
             return self._steps(K.steps, arg)
+        if K.kind in TOKEN_HEAD_KINDS:
+            return token_head_kernel(K, [self._get(env, b) for b in K.inputs])
         x = self._get(env, K.inputs[0])
         if K.kind == "rownorm":
             fn = {"softmax": Norm.SOFTMAX, "layernorm": Norm.LAYERNORM, "rmsnorm": Norm.RMSNORM}[K.attrs["fn"]]
@@ -250,6 +279,14 @@ class FastDevice:
         if missing:
             raise KeyError(f"missing inputs: {missing}")
         t1 = time.perf_counter()
+        if self.offload is None and not getattr(self, "regen", None) and self.compiled:
+            plan = self._plans.get(id(exe))
+            if plan is None:
+                from .plan import numpy_plan
+                plan = self._plans[id(exe)] = numpy_plan(self, exe)
+            with np.errstate(all="ignore"):
+                plan[0](self.mem)
+            return self._finish(exe, fetch, t0, t1, plan[1])
         env: dict[int, np.ndarray] = {}
         ops = 0
         frees = self._frees(exe)
@@ -263,6 +300,9 @@ class FastDevice:
                 ops += 2 * K.shape[0] * K.shape[1] * kd
         for bid in list(self._temp_files):
             self._drop(env, bid)
+        return self._finish(exe, fetch, t0, t1, ops)
+
+    def _finish(self, exe, fetch, t0, t1, ops) -> RunOutput:
         t2 = time.perf_counter()
         outs = {k: self.read(exe, k) for k in (exe.outputs if fetch is None else fetch)}
         t3 = time.perf_counter()

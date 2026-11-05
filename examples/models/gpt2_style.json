@@ -1,0 +1,2 @@
+{"d_model": 128, "layers": 4, "heads": 4, "norm": "layernorm", "activation": "gelu", "position": "learned",
+ "qkv_bias": true, "bias": true, "seq": 64}

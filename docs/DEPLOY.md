@@ -16,15 +16,18 @@ python -m titan env --path /mnt/storage   # what this machine allows
 `titan env` reports CPU, RAM, free storage at the path you will use, PyTorch/GPUs, the
 recommended backend and estimated limits (24 bytes per trained parameter + activations).
 
+Custom architectures and tokenizers (`--model-config`, `--set`, `--model-file`, `--tokenizer`,
+`titan tokenizer train`, `prepare-data --tokenizer`): [CUSTOMIZE.md](CUSTOMIZE.md).
+
 ## 2. Execution backends (choose with `--backend`)
 
 | Backend | Executes | Use for |
 |---|---|---|
 | `functional` | every TITAN ISA instruction (bit-exact replay) | verification, small models |
 | `cycle` | as functional + simulated TITAN-X1 timing | architecture studies |
-| `fast` | compiled TITAN IR kernels on whole tensors (NumPy) | large models without PyTorch |
-| `accel` | compiled TITAN IR kernels via PyTorch on GPU or all CPU cores | maximum speed and size |
-| `auto` | `accel` if PyTorch is installed, else the best of the above | default for big runs |
+| `fast` | the compiled TITAN program as ONE generated NumPy function (`titan/runtime/plan.py`) | small/medium models, storage offload |
+| `accel` | the same plan via PyTorch on GPU or all CPU cores (exact BF16 GEMMs on AMX / TF32) | large models, GPUs |
+| `auto` (default) | `accel` on a CUDA GPU or for `d_model ≥ 128`, else `fast` (measured crossover) | everything |
 
 All backends run the same compiled program (autodiff, fusion, optimizer on TITAN) with TITAN
 numerics; `fast`/`accel` differ from ISA level only in FP32 summation order. Measured on a
@@ -70,8 +73,8 @@ titan quickstart --data /mnt/data/corpus.bin --params 100b --offload-dir /mnt/nv
 With `--offload-dir`, weights, Adam state and every tensor of at least `--offload-mb` (default 4 MiB)
 live in memory-mapped files on that storage; parameters are initialized lazily, one tensor at a
 time, directly into those files. RAM holds the working set of one kernel plus the page cache.
-Exact accounting of the compiled GPT-100B training step (101.7 B parameters, 380,485 kernels,
-sequence 128): **12.5 GB RAM and 1.63 TB storage**. That is ~16 bytes per parameter: FP32 weights, Adam m and v (all
+Exact accounting of the compiled GPT-100B training step (101.7 B parameters, 14,647 kernels,
+sequence 128 or 2048): **10.4 GB RAM and 1.63 TB storage**. That is ~16 bytes per parameter: FP32 weights, Adam m and v (all
 updated in place, no copies) plus gradients. Use NVMe: every step reads and writes the optimizer
 state, so storage bandwidth sets the speed. If the storage is too small, `quickstart`
 prints the exact requirement and the distributed plan instead. Measured in a 16 GB sandbox: a

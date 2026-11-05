@@ -7,7 +7,7 @@ cycle model), compiler, training runtime, RTL matrix engine with bit-exact co-si
 ```
 MODEL / FRAMEWORK      titan.nn (MLP, multi-head attention, transformer blocks), titan.train
 COMPUTATION GRAPH      titan.compiler.graph  (+ autodiff: backward pass is also a graph)
-TITAN IR               titan.compiler.ir     (gemm / ewise / reduce / rownorm / transpose / copy kernels)
+TITAN IR               titan.compiler.ir     (gemm / ewise / reduce / rownorm / transpose / copy / gather / head-layout kernels)
 GRAPH OPTIMIZER        fusion, liveness memory planning, barrier elimination, stream interleaving
 TITAN COMPILER         tiling into LOCAL SRAM, double buffering, multi-core distribution
 TITAN ISA v1.0         titan.isa  — 20 opcodes, 64-bit binary encoding, assembler, docs/ISA.md
@@ -26,18 +26,23 @@ python -m titan matmul --m 256 --n 192 --k 128 --dtype bf16   # vertical slice, 
 python -m titan quickstart                     # train an MLP on TITAN (or: -i for guided mode)
 python -m titan quickstart --data examples/data/machines.csv --target status   # your own data
 python -m titan quickstart --data my_book.txt  # your own text -> character-level transformer
+python -m titan tokenizer train my_book.txt --vocab 4096 --out tok.json   # your own BPE tokenizer
+python -m titan quickstart --data my_book.txt --tokenizer tok.json \
+       --model-config examples/models/llama_style.toml      # your own architecture (docs/CUSTOMIZE.md)
+python -m titan quickstart --data my_book.txt --set norm=rmsnorm activation=swiglu position=rope kv_heads=1
+python -m titan quickstart --data my_book.txt --model-file examples/models/my_model.py:build   # your own code
 python -m titan quickstart --params 100m       # sized transformer, trained for real on this host
 python -m titan quickstart --params 100b --offload-dir /mnt/nvme   # 100B on ONE machine (needs ~1.7 TB NVMe)
 python -m titan plan --params 100b --single-machine   # compiles the full 100B training step, exact RAM/storage
 python -m titan quickstart --params 100b --lora-rank 8 --seq 32 --batch 1 --eval-every 0   # 100B LoRA on ~8 GB RAM
 python -m titan plan --params 100b --devices 64 --compare-b300
 python -m titan env --path /mnt/storage        # your machine's RAM/GPU/storage limits
-python -m titan prepare-data corpus/*.txt --out corpus.bin   # any-size byte corpus (memory-mapped)
+python -m titan prepare-data corpus/*.txt --out corpus.bin   # any-size corpus, memory-mapped (--tokenizer tok.json)
 python -m titan quickstart --data corpus.bin --params 300m --backend auto        # pretrain
 python -m titan quickstart --data domain.txt --tokenizer byte --params 300m \
        --init-from runs/.../checkpoints/best.npz --freeze tlm.tok_emb --lr 1e-4  # fine-tune
 python -m titan bench --suite default          # reproducible report (reports/)
-python -m pytest -q                            # 315 tests (RTL tests need Verilator)
+python -m pytest -q                            # 346 tests (RTL tests need Verilator)
 make lint test                                 # RTL lint (warnings = errors) + 4 RTL simulations
 ```
 
@@ -53,9 +58,10 @@ make lint test                                 # RTL lint (warnings = errors) + 
 | NN + autodiff | MLP, attention, transformer block, char-LM; reverse-mode AD | every gradient rule vs finite differences |
 | Training | forward+loss+backward+optimizer as one TITAN program; checkpoints | loss reduction, bitwise resume, corruption detection |
 | Own data | `.csv/.tsv/.npz/.npy` (classification or regression), `.txt` (language model) | format, validation and end-to-end tests |
-| Execution speed | bit-exact replay of the ISA program; `fast` backend runs TITAN IR kernels on whole tensors | replay memory images identical to the reference engine; fast ≈ ISA within FP32 tolerance |
+| Execution speed | bit-exact replay of the ISA program; compiled execution plans (whole TITAN program = one generated NumPy/PyTorch function); `--backend auto` (default) | replay memory images identical to the reference engine; plans bit-identical to the IR interpreters; IR ≈ ISA within FP32 tolerance |
+| Your architecture / tokenizer | configurable transformer (norm, activation, RoPE/learned/sinusoidal, GQA/MQA, pre/post-LN, tied embeddings, biases) from JSON/TOML/`--set`; Python model plugins; char/byte/BPE/Hugging Face/SentencePiece/plugin tokenizers; token corpora | every variant vs float64 reference on ISA and IR executors; exact parameter/FLOP accounting; see [docs/CUSTOMIZE.md](docs/CUSTOMIZE.md) |
 | Large models | meta graphs of any size, distributed planner (TP×PP×DP, ZeRO, recompute) up to 175B | parameter/FLOP formulas equal compiled graphs exactly |
-| Beyond RAM | lazy initialization + storage offload (weights, Adam state, large temporaries memory-mapped on NVMe); full GPT-100B training step compiles (380k kernels, 35 s) and needs 12.5 GB RAM + 1.63 TB storage | offloaded == in-RAM bit for bit; exact schedule accounting |
+| Beyond RAM | lazy initialization + storage offload (weights, Adam state, large temporaries memory-mapped on NVMe); full GPT-100B training step compiles (14.6k kernels, 1 s) and needs 10.4 GB RAM + 1.63 TB storage | offloaded == in-RAM bit for bit; exact schedule accounting |
 | Own environment | `accel` backend (TITAN IR kernels via PyTorch on GPU/CPU), byte corpora memory-mapped from disk, pretrain / continue / fine-tune (`--init-from`, `--freeze`), AdamW + cosine + clipping + best checkpoint + early stopping, `titan env`, Dockerfile | accel ≈ fast executor; fine-tune transfer and freeze tests; see [docs/DEPLOY.md](docs/DEPLOY.md) |
 | Performance | cycle model, roofline, benchmark harness, verified autotuner | `reports/` (method + provenance on every number) |
 | RTL | `rtl/titan_mxu_tile.sv` (MXU tile), `rtl/rtl_mac_array.sv` (D0) | directed + 2000-cycle random TBs; Verilator co-sim 0 mismatches |
@@ -77,7 +83,9 @@ make lint test                                 # RTL lint (warnings = errors) + 
 | 101 M-parameter transformer step, 4-core host | 7.2 s (`fast`) → 2.7 s (`accel`, CPU), identical loss | measured on the host |
 | Byte-level pretrain (docs) → fine-tune (code), 150 steps | eval loss 2.01 vs 2.37 from scratch | measured, `accel` backend |
 | Model larger than this host's RAM, trained with storage offload | 705 M parameters on 16 GB RAM, 3 steps in 370 s | measured on the host |
-| GPT-100B training step on one machine (exact, compiled program) | 12.5 GB RAM + 1.63 TB storage | schedule accounting |
+| GPT-100B training step on one machine (exact, compiled program) | 10.4 GB RAM + 1.63 TB storage | schedule accounting |
+| Training speed vs previous version, same host (char-LM 300 steps / 72 k model 500 steps / 3.2 M model step) | 2.94 → 0.68 s / 7.06 → 2.7 s / 119 → 55 ms | measured on the host, A/B (docs/PERFORMANCE.md §9) |
+| GPT-100B training program compile | 23.1 s → 1.0 s (380,485 → 14,647 kernels) | measured on the host, A/B |
 | **100.74 B-parameter transformer trained on this 16 GB host** (LoRA rank 8, frozen base regenerated on demand) | 2 steps, 12.85 Tera-ops and ~22 min per step, peak RAM 7.2 GB | measured on the host (procedural base, not pretrained) |
 | GPT-2 initialization for large transformers (101 M, 12 steps) | eval loss 2.83 vs 3.51 with Xavier | measured, `accel` backend |
 | GPT-100B on 64 × `titan-x1-target` | ~2.2 s/step, ~0.96 M tokens/s, MFU 41 %; 7.0× the same plan on 64 × B300 | analytical planner, assumed links (Mode C) |
@@ -93,10 +101,10 @@ make lint test                                 # RTL lint (warnings = errors) + 
 * B300 figures (`titan/perf/reference.py`) carry sources and retrieval date; the code refuses
   cross-precision, sparse-vs-dense and simulated-vs-peak ratios.
 * 100B parameters: full training needs ≈1.6 TB of state — one machine does it with `--offload-dir`
-  on enough NVMe (12.5 GB RAM suffice), bounded by storage bandwidth; not run here (≈20 GB free disk).
+  on enough NVMe (10.4 GB RAM suffice), bounded by storage bandwidth; not run here (≈20 GB free disk).
   LoRA fine-tuning of a 100.7B model ran on this 16 GB host (base frozen and regenerated from seeds,
   i.e. a procedural base — real pretrained weights would be memory-mapped from storage instead).
 
 Documentation: [Architecture](docs/ARCHITECTURE.md) · [ISA](docs/ISA.md) · [Performance](docs/PERFORMANCE.md) ·
 [Verification](docs/VERIFICATION.md) · [FPGA](docs/FPGA.md) · [Roadmap](docs/ROADMAP.md) ·
-[Status](docs/PROJECT_STATUS.md) · [M0 audit](docs/AUDIT_M0.md) · [Speed & large models](reports/SPEED_AND_LARGE_MODELS.md) · [Own environment](docs/DEPLOY.md)
+[Status](docs/PROJECT_STATUS.md) · [M0 audit](docs/AUDIT_M0.md) · [Speed & large models](reports/SPEED_AND_LARGE_MODELS.md) · [Own environment](docs/DEPLOY.md) · [Custom models & tokenizers](docs/CUSTOMIZE.md)
