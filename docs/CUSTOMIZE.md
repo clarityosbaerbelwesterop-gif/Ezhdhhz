@@ -32,6 +32,7 @@ JSON or TOML; a `[model]` section is accepted. All keys (`titan.nn.TransformerCo
 | `causal` | causal mask | `true` |
 | `vocab` | optional; ≥ tokenizer vocabulary (pad e.g. to a multiple of 64) | tokenizer size |
 | `name` | parameter-name prefix | `tlm` |
+| `experts`, `top_k`, `capacity_factor`, `moe_every`, `moe_aux`, `shared_expert` | mixture of experts ([REASONING.md](REASONING.md)) | dense |
 
 Typical presets: GPT-2 = defaults + `qkv_bias=true`; Llama = `rmsnorm, swiglu, rope, bias=false,
 kv_heads<heads`; Mistral-like = Llama + GQA; original Transformer decoder = `prenorm=false,

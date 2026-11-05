@@ -33,7 +33,7 @@ from .device import RunOutput
 
 MODE = "fast"
 TOKEN_HEAD_KINDS = {"onehot", "embedding", "embedding_grad", "split_heads", "merge_heads", "repeat_heads",
-                    "sum_head_groups"}
+                    "sum_head_groups", "moe_slots"}
 
 
 def token_head_kernel(K, xs):
@@ -42,11 +42,20 @@ def token_head_kernel(K, xs):
     if K.kind == "onehot":
         ids = np.asarray(xs[0]).reshape(-1)
         return (ids[:, None] == np.arange(K.attrs["n"])[None, :]).astype(np.float32)
+    if K.kind == "moe_slots":
+        from ..compiler.reference import moe_slots_np
+        return moe_slots_np(xs[0], K.attrs["capacity"]).astype(np.int32)
     if K.kind == "embedding":
-        return np.asarray(xs[1])[np.asarray(xs[0]).reshape(-1).astype(np.int64)]
+        ids = np.asarray(xs[0]).reshape(-1).astype(np.int64)
+        out = np.asarray(xs[1])[np.maximum(ids, 0)]
+        if ids.min(initial=0) < 0:                   # empty routing slots -> zero rows
+            out = np.where((ids >= 0)[:, None], out, np.float32(0))
+        return out
     if K.kind == "embedding_grad":
         ids = np.asarray(xs[0]).reshape(-1).astype(np.int64)
         dy = np.asarray(xs[1], dtype=np.float32)
+        if ids.min(initial=0) < 0:
+            dy, ids = dy[ids >= 0], ids[ids >= 0]
         out = np.zeros(K.output.shape, dtype=np.float32)
         order = np.argsort(ids, kind="stable")
         uniq, starts = np.unique(ids[order], return_index=True)

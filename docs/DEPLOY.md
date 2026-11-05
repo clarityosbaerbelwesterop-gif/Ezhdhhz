@@ -29,6 +29,9 @@ Custom architectures and tokenizers (`--model-config`, `--set`, `--model-file`, 
 | `accel` | the same plan via PyTorch on GPU or all CPU cores (exact BF16 GEMMs on AMX / TF32) | large models, GPUs |
 | `auto` (default) | `accel` on a CUDA GPU or for `d_model ≥ 128`, else `fast` (measured crossover) | everything |
 
+`--compile` additionally runs the accel program through `torch.compile` (one-time 0.5–2 min,
+then 1.3–2.2× faster steps measured on CPU; use for long runs).
+
 All backends run the same compiled program (autodiff, fusion, optimizer on TITAN) with TITAN
 numerics; `fast`/`accel` differ from ISA level only in FP32 summation order. Measured on a
 4-core host: 101 M-parameter transformer step 7.2 s (`fast`) → 2.7 s (`accel`, CPU), same loss.

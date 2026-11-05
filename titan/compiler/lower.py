@@ -23,7 +23,7 @@ from ..hw.memory import Allocator
 from ..isa import build as B
 from ..isa import build as B_
 from ..isa.spec import ISA_VERSION, Act, Axis, Norm, Opcode, Program, ReduceOp, Space, TensorRef
-from .graph import BINARY, DUAL, EWISE, HEADS, ROWNORM, UNARY, Graph, Tensor
+from .graph import BINARY, DUAL, EWISE, HEADS, IR_ONLY, ROWNORM, UNARY, Graph, Tensor
 from .ir import Buffer, Kernel, Module, Step
 
 _VEC = {"add": Opcode.VECTOR_ADD, "sub": Opcode.VECTOR_SUB, "mul": Opcode.VECTOR_MULTIPLY,
@@ -303,7 +303,7 @@ class Compiler:
                 K.nodes.append(nd.id)
                 kernels.append(K)
                 producer[nd.output.id] = K
-            elif nd.op in DUAL or nd.op in HEADS:
+            elif nd.op in DUAL or nd.op in HEADS or nd.op in IR_ONLY:
                 K = Kernel(nd.op, nd.output.shape, attrs=dict(nd.attrs))
                 K.in_tensors, K.modes = list(ins), ["full"] * len(ins)
                 K.head = nd.output
@@ -949,6 +949,9 @@ class Compiler:
         if self.o.emit_isa and any(t.value is None for t in g.tensors if t.kind == "param"):
             raise CompileError("graph contains meta parameters (shape only): compile with "
                                "CompileOptions(emit_isa=False) for TITAN IR, or plan it with titan.scale")
+        if self.o.emit_isa and any(nd.op in IR_ONLY for nd in self.g.nodes):
+            raise CompileError("graph contains data-dependent routing (moe_slots) without an ISA lowering: "
+                               "use a TITAN IR backend (fast/accel) or dense MoE dispatch for ISA execution")
         kernels = self.form_kernels()
         kernels = self.place_assigns(kernels)
         named, allb = self.plan_memory(kernels)

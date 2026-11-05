@@ -23,6 +23,11 @@ plugins) with fingerprinted uint16/uint32 token corpora. Training is 2–4× fas
 models (compiled execution plans, fused multi-head attention, gather embeddings) and the GPT-100B
 step compiles 23× faster (14,647 instead of 380,485 kernels) — `docs/PERFORMANCE.md` §9.
 
+Mixture of experts, Frankenstein models (soup, SLERP, task arithmetic, TIES, layer stacking, MoE
+upcycling), post-training (SFT with response-only loss), KV-cached generation, test-time compute
+(best-of-n with verifiers, self-consistency, beam) and reasoning RL by rejection sampling (STaR):
+`docs/REASONING.md`. Measured on a synthetic reasoning task: RFT 75.3 % → 98.0 % held-out accuracy.
+
 ## Evidence status
 
 | Item | Status |
@@ -63,6 +68,9 @@ step compiles 23× faster (14,647 instead of 380,485 kernels) — `docs/PERFORMA
   encoder-decoder models, convolutions and mixture-of-experts routing are not supported yet.
   Tokenizer plugins run in Python on the host (pre-tokenize big corpora with `prepare-data`).
 * `--backend auto` measured its crossover on one CPU host; GPU speed is untested here (no GPU).
+* MoE routing tables are built on the host (data-dependent, no ISA lowering; the ISA path uses dense
+  dispatch); no expert parallelism across devices yet. Reasoning results are small-model, synthetic-
+  task measurements; no DPO/GRPO yet.
 
 ## Performance honesty
 

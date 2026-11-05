@@ -42,10 +42,11 @@ def default_device() -> str:
 
 
 class AccelDevice:
-    def __init__(self, cfg="dev", device: str | None = None, compiled: bool = True):
+    def __init__(self, cfg="dev", device: str | None = None, compiled: bool = True, torch_compile: bool = False):
         import torch
         self.torch = torch
         self.compiled = compiled           # whole program as one generated function (runtime/plan.py)
+        self.torch_compile = torch_compile  # + torch.compile of that function (fuses element-wise chains)
         self._plans: dict[int, tuple] = {}
         self.cfg = load_config(cfg)
         self.device = torch.device(device or default_device())
@@ -327,11 +328,21 @@ class AccelDevice:
         t = self.torch
         a = K.attrs
         if K.kind == "onehot":
-            return t.nn.functional.one_hot(self._ids(xs[0]), a["n"]).to(t.float32)
+            ids = self._ids(xs[0])
+            return (ids[:, None] == t.arange(a["n"], device=self.device)[None, :]).to(t.float32)
+        if K.kind == "moe_slots":
+            from ..compiler.reference import moe_slots_np
+            return moe_slots_np(self._host(xs[0]), a["capacity"]).astype(np.int32)
         if K.kind == "embedding":
-            return xs[1].index_select(0, self._ids(xs[0]))
+            ids = self._ids(xs[0])
+            out = xs[1].index_select(0, ids.clamp(min=0))
+            return out * (ids >= 0).to(out.dtype)[:, None] if bool((ids < 0).any()) else out
         if K.kind == "embedding_grad":
-            return t.zeros(K.output.shape, dtype=t.float32, device=self.device).index_add_(0, self._ids(xs[0]), xs[1])
+            ids, dy = self._ids(xs[0]), xs[1]
+            if bool((ids < 0).any()):
+                keep = ids >= 0
+                ids, dy = ids[keep], dy[keep]
+            return t.zeros(K.output.shape, dtype=t.float32, device=self.device).index_add_(0, ids, dy)
         x = xs[0]
         B, H = a["batch"], a["heads"]
         if K.kind == "split_heads":
@@ -361,7 +372,12 @@ class AccelDevice:
             plan = self._plans.get(id(exe))
             if plan is None:
                 from .plan import torch_plan
-                plan = self._plans[id(exe)] = torch_plan(self, exe)
+                plan = torch_plan(self, exe)
+                if self.torch_compile:
+                    import logging
+                    logging.getLogger("torch._dynamo").setLevel(logging.ERROR)
+                    plan = (self.torch.compile(plan[0], dynamic=False), plan[1])
+                self._plans[id(exe)] = plan
             with self.torch.no_grad():
                 plan[0](self.mem)
             return self._finish(exe, fetch, t0, t1, plan[1])

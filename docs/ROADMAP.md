@@ -31,7 +31,9 @@ stated gaps; **open** = not started. Commit SHAs refer to branch `titan-x1/platf
 | Beyond RAM: lazy init + storage offload; full 100B training step compiles with exact memory plan | done | `tests/test_offload.py` (`c835b90`) |
 | LoRA with regenerated frozen base; 100.74B-parameter LoRA training run on a 16 GB host | done | `tests/test_environment.py`, `docs/DEPLOY.md` (`92d8639`) |
 | Bring your own transformer (config/plugins) and tokenizer (BPE/HF/SentencePiece/plugins); compiled execution plans; fused attention | done | `tests/test_customize.py`, `docs/CUSTOMIZE.md`, `docs/PERFORMANCE.md` §9 |
-| CUDA graphs / `torch.compile` for the accel plan; in-place element-wise chains | open | next host-speed step (GPU launch overhead, memory-bound optimizer passes) |
+| MoE, Frankenstein merges, SFT, KV-cached generation, test-time compute, RFT; `--compile` | done | `tests/test_moe_reasoning.py`, `docs/REASONING.md` |
+| CUDA graphs for the accel plan; in-place element-wise chains; expert parallelism over devices | open | next host-speed step |
+| Preference optimization (DPO) and policy-gradient RL (GRPO) on top of the generation runtime | open | builds on generate + SFT loss masking |
 | Multi-GPU / multi-node runtime (data + tensor parallel over real devices) | open | next step for speed at 100B scale |
 
 ## Next gates (in order)

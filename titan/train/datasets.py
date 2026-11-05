@@ -284,6 +284,12 @@ class Sampler:
 
     def next(self) -> dict:
         ds, b = self.ds, self.batch
+        if ds.kind == "lm" and getattr(ds, "mask_train", None) is not None:      # SFT: masked, packed
+            from .sft import masked_targets
+            x, y = masked_targets(ds, "train", self.rng.choice(ds.starts_train, b), ds.seq)
+            n_valid = max(1, int((y >= 0).sum()))
+            return {"x": x.reshape(-1, 1).astype(np.int32), "y": y.reshape(-1, 1).astype(np.int32),
+                    "lm_w": np.array([[y.size / n_valid]])}
         if ds.kind == "lm":                       # token ids; one-hot targets are built on the device
             starts = self.rng.integers(0, len(ds.x_train) - ds.seq - 1, b)
             idx = starts[:, None] + np.arange(ds.seq)[None, :]
@@ -311,6 +317,16 @@ class Sampler:
 
 def eval_batches(ds: Dataset, batch: int):
     """Fixed evaluation batches ``(x, y, n_valid)``; the last batch is padded and only n_valid rows count."""
+    if ds.kind == "lm" and getattr(ds, "mask_test", None) is not None:
+        from .sft import masked_targets
+        st = np.asarray(ds.starts_test)[:getattr(ds, "eval_windows_max", None) or len(ds.starts_test)]
+        st = st[st <= max(0, len(ds.x_test) - ds.seq - 1)] if len(ds.x_test) > ds.seq + 1 else st[:0]
+        for i in range(0, len(st), batch):
+            chunk = st[i:i + batch]
+            pad = np.concatenate([chunk, np.full(batch - len(chunk), chunk[-1])])
+            x, y = masked_targets(ds, "test", pad, ds.seq)
+            yield x.reshape(-1, 1).astype(np.int32), y.ravel(), len(chunk) * ds.seq
+        return
     if ds.kind == "lm":
         n = (len(ds.x_test) - 1) // ds.seq
         n = min(n, getattr(ds, "eval_windows_max", None) or n)

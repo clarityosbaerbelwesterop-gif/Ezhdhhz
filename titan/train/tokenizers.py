@@ -239,6 +239,18 @@ class PluginTokenizer(Tokenizer):
         return self.obj.decode(list(ids))
 
 
+def tokenizer_from_description(d: dict) -> Tokenizer:
+    kind = d.get("kind")
+    if kind == "char":
+        return CharTokenizer(list(d["chars"]))
+    if kind == "byte":
+        return ByteTokenizer()
+    spec = d.get("spec")
+    if not spec or spec in ("char", "byte"):
+        raise ValueError(f"cannot rebuild tokenizer from {d}")
+    return load_tokenizer(spec)
+
+
 def load_tokenizer(spec: str, fit_text: str | None = None) -> Tokenizer:
     """Resolve a tokenizer spec (see module docstring). ``char`` needs ``fit_text``."""
     if spec == "byte":
@@ -266,6 +278,8 @@ def load_tokenizer(spec: str, fit_text: str | None = None) -> Tokenizer:
     if p.suffix == ".model":
         return SentencePieceTokenizer(p)
     data = json.loads(p.read_text())
+    if data.get("format") == "titan-tokenizer-desc-v1":     # a run's tokenizer.json (exact vocabulary)
+        return tokenizer_from_description(data)
     if data.get("format") == "titan-bpe-v1":
         return BPETokenizer([tuple(m) for m in data["merges"]], spec=str(p))
     if "model" in data and "added_tokens" in data:

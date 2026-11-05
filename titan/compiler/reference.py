@@ -64,6 +64,18 @@ def head_layout(op: str, x, a: dict, xp=np):
     return x.reshape(B, H, G, T, dh).sum(axis=2).reshape(B * H * T, dh)
 
 
+def moe_slots_np(mask, capacity: int, xp=np):
+    """Reference routing table (see Graph.moe_slots)."""
+    m = np.asarray(mask) > 0.5
+    n_tok, n_exp = m.shape
+    pos = np.cumsum(m.astype(np.int64), axis=0) - 1
+    keep = m & (pos < capacity)
+    rows, cols = np.nonzero(keep)
+    out = np.full(n_exp * capacity, -1, dtype=np.int64)
+    out[cols * capacity + pos[rows, cols]] = rows
+    return out.reshape(-1, 1)
+
+
 def evaluate(g: Graph, feeds: dict, params: dict | None = None) -> dict[int, np.ndarray]:
     """Return {tensor id: value} for every tensor of the graph."""
     env: dict[int, np.ndarray] = {}
@@ -126,10 +138,14 @@ def evaluate(g: Graph, feeds: dict, params: dict | None = None) -> dict[int, np.
             elif op == "onehot":
                 r = (x[0].reshape(-1)[:, None] == np.arange(a["n"])[None, :]).astype(np.float64)
             elif op == "embedding":
-                r = x[1][x[0].reshape(-1).astype(np.int64)]
+                ids = x[0].reshape(-1).astype(np.int64)
+                r = np.where((ids >= 0)[:, None], x[1][np.maximum(ids, 0)], 0.0)      # id -1 = empty slot
             elif op == "embedding_grad":
+                ids = x[0].reshape(-1).astype(np.int64)
                 r = np.zeros(n.output.shape)
-                np.add.at(r, x[0].reshape(-1).astype(np.int64), x[1])
+                np.add.at(r, ids[ids >= 0], x[1][ids >= 0])
+            elif op == "moe_slots":
+                r = moe_slots_np(x[0], a["capacity"])
             elif op in ("split_heads", "merge_heads", "repeat_heads", "sum_head_groups"):
                 r = head_layout(op, x[0], a)
             elif op == "xent":

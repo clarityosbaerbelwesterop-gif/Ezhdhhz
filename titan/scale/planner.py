@@ -44,11 +44,53 @@ class TransformerSpec:
     qkv_bias: bool = False
     norm: str = "layernorm"
     position: str = "learned"
+    experts: int = 0           # mixture of experts (0 = dense MLP)
+    top_k: int = 2
+    capacity_factor: float = 1.25
+    moe_every: int = 1
+    shared_expert: bool = False
 
     @classmethod
     def from_config(cls, c) -> "TransformerSpec":
         return cls(c.name, c.layers, c.d_model, c.heads, c.d_ff, c.vocab, c.seq, c.kv_heads, c.gated,
-                   c.tie_embeddings, c.bias, c.qkv_bias, c.norm, c.position)
+                   c.tie_embeddings, c.bias, c.qkv_bias, c.norm, c.position, c.experts, c.top_k,
+                   c.capacity_factor, c.moe_every, c.shared_expert)
+
+    def moe_layers(self) -> int:
+        return self.layers // self.moe_every if self.experts else 0
+
+    def _mlp_params(self) -> int:
+        d, f = self.d_model, self.d_ff
+        return (3 if self.gated else 2) * d * f + (((2 if self.gated else 1) * f + d) if self.bias else 0)
+
+    def _moe_params(self) -> int:
+        """Router + experts (+ shared expert) of one MoE block."""
+        return self.d_model * self.experts + self.experts * self._mlp_params() + \
+            (self._mlp_params() if self.shared_expert else 0)
+
+    def active_params(self) -> int:
+        """Parameters used per token (top_k of the experts)."""
+        if not self.experts:
+            return self.params()
+        return self.params() - self.moe_layers() * (self.experts - self.top_k) * self._mlp_params()
+
+    def capacity(self, tokens: int, dense: bool = False) -> int:
+        import math
+        if dense:
+            return tokens
+        return min(tokens, max(1, math.ceil(self.capacity_factor * tokens * self.top_k / self.experts)))
+
+    def fwd_flops(self, batch: int, dense_moe: bool = False) -> int:
+        """Exact matmul FLOPs of one forward pass over ``batch`` sequences (MoE: expert capacity slots)."""
+        if not self.experts:
+            return batch * self.fwd_flops_per_seq()
+        n = batch * self.seq
+        d, f = self.d_model, self.d_ff
+        mats = 3 if self.gated else 2
+        dense_mlp = 2 * n * mats * d * f
+        moe = 2 * n * d * self.experts + 2 * self.experts * self.capacity(n, dense_moe) * mats * d * f + \
+            (dense_mlp if self.shared_expert else 0)
+        return batch * self.fwd_flops_per_seq() + self.moe_layers() * (moe - dense_mlp)
 
     @property
     def kvd(self) -> int:
@@ -57,15 +99,15 @@ class TransformerSpec:
     def layer_params(self) -> int:
         d, f, kvd = self.d_model, self.d_ff, self.kvd
         attn = 2 * d * d + 2 * d * kvd + (d if self.bias else 0) + ((d + 2 * kvd) if self.qkv_bias else 0)
-        mlp = (3 if self.gated else 2) * d * f + (((2 if self.gated else 1) * f + d) if self.bias else 0)
         norms = 2 * (2 * d if self.norm == "layernorm" else d)
-        return attn + mlp + norms
+        return attn + self._mlp_params() + norms
 
     def params(self) -> int:
         d, V = self.d_model, self.vocab
         emb = V * d + (self.seq * d if self.position == "learned" else 0)
         head = (0 if self.tie_embeddings else d * V) + (V if self.bias else 0)
-        return self.layers * self.layer_params() + emb + (2 * d if self.norm == "layernorm" else d) + head
+        moe = self.moe_layers() * (self._moe_params() - self._mlp_params())
+        return self.layers * self.layer_params() + moe + emb + (2 * d if self.norm == "layernorm" else d) + head
 
     def fwd_flops_per_seq(self) -> int:
         """Matmul FLOPs of one forward pass over one sequence (embeddings are gathers)."""

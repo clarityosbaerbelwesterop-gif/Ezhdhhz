@@ -8,8 +8,17 @@ Everything is expressed with TITAN graph ops, so the same model trains on every 
     position     learned | rope | sinusoidal | none       qkv_bias  biases on q, k, v (GPT-2 style)
     heads / kv_heads (grouped-query attention)            tie_embeddings  LM head = token embedding^T
 
+    experts / top_k / capacity_factor / moe_every / moe_aux / shared_expert   mixture-of-experts MLPs
+
 Attention is fused across heads (split_heads -> batched products -> merge_heads), token and
 position embeddings are row gathers. A config is a dataclass, a JSON file or a TOML file.
+
+Mixture of experts: a router picks the top-k experts per token (softmax renormalized over them);
+tokens are dispatched sparsely (gather -> expert-batched GEMMs -> gate -> scatter-add) with a
+per-expert capacity of ceil(capacity_factor * tokens * k / experts) (overflow tokens skip the
+expert, as in Switch/GShard), plus the Switch load-balancing loss. The TITAN ISA path uses the
+mathematically identical dense dispatch (every expert sees every token, gate 0 when unselected).
+``build_decode`` builds a one-token step with a key/value cache for fast generation.
 """
 from __future__ import annotations
 
@@ -50,6 +59,12 @@ class TransformerConfig:
     prenorm: bool = True
     causal: bool = True
     name: str = "tlm"
+    experts: int = 0                 # > 0: mixture-of-experts MLP with this many experts
+    top_k: int = 2                   # experts per token
+    capacity_factor: float = 1.25    # expert capacity = ceil(cf * tokens * top_k / experts)
+    moe_every: int = 1               # MoE in every n-th block (1 = all blocks)
+    moe_aux: float = 0.01            # load-balancing loss coefficient
+    shared_expert: bool = False      # dense MLP added to the experts' output (always active)
 
     def __post_init__(self):
         if self.kv_heads is None:
@@ -76,6 +91,8 @@ class TransformerConfig:
             raise ValueError(f"norm in {NORMS}, activation in {ACTIVATIONS}, position in {POSITIONS}")
         if self.position == "rope" and self.head_dim % 2:
             raise ValueError("rope needs an even head dimension")
+        if self.experts and not (1 <= self.top_k <= self.experts and self.moe_every >= 1):
+            raise ValueError("MoE needs 1 <= top_k <= experts and moe_every >= 1")
         for k in ("vocab", "seq", "d_model", "layers", "heads", "d_ff"):
             if getattr(self, k) <= 0:
                 raise ValueError(f"{k} must be > 0")
@@ -144,21 +161,36 @@ class TransformerLM:
         y = g.layernorm(x, c.norm_eps)
         return g.add(g.mul(y, ps.get(f"{name}.gamma", (1, x.cols), "ones")), ps.get(f"{name}.beta", (1, x.cols), "zeros"))
 
-    def _rope(self, g: Graph, x: Tensor, batch: int, heads: int, tag: str) -> Tensor:
+    def rope_table(self, positions) -> tuple[np.ndarray, np.ndarray]:
+        """cos / sin rows [len(positions), head_dim] (rotate-half convention)."""
         c = self.config
-        T, dh = c.seq, c.head_dim
+        dh = c.head_dim
         inv = c.rope_base ** (-np.arange(0, dh, 2) / dh)
-        ang = np.arange(T)[:, None] * inv[None, :]
-        cos = np.tile(np.concatenate([np.cos(ang), np.cos(ang)], 1), (batch * heads, 1))
-        sin = np.tile(np.concatenate([np.sin(ang), np.sin(ang)], 1), (batch * heads, 1))
+        ang = np.asarray(positions)[:, None] * inv[None, :]
+        return np.concatenate([np.cos(ang), np.cos(ang)], 1), np.concatenate([np.sin(ang), np.sin(ang)], 1)
+
+    def sinusoid_table(self, positions) -> np.ndarray:
+        d = self.config.d_model
+        pos = np.asarray(positions)[:, None] / (10000.0 ** (np.arange(0, d, 2)[None, :] / d))
+        table = np.zeros((len(pos), d))
+        table[:, 0::2], table[:, 1::2] = np.sin(pos), np.cos(pos)
+        return table
+
+    def _rotate(self, g: Graph, x: Tensor, cos: Tensor, sin: Tensor, tag: str) -> Tensor:
+        dh = self.config.head_dim
         h = dh // 2
         R = np.zeros((dh, dh))
         R[np.arange(h) + h, np.arange(h)] = -1.0          # rotate_half(x) = [-x2, x1] = x @ R
         R[np.arange(h), np.arange(h) + h] = 1.0
+        rot = g.matmul(x, g.const(R, name=f"{self.config.name}.rope_R_{tag}{len(g.tensors)}"))
+        return g.add(g.mul(x, cos), g.mul(rot, sin))
+
+    def _rope(self, g: Graph, x: Tensor, batch: int, heads: int, tag: str) -> Tensor:
+        c = self.config
+        cos, sin = self.rope_table(np.arange(c.seq))
         k = len(g.tensors)
-        rot = g.matmul(x, g.const(R, name=f"{c.name}.rope_R_{tag}{k}"))
-        return g.add(g.mul(x, g.const(cos, name=f"{c.name}.rope_cos_{tag}{k}")),
-                     g.mul(rot, g.const(sin, name=f"{c.name}.rope_sin_{tag}{k}")))
+        return self._rotate(g, x, g.const(np.tile(cos, (batch * heads, 1)), name=f"{c.name}.rope_cos_{tag}{k}"),
+                            g.const(np.tile(sin, (batch * heads, 1)), name=f"{c.name}.rope_sin_{tag}{k}"), tag)
 
     def _attention(self, g, ps, x, batch, name, compute, mask):
         c = self.config
@@ -179,16 +211,73 @@ class TransformerLM:
 
     def _mlp(self, g, ps, x, name, compute):
         c = self.config
-        h = linear(g, ps, x, c.d_ff, f"{name}.ff1", bias=c.bias, compute=compute)
+        if c.experts and self._layer is not None and (self._layer + 1) % c.moe_every == 0:
+            y = self._moe(g, ps, x, f"{name}.moe", compute)
+            return g.add(y, self._dense_mlp(g, ps, x, f"{name}.shared", compute)) if c.shared_expert else y
+        return self._dense_mlp(g, ps, x, name, compute)
+
+    def _act(self, g, h, up=None):
+        c = self.config
         if c.activation in ("gelu", "relu"):
-            h = getattr(g, c.activation)(h)
-        elif c.activation == "silu":
-            h = g.mul(h, g.sigmoid(h))
+            return getattr(g, c.activation)(h)
+        if c.activation == "silu":
+            return g.mul(h, g.sigmoid(h))
+        gate = g.mul(h, g.sigmoid(h)) if c.activation == "swiglu" else g.gelu(h)
+        return g.mul(gate, up)
+
+    def _moe(self, g, ps, x, name, compute):
+        """Top-k mixture of experts; sparse dispatch on TITAN IR, dense dispatch on the ISA path."""
+        c = self.config
+        E, k, N, d, f = c.experts, c.top_k, x.rows, x.cols, c.d_ff
+        s = linear(g, ps, x, E, f"{name}.router", bias=False)                       # router logits (FP32)
+        t, m = s, None
+        for i in range(k):                                                          # top-k mask, no gradient
+            sel = g.scale(g.step(g.scale(g.sub(t, g.max(t, 1)), -1.0)), -1.0, 1.0)   # 1 where t == row max
+            m = sel if m is None else g.add(m, sel)
+            if i + 1 < k:
+                t = g.sub(t, g.scale(sel, 1e9))
+        gates = g.softmax(g.add(s, g.scale(m, 1e9, -1e9)))                          # renormalized over top-k
+        if getattr(ps, "dense_moe", False):
+            C, ids = N, g.const(np.tile(np.arange(N), E)[:, None], DType.INT32, name=f"{name}.dense_ids_c{N}")
         else:
-            up = linear(g, ps, x, c.d_ff, f"{name}.ff3", bias=c.bias, compute=compute)
-            gate = g.mul(h, g.sigmoid(h)) if c.activation == "swiglu" else g.gelu(h)
-            h = g.mul(gate, up)
-        return linear(g, ps, h, c.d_model, f"{name}.ff2", bias=c.bias, compute=compute)
+            C = N if self._no_drop else min(N, max(1, math.ceil(c.capacity_factor * N * k / E)))
+            ids = g.moe_slots(m, C)
+        sel_c = g.const(np.repeat(np.eye(E), C, axis=0), name=f"{name}.slot_expert_c{C}")
+        ge = g.sum(g.mul(g.embedding(ids, gates), sel_c), 1)                        # gate of every slot [E*C,1]
+        xe = g.embedding(ids, x)                                                    # dispatch [E*C, d]
+        gpt2 = getattr(ps, "scheme", "xavier") == "gpt2"
+        std_in = 0.02 if gpt2 else math.sqrt(2.0 / (d + f))
+        std_out = 0.02 / math.sqrt(2 * c.layers) if gpt2 else math.sqrt(2.0 / (d + f))
+        e_of_slot = None
+        if c.bias:
+            e_of_slot = g.const(np.repeat(np.arange(E), C)[:, None], DType.INT32, name=f"{name}.slot_e_c{C}")
+
+        def proj(inp, rows, cols, wname, std):
+            y = mm(g, inp, ps.get(f"{name}.{wname}", (E * rows, cols), ("normal", std)), compute, batch=E)
+            if c.bias:
+                y = g.add(y, g.embedding(e_of_slot, ps.get(f"{name}.{wname}_b", (E, cols), "zeros")))
+            return y
+        h = proj(xe, d, f, "w1", std_in)
+        h = self._act(g, h, proj(xe, d, f, "w3", std_in) if c.gated else None)
+        ye = g.mul(proj(h, f, d, "w2", std_out), ge)
+        y = g.embedding_grad(ids, ye, N)                                            # combine (scatter-add)
+        if c.moe_aux and not self._no_drop:                                         # Switch load-balancing loss
+            frac = g.mean(m, 0)
+            prob = g.mean(g.softmax(s), 0)
+            aux = g.scale(g.sum(g.mul(frac, prob), 2), E / k)
+            if not hasattr(g, "aux_losses"):
+                g.aux_losses = []
+            g.aux_losses.append((c.moe_aux, aux))
+        return y
+
+    def _dense_mlp(self, g, ps, x, name, compute):
+        c = self.config
+        h = linear(g, ps, x, c.d_ff, f"{name}.ff1", bias=c.bias, compute=compute)
+        up = linear(g, ps, x, c.d_ff, f"{name}.ff3", bias=c.bias, compute=compute) if c.gated else None
+        return linear(g, ps, self._act(g, h, up), c.d_model, f"{name}.ff2", bias=c.bias, compute=compute)
+
+    _layer = None
+    _no_drop = False
 
     def _block(self, g, ps, x, batch, name, compute, mask):
         c = self.config
@@ -212,16 +301,19 @@ class TransformerLM:
             pos_ids = g.const(np.tile(np.arange(T), batch)[:, None], DType.INT32, name=f"{c.name}.pos_ids")
             h = g.add(h, g.embedding(pos_ids, ps.get(f"{c.name}.pos_emb", (T, d), "embed")))
         elif c.position == "sinusoidal":
-            pos = np.arange(T)[:, None] / (10000.0 ** (np.arange(0, d, 2)[None, :] / d))
-            table = np.zeros((T, d))
-            table[:, 0::2], table[:, 1::2] = np.sin(pos), np.cos(pos)
-            h = g.add(h, g.const(np.tile(table, (batch, 1)), name=f"{c.name}.sinusoid"))
+            h = g.add(h, g.const(np.tile(self.sinusoid_table(np.arange(T)), (batch, 1)), name=f"{c.name}.sinusoid"))
         mask = None
         if c.causal:
             m = np.triu(np.full((T, T), -1e9), 1)
             mask = g.const(np.tile(m, (batch * c.heads, 1)), name=f"{c.name}.mask")
         for i in range(c.layers):
+            self._layer = i
             h = self._block(g, ps, h, batch, f"{c.name}.b{i}", compute, mask)
+        self._layer = None
+        return ids, self._head(g, ps, h, tok, compute)
+
+    def _head(self, g, ps, h, tok, compute):
+        c = self.config
         h = self._norm(g, ps, h, f"{c.name}.lnf")
         if c.tie_embeddings:
             logits = mm(g, h, tok, compute, tb=True)
@@ -229,7 +321,63 @@ class TransformerLM:
                 logits = g.add(logits, ps.get(f"{c.name}.head.b", (1, c.vocab), "zeros"))
         else:
             logits = linear(g, ps, h, c.vocab, f"{c.name}.head", bias=c.bias, compute=compute)
-        return ids, logits
+        return logits
+
+    # ------------------------------------------------------------------ generation (key/value cache)
+    def build_decode(self, g: Graph, ps: ParamStore, batch: int, tmax: int, compute: DType = DType.FP32) -> dict:
+        """One generation step for ``batch`` sequences with a key/value cache of ``tmax`` positions.
+
+        Inputs: tok [B,1] ids, pos [B,1] positions (learned), pvec [B,d] (sinusoidal), rope_cq/sq [B*H,dh] and
+        rope_ck/sk [B*KV,dh] (rope), slot [B*KV,1] cache rows of the current position, amask [B*H,tmax]
+        (0 = visible, -1e9 = not yet written), kc{i}/vc{i} [B*KV*tmax, dh] caches (current rows zero).
+        Outputs: logits [B, vocab]; k{i}, v{i} [B*KV, dh] = this position's keys/values (to store)."""
+        c = self.config
+        if not c.causal:
+            raise ValueError("generation needs a causal model")
+        ps.layers = c.layers
+        B, H, KV, dh, d = batch, c.heads, c.kv_heads, c.head_dim, c.d_model
+        tok = ps.get(f"{c.name}.tok_emb", (c.vocab, d), "embed")
+        h = g.embedding(g.input("tok", (B, 1), DType.INT32), tok)
+        if c.position == "learned":
+            h = g.add(h, g.embedding(g.input("pos", (B, 1), DType.INT32), ps.get(f"{c.name}.pos_emb", (c.seq, d), "embed")))
+        elif c.position == "sinusoidal":
+            h = g.add(h, g.input("pvec", (B, d)))
+        rope = None
+        if c.position == "rope":
+            rope = [g.input(n, (B * hh, dh)) for n, hh in (("rope_cq", H), ("rope_sq", H), ("rope_ck", KV), ("rope_sk", KV))]
+        slot = g.input("slot", (B * KV, 1), DType.INT32)
+        amask = g.input("amask", (B * H, tmax))
+        self._no_drop = True
+        for i in range(c.layers):
+            self._layer = i
+            name = f"{c.name}.b{i}"
+            kc, vc = g.input(f"kc{i}", (B * KV * tmax, dh)), g.input(f"vc{i}", (B * KV * tmax, dh))
+
+            def attn(x, i=i, name=name, kc=kc, vc=vc):
+                q = linear(g, ps, x, H * dh, f"{name}.attn.q", bias=c.qkv_bias, compute=compute)
+                k = linear(g, ps, x, KV * dh, f"{name}.attn.k", bias=c.qkv_bias, compute=compute)
+                v = linear(g, ps, x, KV * dh, f"{name}.attn.v", bias=c.qkv_bias, compute=compute)
+                qh, kh, vh = g.split_heads(q, B, H), g.split_heads(k, B, KV), g.split_heads(v, B, KV)
+                if rope:
+                    qh = self._rotate(g, qh, rope[0], rope[1], "dq")
+                    kh = self._rotate(g, kh, rope[2], rope[3], "dk")
+                g.output(f"k{i}", kh)
+                g.output(f"v{i}", vh)
+                K = g.add(kc, g.embedding_grad(slot, kh, B * KV * tmax))        # cache + this position
+                V = g.add(vc, g.embedding_grad(slot, vh, B * KV * tmax))
+                K, V = g.repeat_heads(K, B, KV, H // KV), g.repeat_heads(V, B, KV, H // KV)
+                sc = g.add(g.scale(mm(g, qh, K, compute, tb=True, batch=B * H), 1.0 / math.sqrt(dh)), amask)
+                o = g.merge_heads(mm(g, g.softmax(sc), V, compute, batch=B * H), B, H)
+                return linear(g, ps, o, d, f"{name}.attn.o", bias=c.bias, compute=compute)
+            if c.prenorm:
+                h = g.add(h, attn(self._norm(g, ps, h, f"{name}.ln1")))
+                h = g.add(h, self._mlp(g, ps, self._norm(g, ps, h, f"{name}.ln2"), name, compute))
+            else:
+                h = self._norm(g, ps, g.add(h, attn(h)), f"{name}.ln1")
+                h = self._norm(g, ps, g.add(h, self._mlp(g, ps, h, name, compute)), f"{name}.ln2")
+        self._layer, self._no_drop = None, False
+        g.output("logits", self._head(g, ps, h, tok, compute))
+        return {"batch": B, "tmax": tmax}
 
 
 def load_model_plugin(spec: str, vocab: int, seq: int, **kwargs):

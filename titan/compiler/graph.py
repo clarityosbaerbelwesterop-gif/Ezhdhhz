@@ -22,6 +22,8 @@ ROWNORM = {"softmax": Norm.SOFTMAX, "layernorm": Norm.LAYERNORM, "rmsnorm": Norm
 # IR-level executors run them as dedicated kernels (gather / scatter-add / one-hot).
 DUAL = {"onehot", "embedding", "embedding_grad"}
 HEADS = {"split_heads", "merge_heads", "repeat_heads", "sum_head_groups"}
+# data-dependent routing without an ISA lowering (TITAN IR executors only; models fall back to dense dispatch)
+IR_ONLY = {"moe_slots"}
 
 
 class GraphError(ValueError):
@@ -294,6 +296,15 @@ class Graph:
         impl.node.attrs["impl"] = True
         return self._op("embedding_grad", [ids, dy, impl], (vocab, dy.cols), DType.FP32, vocab=vocab)
 
+    def moe_slots(self, mask: Tensor, capacity: int) -> Tensor:
+        """Expert routing table: mask [N, E] (1 = token n routed to expert e) -> token ids [E*capacity, 1]
+        (INT32), expert-major, tokens in order; slots beyond an expert's load hold -1 (empty), tokens beyond
+        its capacity are dropped. Gathers of id -1 give zero rows and scatter-adds skip them. No gradient."""
+        if mask.dtype != DType.FP32 or capacity <= 0:
+            raise GraphError("moe_slots expects an FP32 mask and capacity > 0")
+        return self._op("moe_slots", [mask], (mask.cols * capacity, 1), DType.INT32, capacity=capacity,
+                        experts=mask.cols)
+
     def split_heads(self, x: Tensor, batch: int, heads: int) -> Tensor:
         """[B*T, H*dh] -> [B*H*T, dh] (head-major rows, for batched attention)."""
         if x.rows % batch or x.cols % heads:
@@ -320,18 +331,20 @@ class Graph:
         return self._op("sum_head_groups", [x], (x.rows // groups, x.cols), x.dtype, batch=batch, heads=kv_heads,
                         groups=groups)
 
-    def xent(self, logits: Tensor, onehot: Tensor) -> Tensor:
+    def xent(self, logits: Tensor, onehot: Tensor, weighted: bool = False) -> Tensor:
         """Mean softmax cross-entropy over rows -> [1,1].
 
         Composite op: the forward pass is built from primitives (numerically stable
         log-softmax); autodiff uses the fused rule d/dz = (softmax(z) - y) / rows.
+        ``weighted``: target rows may be scaled or zero (loss masking, e.g. prompt tokens in SFT);
+        the rule becomes d/dz = (softmax(z) * rowsum(y) - y) / rows.
         """
         if logits.shape != onehot.shape or logits.dtype != DType.FP32 or onehot.dtype != DType.FP32:
             raise GraphError("xent: logits and onehot must be FP32 with equal shapes")
         zc = self.sub(logits, self.max(logits, 1))
         logp = self.sub(zc, self.log(self.sum(self.exp(zc), 1)))
         impl = self.scale(self.sum(self.mul(onehot, logp), 2), -1.0 / logits.rows)
-        return self._op("xent", [logits, onehot, impl], (1, 1), DType.FP32)
+        return self._op("xent", [logits, onehot, impl], (1, 1), DType.FP32, weighted=weighted)
 
     # ------------------------------------------------------------ graph io
     def output(self, name: str, t: Tensor) -> Tensor:

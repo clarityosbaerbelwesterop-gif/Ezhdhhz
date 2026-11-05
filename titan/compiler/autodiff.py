@@ -109,7 +109,9 @@ def _rules(g: Graph, n, gy: Tensor, need: set = frozenset()):
         return [(x[0], g.transpose(gy))]
     if op == "embedding":
         return [(x[1], g.embedding_grad(x[0], gy, x[1].rows))]
-    if op in ("onehot", "embedding_grad"):
+    if op == "embedding_grad":                       # scatter-add: gradient w.r.t. dy is a gather
+        return [(x[1], g.embedding(x[0], gy))]
+    if op in ("onehot", "moe_slots"):
         return []
     a = n.attrs
     if op == "split_heads":
@@ -122,7 +124,10 @@ def _rules(g: Graph, n, gy: Tensor, need: set = frozenset()):
         return [(x[0], g.repeat_heads(gy, a["batch"], a["heads"], a["groups"]))]
     if op == "xent":
         z, onehot = x[0], x[1]
-        d = g.scale(g.sub(g.softmax(z), onehot), 1.0 / z.rows)
+        sm = g.softmax(z)
+        if n.attrs.get("weighted"):
+            sm = g.mul(sm, g.sum(onehot, 1))
+        d = g.scale(g.sub(sm, onehot), 1.0 / z.rows)
         return [(z, g.mul(d, gy))]
     raise GraphError(f"no gradient rule for {op}")
 

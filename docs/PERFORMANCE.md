@@ -131,3 +131,19 @@ products) and the element-wise/optimizer passes (memory-bound) then dominate. On
 plan removes the per-kernel Python dispatch that otherwise limits small and medium models; GPU
 numbers are **not measured** here (no GPU in this environment).
 
+## 10. Compilation, generation and sparsity (measured)
+
+| | eager plan | with `--compile` (torch.compile of the plan) | one-time compile |
+|---|---|---|---|
+| 72 k params (`--profile medium`) | 7.1 ms/step | 3.2 ms/step (2.17×) | 26 s |
+| 3.2 M params (d 256, L 4, seq 64) | 65.3 ms/step | 34.3 ms/step (1.90×) | 33 s |
+| 17.9 M MoE (8 experts, top-2) | 152.1 ms/step | 105.3 ms/step (1.44×) | 114 s |
+| 100.9 M params (d 1024, L 8) | 1,156 ms/step | 860 ms/step (1.34×) | 70 s |
+
+Losses agree to 4 decimals (fused kernels may round differently; the eager plan is bit-identical
+to the interpreters). Compile pays off after a few hundred to a few thousand steps.
+
+Generation: KV-cached decode 17.6 k tokens/s vs 2.3 k tokens/s with full-window recomputation
+(153 k model, 64 rows, fast backend). Mixture of experts: see docs/REASONING.md §1 (2.8× the
+parameters of an equal-FLOP dense model for +16 % step time).
+

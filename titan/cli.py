@@ -234,6 +234,7 @@ def cmd_quickstart(a) -> int:
                      clip_grad=a.clip_grad, early_stop=a.early_stop, warmup=a.warmup,
                      offload_dir=a.offload_dir, offload_mb=a.offload_mb, init_scheme=a.init,
                      lora_rank=a.lora_rank, lora_alpha=a.lora_alpha, model_config=a.model_config,
+                     torch_compile=a.compile,
                      model_file=a.model_file)
     try:
         tr = Trainer(tc)
@@ -291,6 +292,72 @@ def cmd_prepare_data(a) -> int:
     print(f"wrote {a.out}: {meta['tokens']:,} {kind} tokens from {len(meta['sources'])} file(s), sha256 "
           f"{meta['sha256'][:16]}...; metadata {Path(a.out).with_suffix('.json')}")
     return 0
+
+
+def _problems(path) -> list[dict]:
+    from .train.sft import read_jsonl
+    return [p for p in read_jsonl(path) if "prompt" in p and "answer" in p]
+
+
+def _stops(a):
+    return tuple(x.encode().decode("unicode_escape") for x in (a.stop or []))
+
+
+def cmd_generate(a) -> int:
+    from .infer import generator_for_run, solve
+    from .infer.ttc import load_verifier
+    n = a.n if a.strategy not in ("greedy", "sample") else 1
+    gen = generator_for_run(a.run, batch=max(n, len(a.prompt)), tmax=a.tmax, backend=a.backend, ckpt=a.ckpt)
+    import time as _t
+    t0 = _t.perf_counter()
+    res = solve(gen, a.prompt, a.strategy, a.n, max_new=a.max_new, temperature=a.temperature, top_k=a.top_k,
+                top_p=a.top_p, stop=_stops(a), regex=a.answer_regex, verifier=load_verifier(a.verifier), seed=a.seed)
+    dt = _t.perf_counter() - t0
+    for p, r in zip(a.prompt, res):
+        print(f"{p}{r['completion']}")
+        extra = f" votes={r['votes']}" if "votes" in r else ""
+        print(f"  [{a.strategy}, {r['candidates']} candidate(s), answer={r['answer']}{extra}]")
+    toks = sum(r["tokens"] for r in res)
+    print(f"{toks} tokens in {dt:.2f} s ({toks / dt:,.0f} tokens/s, {gen.backend} backend, "
+          f"{'KV cache' if gen.cached else 'full-window recompute'})")
+    return 0
+
+
+def cmd_reason(a) -> int:
+    from .infer import evaluate_problems, generator_for_run
+    from .infer.ttc import load_verifier
+    probs = _problems(a.data)[:a.limit or None]
+    ver = load_verifier(a.verifier)
+    rows = []
+    for strat in a.strategy:
+        n = 1 if strat in ("greedy", "sample") else a.n
+        gen = generator_for_run(a.run, batch=max(a.batch, n), backend=a.backend, ckpt=a.ckpt)
+        r = evaluate_problems(gen, probs, strat, a.n, max_new=a.max_new, temperature=a.temperature, top_p=a.top_p,
+                              stop=_stops(a), regex=a.answer_regex, verifier=ver, seed=a.seed)
+        rows.append({k: v for k, v in r.items() if k not in ("results", "correct")})
+        print(f"{strat:17s} n={r['n']:<3d} accuracy {100 * r['accuracy']:5.1f}%  tokens {r['generated_tokens']:7d}  "
+              f"{r['wall_s']:7.2f} s  {r['tokens_per_s'] or 0:9,.0f} tok/s")
+    if a.out:
+        Path(a.out).write_text(json.dumps(rows, indent=2))
+    return 0
+
+
+def cmd_rft(a) -> int:
+    from .infer.rft import rejection_finetune
+    from .infer.ttc import load_verifier
+    probs = _problems(a.data)
+    ev = _problems(a.eval_data) if a.eval_data else None
+    rep = rejection_finetune(a.run, probs, ev, rounds=a.rounds, samples=a.samples, steps=a.steps, out=a.out,
+                             temperature=a.temperature, max_new=a.max_new, stop=_stops(a), regex=a.answer_regex,
+                             verifier=load_verifier(a.verifier), backend=a.backend, batch=a.batch, lr=a.lr,
+                             seed=a.seed)
+    print(json.dumps(rep, indent=2))
+    return 0
+
+
+def cmd_merge(a) -> int:
+    from .merge import merge_cli
+    return merge_cli(a)
 
 
 def cmd_tokenizer_train(a) -> int:
@@ -614,6 +681,9 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--lora-rank", type=int, default=0,
                    help="LoRA fine-tuning: train rank-R adapters, base weights frozen (regenerated, never stored)")
     s.add_argument("--lora-alpha", type=float, default=16.0)
+    s.add_argument("--compile", action="store_true",
+                   help="accel: torch.compile the training program (one-time compile of ~0.5-2 min, then faster "
+                        "steps; for long runs)")
     s.add_argument("--init", default="auto", choices=["auto", "xavier", "gpt2"],
                    help="weight initialization (auto: GPT-2 scheme for transformers with d_model >= 256)")
     s.add_argument("--profile", default="small", choices=["tiny", "small", "medium"])
@@ -647,6 +717,67 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--out", required=True)
     s.add_argument("--tokenizer", default="byte", help="byte (default) or any tokenizer spec (see quickstart)")
     s.set_defaults(fn=cmd_prepare_data)
+
+    def gen_args(s, n_default=8):
+        s.add_argument("--backend", default="auto", choices=["auto", "fast", "accel"])
+        s.add_argument("--ckpt", default=None, help="checkpoint .npz (default: best, else latest)")
+        s.add_argument("--max-new", type=int, default=64)
+        s.add_argument("--temperature", type=float, default=0.8)
+        s.add_argument("--top-k", type=int, default=0)
+        s.add_argument("--top-p", type=float, default=1.0)
+        s.add_argument("--n", type=int, default=n_default, help="samples / beam width for test-time compute")
+        s.add_argument("--stop", nargs="*", default=["\\n"], help="stop strings (escapes allowed)")
+        s.add_argument("--answer-regex", default=None, help="answer extraction (default: last number)")
+        s.add_argument("--verifier", default=None, help="file.py:fn(prompt, completion) -> score (best-of-n, rft)")
+        s.add_argument("--seed", type=int, default=0)
+
+    s = sub.add_parser("generate", help="generate text from a training run (KV cache, sampling, beam, TTC)")
+    s.add_argument("run")
+    s.add_argument("--prompt", nargs="+", required=True)
+    s.add_argument("--strategy", default="sample", choices=["greedy", "sample", "best-of-n", "self-consistency", "beam"])
+    s.add_argument("--tmax", type=int, default=None, help="cache length (default: trained sequence length)")
+    gen_args(s, 4)
+    s.set_defaults(fn=cmd_generate)
+
+    s = sub.add_parser("reason", help="accuracy vs test-time compute on {prompt, answer} problems (JSONL)")
+    s.add_argument("run")
+    s.add_argument("--data", required=True)
+    s.add_argument("--strategy", nargs="+", default=["greedy", "self-consistency", "best-of-n"])
+    s.add_argument("--limit", type=int, default=0)
+    s.add_argument("--batch", type=int, default=64, help="generation rows (problems x samples per step)")
+    s.add_argument("--out", default=None)
+    gen_args(s)
+    s.set_defaults(fn=cmd_reason)
+
+    s = sub.add_parser("rft", help="reasoning post-training: rejection sampling fine-tuning (STaR)")
+    s.add_argument("run")
+    s.add_argument("--data", required=True, help="training problems {prompt, answer} (JSONL)")
+    s.add_argument("--eval-data", default=None, help="held-out problems for accuracy before/after")
+    s.add_argument("--rounds", type=int, default=2)
+    s.add_argument("--samples", type=int, default=8)
+    s.add_argument("--steps", type=int, default=300)
+    s.add_argument("--lr", type=float, default=1e-3)
+    s.add_argument("--batch", type=int, default=64)
+    s.add_argument("--out", default="runs/rft")
+    gen_args(s)
+    s.set_defaults(fn=cmd_rft)
+
+    s = sub.add_parser("merge", help="Frankenstein models: soup, SLERP, task arithmetic, TIES, layer stacking, MoE upcycling")
+    s.add_argument("method", choices=["average", "slerp", "task-arithmetic", "ties", "stack", "upcycle-moe"])
+    s.add_argument("--models", nargs="+", required=True, help="run directories or checkpoint .npz files")
+    s.add_argument("--base", default=None, help="base model for task-arithmetic / ties")
+    s.add_argument("--weights", type=float, nargs="+", default=None, help="average: per-model weights")
+    s.add_argument("--t", type=float, default=0.5, help="slerp interpolation")
+    s.add_argument("--scale", type=float, default=1.0, help="task-arithmetic / ties: lambda")
+    s.add_argument("--density", type=float, default=0.2, help="ties: fraction of each task vector kept")
+    s.add_argument("--layers", nargs="+", default=None,
+                   help="stack: SOURCE:FIRST-LAST ranges in order, e.g. 0:0-5 1:2-7 (SOURCE = index in --models)")
+    s.add_argument("--experts", type=int, default=4, help="upcycle-moe: experts per MLP")
+    s.add_argument("--top-k", type=int, default=2, help="upcycle-moe: experts per token")
+    s.add_argument("--noise", type=float, default=0.0, help="upcycle-moe: relative noise to break expert symmetry")
+    s.add_argument("--seed", type=int, default=0)
+    s.add_argument("--out", required=True, help="output checkpoint .npz (+ .json, .model.json)")
+    s.set_defaults(fn=cmd_merge)
 
     s = sub.add_parser("tokenizer", help="train or inspect tokenizers")
     tsub = s.add_subparsers(dest="tcmd", required=True)
