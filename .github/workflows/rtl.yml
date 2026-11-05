@@ -1,4 +1,4 @@
-name: RTL verification
+name: TITAN verification
 
 on:
   push:
@@ -6,19 +6,69 @@ on:
   workflow_dispatch:
 
 jobs:
-  verilator:
+  rtl:
+    name: RTL lint + simulation + synthesis
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Verilator
+      - name: Install Verilator, Icarus Verilog, Yosys
         run: |
           sudo apt-get update
-          sudo apt-get install -y verilator make
-      - name: Show tool version
-        run: verilator --version
-      - name: Lint RTL
+          sudo apt-get install -y verilator iverilog yosys nextpnr-ecp5 make
+      - name: Tool versions
+        run: |
+          verilator --version
+          iverilog -V 2>&1 | head -1
+          yosys -V
+      - name: Lint RTL (warnings are errors)
         run: make lint
-      - name: Run directed simulation
+      - name: Self-checking RTL simulation (Verilator)
         run: make test
-      - name: Check performance model
-        run: python3 scripts/perf_model.py --macs 16 --clock-mhz 100
+      - name: Cross-check with Icarus Verilog
+        run: |
+          iverilog -g2012 -o mac_rand rtl/rtl_mac_array.sv tb/tb_rtl_mac_array_random.sv && vvp mac_rand | tee /dev/stderr | grep -q PASS
+          iverilog -g2012 -o mxu rtl/titan_mxu_tile.sv tb/tb_titan_mxu_tile.sv && vvp mxu | tee /dev/stderr | grep -q PASS
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Python package
+        run: pip install -e ".[test]"
+      - name: RTL co-simulation vs golden model
+        run: python -m pytest -q -m rtl
+      - name: Synthesis resource report
+        run: python -m titan synth --targets generic xc7 ecp5 --pnr --out synth-report
+      - uses: actions/upload-artifact@v4
+        with:
+          name: synth-report
+          path: synth-report
+
+  software:
+    name: Emulator, compiler, training (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install
+        run: pip install -e ".[test]"
+      - name: Install PyTorch (CPU) for the accel backend tests
+        if: matrix.python == '3.13'
+        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Unit, integration and end-to-end tests
+        run: python -m pytest -q -m "not rtl"
+      - name: Vertical slice (graph -> ISA -> execution -> verification)
+        run: python -m titan matmul --m 96 --n 80 --k 64 --dtype bf16 --show 4
+      - name: QuickStart smoke run
+        run: python -m titan quickstart --model mlp --profile tiny --steps 40 --eval-every 20 --out ci-run
+      - name: Benchmark report
+        run: python -m titan bench --suite quick --out ci-bench
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ci-reports-py${{ matrix.python }}
+          path: |
+            ci-run
+            ci-bench

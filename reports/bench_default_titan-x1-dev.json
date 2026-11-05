@@ -1,0 +1,737 @@
+{
+  "suite": "default",
+  "provenance": {
+    "titan_version": "0.1.0",
+    "commit": "0a393698401ca76227e2301a798462accbb4036e",
+    "timestamp_utc": "2026-11-04T19:56:25+00:00",
+    "host": {
+      "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+      "logical_cpus": 4,
+      "os": "Linux-6.18.44-fc-v233-x86_64-with-glibc2.39",
+      "python": "3.13.18",
+      "numpy": "2.5.3"
+    },
+    "arch": "titan-x1-dev",
+    "arch_hash": "ae5c9f6222b89391",
+    "seed": 0
+  },
+  "config": {
+    "name": "titan-x1-dev",
+    "description": "4 cores, 16x16 MXU; default development configuration",
+    "clock_ghz": 1.0,
+    "cores": 4,
+    "mxu_rows": 16,
+    "mxu_cols": 16,
+    "mxu_rate_int4": 4.0,
+    "mxu_rate_int8": 2.0,
+    "mxu_rate_fp16": 1.0,
+    "mxu_rate_bf16": 1.0,
+    "mxu_rate_fp32": 0.25,
+    "mxu_latency": 8,
+    "vpu_lanes": 64,
+    "vpu_latency": 4,
+    "sfu_lanes": 16,
+    "sfu_latency": 12,
+    "local_sram_kib": 512,
+    "gemm_staging_kib": 128,
+    "local_gbps": 512.0,
+    "local_latency": 4,
+    "shared_sram_kib": 4096,
+    "shared_gbps": 512.0,
+    "shared_latency": 24,
+    "l2_kib": 1024,
+    "l2_line": 128,
+    "l2_ways": 8,
+    "l2_gbps": 1024.0,
+    "l2_latency": 40,
+    "hbm_gbps": 256.0,
+    "hbm_latency": 200,
+    "global_mem_gib": 16.0,
+    "emulated_global_mib": 256,
+    "noc_link_gbps": 128.0,
+    "dma_engines": 2,
+    "queue_depth": 64,
+    "cp_dispatch_cycles": 1,
+    "semaphores": 64,
+    "barrier_latency": 16,
+    "kernel_max_depth": 4
+  },
+  "records": [
+    {
+      "workload": "GEMM 128x128x128",
+      "precision": "FP32",
+      "config": "titan-x1-dev",
+      "config_hash": "ae5c9f6222b89391",
+      "program": {
+        "instructions": 16,
+        "kernels": 1,
+        "barriers": 0
+      },
+      "verification": {
+        "max_rel_error": 3.398413013460208e-07,
+        "tolerance": 0.0001,
+        "passed": true,
+        "method": "verified: functional emulation vs float64 NumPy reference"
+      },
+      "functional": {
+        "instructions_retired": 16,
+        "ops": 4194304,
+        "dma_bytes": 393216,
+        "host_wall_s": 0.001174,
+        "method": "measured: host wall clock of the software emulator on the host CPU (not accelerator speed)"
+      },
+      "cycle": {
+        "simulated_cycles": 9112.0,
+        "simulated_seconds": 9.112e-06,
+        "simulated_tops": 0.4603055311676909,
+        "fraction_of_config_peak": 0.8990342405618963,
+        "unit_utilization": {
+          "DMA": 0.057643766461808604,
+          "MXU": 0.8990342405618964
+        },
+        "mxu_tile_efficiency": 1.0,
+        "hbm_bytes": 196608,
+        "effective_hbm_gbps": 21.576821773485513,
+        "l2_read_hit_rate": 0.6,
+        "stall_cycles": {
+          "dependency": 38148.0,
+          "unit_busy": 0.0,
+          "sync_wait": 0.0,
+          "barrier": 0.0
+        },
+        "queue_delay_cycles": 0.0,
+        "sync_overhead_fraction": 0.0,
+        "method": "simulated: TITAN-X1 cycle model (transaction-level, cycle-approximate) at the configured clock"
+      },
+      "host_overhead": {
+        "compile_s": 0.000739,
+        "host_io_s": 0.000835,
+        "method": "measured: host wall clock of the software emulator on the host CPU (not accelerator speed)"
+      },
+      "analytical": {
+        "ops": 4194304,
+        "compulsory_bytes": 196608,
+        "arithmetic_intensity": 21.333333333333332,
+        "ridge_point": 2.0,
+        "bound": "compute",
+        "mxu_tile_efficiency": 1.0,
+        "estimated_seconds": 8.192e-06,
+        "attainable_ops_per_s": 511999999999.99994,
+        "peak_ops_per_s": 512000000000.0,
+        "label": "analytical estimate (roofline; ideal overlap; not a measurement)"
+      }
+    },
+    {
+      "workload": "GEMM 256x256x256",
+      "precision": "FP32",
+      "config": "titan-x1-dev",
+      "config_hash": "ae5c9f6222b89391",
+      "program": {
+        "instructions": 64,
+        "kernels": 1,
+        "barriers": 0
+      },
+      "verification": {
+        "max_rel_error": 6.03776006495048e-07,
+        "tolerance": 0.0001,
+        "passed": true,
+        "method": "verified: functional emulation vs float64 NumPy reference"
+      },
+      "functional": {
+        "instructions_retired": 64,
+        "ops": 33554432,
+        "dma_bytes": 2359296,
+        "host_wall_s": 0.002568,
+        "method": "measured: host wall clock of the software emulator on the host CPU (not accelerator speed)"
+      },
+      "cycle": {
+        "simulated_cycles": 67224.0,
+        "simulated_seconds": 6.7224e-05,
+        "simulated_tops": 0.4991436391764846,
+        "fraction_of_config_peak": 0.9748899202665714,
+        "unit_utilization": {
+          "DMA": 0.03711286147804355,
+          "MXU": 0.9748899202665715
+        },
+        "mxu_tile_efficiency": 1.0,
+        "hbm_bytes": 786432,
+        "effective_hbm_gbps": 11.698679043198856,
+        "l2_read_hit_rate": 0.75,
+        "stall_cycles": {
+          "dependency": 1311048.0,
+          "unit_busy": 198026.0,
+          "sync_wait": 0.0,
+          "barrier": 0.0
+        },
+        "queue_delay_cycles": 0.0,
+        "sync_overhead_fraction": 0.0,
+        "method": "simulated: TITAN-X1 cycle model (transaction-level, cycle-approximate) at the configured clock"
+      },
+      "host_overhead": {
+        "compile_s": 0.001215,
+        "host_io_s": 0.001009,
+        "method": "measured: host wall clock of the software emulator on the host CPU (not accelerator speed)"
+      },
+      "analytical": {
+        "ops": 33554432,
+        "compulsory_bytes": 786432,
+        "arithmetic_intensity": 42.666666666666664,
+        "ridge_point": 2.0,
+        "bound": "compute",
+        "mxu_tile_efficiency": 1.0,
+        "estimated_seconds": 6.5536e-05,
+        "attainable_ops_per_s": 511999999999.99994,
+        "peak_ops_per_s": 512000000000.0,
+        "label": "analytical estimate (roofline; ideal overlap; not a measurement)"
+      }
+    },
+    {
+      "workload": "GEMM 256x256x256",
+      "precision": "BF16",
+      "config": "titan-x1-dev",
+      "config_hash": "ae5c9f6222b89391",
+      "program": {
+        "instructions": 52,
+        "kernels": 1,
+        "barriers": 0
+      },
+      "verification": {
+        "max_rel_error": 3.033880219102343e-07,
+        "tolerance": 0.01,
+        "passed": true,
+        "method": "verified: functional emulation vs float64 NumPy reference"
+      },
+      "functional": {
+        "instructions_retired": 52,
+        "ops": 33554432,
+        "dma_bytes": 1310720,
+        "host_wall_s": 0.003804,
+        "method": "measured: host wall clock of the software emulator on the host CPU (not accelerator speed)"
+      },
+      "cycle": {
+        "simulated_cycles": 17816.0,
+        "simulated_seconds": 1.7816e-05,
+        "simulated_tops": 1.8833875168387966,
+        "fraction_of_config_peak": 0.9196228109564437,
+        "unit_utilization": {
+          "DMA": 0.08785642119443197,
+          "MXU": 0.9196228109564436
+        },
+        "mxu_tile_efficiency": 1.0,
+        "hbm_bytes": 524288,
+        "effective_hbm_gbps": 29.4279299506062,
+        "l2_read_hit_rate": 0.75,
+        "stall_cycles": {
+          "dependency": 312355.0,
+          "unit_busy": 49819.0,
+          "sync_wait": 0.0,
+          "barrier": 0.0
+        },
+        "queue_delay_cycles": 0.0,
+        "sync_overhead_fraction": 0.0,
+        "method": "simulated: TITAN-X1 cycle model (transaction-level, cycle-approximate) at the configured clock"
+      },
+      "host_overhead": {
+        "compile_s": 0.000819,
+        "host_io_s": 0.00265,
+        "method": "measured: host wall clock of the software emulator on the host CPU (not accelerator speed)"
+      },
+      "analytical": {
+        "ops": 33554432,
+        "compulsory_bytes": 524288,
+        "arithmetic_intensity": 64.0,
+        "ridge_point": 8.0,
+        "bound": "compute",
+        "mxu_tile_efficiency": 1.0,
+        "estimated_seconds": 1.6384e-05,
+        "attainable_ops_per_s": 2047999999999.9998,
+        "peak_ops_per_s": 2048000000000.0,
+        "label": "analytical estimate (roofline; ideal overlap; not a measurement)"
+      }
+    },
+    {
+      "workload": "GEMM 256x256x256",
+      "precision": "INT8",
+      "config": "titan-x1-dev",
+      "config_hash": "ae5c9f6222b89391",
+      "program": {
+        "instructions": 52,
+        "kernels": 1,
+        "barriers": 0
+      },
+      "verification": {
+        "max_rel_error": 0.0,
+        "tolerance": 0,
+        "passed": true,
+        "method": "verified: functional emulation vs float64 NumPy reference"
+      },
+      "functional": {
+        "instructions_retired": 52,
+        "ops": 33554432,
+        "dma_bytes": 786432,
+        "host_wall_s": 0.015923,
+        "method": "measured: host wall clock of the software emulator on the host CPU (not accelerator speed)"
+      },
+      "cycle": {
+        "simulated_cycles": 9112.0,
+        "simulated_seconds": 9.112e-06,
+        "simulated_tops": 3.6824442493415273,
+        "fraction_of_config_peak": 0.8990342405618963,
+        "unit_utilization": {
+          "DMA": 0.0997859964881475,
+          "MXU": 0.8990342405618964
+        },
+        "mxu_tile_efficiency": 1.0,
+        "hbm_bytes": 393216,
+        "effective_hbm_gbps": 43.153643546971026,
+        "l2_read_hit_rate": 0.75,
+        "stall_cycles": {
+          "dependency": 160154.0,
+          "unit_busy": 24794.0,
+          "sync_wait": 0.0,
+          "barrier": 0.0
+        },
+        "queue_delay_cycles": 0.0,
+        "sync_overhead_fraction": 0.0,
+        "method": "simulated: TITAN-X1 cycle model (transaction-level, cycle-approximate) at the configured clock"
+      },
+      "host_overhead": {
+        "compile_s": 0.000833,
+        "host_io_s": 0.001015,
+        "method": "measured: host wall clock of the software emulator on the host CPU (not accelerator speed)"
+      },
+      "analytical": {
+        "ops": 33554432,
+        "compulsory_bytes": 393216,
+        "arithmetic_intensity": 85.33333333333333,
+        "ridge_point": 16.0,
+        "bound": "compute",
+        "mxu_tile_efficiency": 1.0,
+        "estimated_seconds": 8.192e-06,
+        "attainable_ops_per_s": 4095999999999.9995,
+        "peak_ops_per_s": 4096000000000.0,
+        "label": "analytical estimate (roofline; ideal overlap; not a measurement)"
+      }
+    },
+    {
+      "workload": "GEMM 512x512x512",
+      "precision": "BF16",
+      "config": "titan-x1-dev",
+      "config_hash": "ae5c9f6222b89391",
+      "program": {
+        "instructions": 256,
+        "kernels": 1,
+        "barriers": 0
+      },
+      "verification": {
+        "max_rel_error": 2.745131107250294e-07,
+        "tolerance": 0.01,
+        "passed": true,
+        "method": "verified: functional emulation vs float64 NumPy reference"
+      },
+      "functional": {
+        "instructions_retired": 256,
+        "ops": 268435456,
+        "dma_bytes": 9437184,
+        "host_wall_s": 0.026143,
+        "method": "measured: host wall clock of the software emulator on the host CPU (not accelerator speed)"
+      },
+      "cycle": {
+        "simulated_cycles": 132760.0,
+        "simulated_seconds": 0.00013276,
+        "simulated_tops": 2.021960349502862,
+        "fraction_of_config_peak": 0.9872853269056945,
+        "unit_utilization": {
+          "DMA": 0.0725425579993974,
+          "MXU": 0.9872853269056945
+        },
+        "mxu_tile_efficiency": 1.0,
+        "hbm_bytes": 2097152,
+        "effective_hbm_gbps": 15.796565230491112,
+        "l2_read_hit_rate": 0.875,
+        "stall_cycles": {
+          "dependency": 6155792.0,
+          "unit_busy": 470026.0,
+          "inflight_limit": 369311.0,
+          "sync_wait": 0.0,
+          "barrier": 0.0
+        },
+        "queue_delay_cycles": 8566312.0,
+        "sync_overhead_fraction": 0.0,
+        "method": "simulated: TITAN-X1 cycle model (transaction-level, cycle-approximate) at the configured clock"
+      },
+      "host_overhead": {
+        "compile_s": 0.004014,
+        "host_io_s": 0.013485,
+        "method": "measured: host wall clock of the software emulator on the host CPU (not accelerator speed)"
+      },
+      "analytical": {
+        "ops": 268435456,
+        "compulsory_bytes": 2097152,
+        "arithmetic_intensity": 128.0,
+        "ridge_point": 8.0,
+        "bound": "compute",
+        "mxu_tile_efficiency": 1.0,
+        "estimated_seconds": 0.000131072,
+        "attainable_ops_per_s": 2047999999999.9998,
+        "peak_ops_per_s": 2048000000000.0,
+        "label": "analytical estimate (roofline; ideal overlap; not a measurement)"
+      }
+    },
+    {
+      "workload": "GEMM 512x64x512",
+      "precision": "BF16",
+      "config": "titan-x1-dev",
+      "config_hash": "ae5c9f6222b89391",
+      "program": {
+        "instructions": 28,
+        "kernels": 1,
+        "barriers": 0
+      },
+      "verification": {
+        "max_rel_error": 2.158002568090688e-07,
+        "tolerance": 0.01,
+        "passed": true,
+        "method": "verified: functional emulation vs float64 NumPy reference"
+      },
+      "functional": {
+        "instructions_retired": 28,
+        "ops": 33554432,
+        "dma_bytes": 917504,
+        "host_wall_s": 0.002192,
+        "method": "measured: host wall clock of the software emulator on the host CPU (not accelerator speed)"
+      },
+      "cycle": {
+        "simulated_cycles": 18072.0,
+        "simulated_seconds": 1.8072e-05,
+        "simulated_tops": 1.8567082779991146,
+        "fraction_of_config_peak": 0.9065958388667552,
+        "unit_utilization": {
+          "DMA": 0.07421702080566622,
+          "MXU": 0.9065958388667552
+        },
+        "mxu_tile_efficiency": 1.0,
+        "hbm_bytes": 720896,
+        "effective_hbm_gbps": 39.89021691013723,
+        "l2_read_hit_rate": 0.25,
+        "stall_cycles": {
+          "dependency": 119988.0,
+          "unit_busy": 32194.0,
+          "sync_wait": 0.0,
+          "barrier": 0.0
+        },
+        "queue_delay_cycles": 0.0,
+        "sync_overhead_fraction": 0.0,
+        "method": "simulated: TITAN-X1 cycle model (transaction-level, cycle-approximate) at the configured clock"
+      },
+      "host_overhead": {
+        "compile_s": 0.000634,
+        "host_io_s": 0.006743,
+        "method": "measured: host wall clock of the software emulator on the host CPU (not accelerator speed)"
+      },
+      "analytical": {
+        "ops": 33554432,
+        "compulsory_bytes": 720896,
+        "arithmetic_intensity": 46.54545454545455,
+        "ridge_point": 8.0,
+        "bound": "compute",
+        "mxu_tile_efficiency": 1.0,
+        "estimated_seconds": 1.6384e-05,
+        "attainable_ops_per_s": 2047999999999.9998,
+        "peak_ops_per_s": 2048000000000.0,
+        "label": "analytical estimate (roofline; ideal overlap; not a measurement)"
+      }
+    },
+    {
+      "workload": "GEMM 1024x1024x64",
+      "precision": "BF16",
+      "config": "titan-x1-dev",
+      "config_hash": "ae5c9f6222b89391",
+      "program": {
+        "instructions": 772,
+        "kernels": 1,
+        "barriers": 0
+      },
+      "verification": {
+        "max_rel_error": 1.3957563493741446e-07,
+        "tolerance": 0.01,
+        "passed": true,
+        "method": "verified: functional emulation vs float64 NumPy reference"
+      },
+      "functional": {
+        "instructions_retired": 772,
+        "ops": 134217728,
+        "dma_bytes": 6815744,
+        "host_wall_s": 0.02759,
+        "method": "measured: host wall clock of the software emulator on the host CPU (not accelerator speed)"
+      },
+      "cycle": {
+        "simulated_cycles": 66968.0,
+        "simulated_seconds": 6.6968e-05,
+        "simulated_tops": 2.0042069047903475,
+        "fraction_of_config_peak": 0.9786166527296619,
+        "unit_utilization": {
+          "DMA": 0.1224073438059969,
+          "MXU": 0.9786166527296619
+        },
+        "mxu_tile_efficiency": 1.0,
+        "hbm_bytes": 4456448,
+        "effective_hbm_gbps": 66.54593238561701,
+        "l2_read_hit_rate": 0.9,
+        "stall_cycles": {
+          "dependency": 3510064.0,
+          "unit_busy": 223113.0,
+          "inflight_limit": 242269.0,
+          "sync_wait": 0.0,
+          "barrier": 0.0
+        },
+        "queue_delay_cycles": 12694582.0,
+        "sync_overhead_fraction": 0.0,
+        "method": "simulated: TITAN-X1 cycle model (transaction-level, cycle-approximate) at the configured clock"
+      },
+      "host_overhead": {
+        "compile_s": 0.007816,
+        "host_io_s": 0.00403,
+        "method": "measured: host wall clock of the software emulator on the host CPU (not accelerator speed)"
+      },
+      "analytical": {
+        "ops": 134217728,
+        "compulsory_bytes": 4456448,
+        "arithmetic_intensity": 30.11764705882353,
+        "ridge_point": 8.0,
+        "bound": "compute",
+        "mxu_tile_efficiency": 1.0,
+        "estimated_seconds": 6.5536e-05,
+        "attainable_ops_per_s": 2047999999999.9998,
+        "peak_ops_per_s": 2048000000000.0,
+        "label": "analytical estimate (roofline; ideal overlap; not a measurement)"
+      }
+    },
+    {
+      "workload": "element-wise add 1024x1024",
+      "precision": "FP32",
+      "config": "titan-x1-dev",
+      "config_hash": "ae5c9f6222b89391",
+      "program": {
+        "instructions": 288,
+        "kernels": 1,
+        "barriers": 0
+      },
+      "verification": {
+        "max_rel_error": 6.48637934555799e-08,
+        "tolerance": 1e-06,
+        "passed": true,
+        "method": "verified: functional emulation vs float64 NumPy reference"
+      },
+      "functional": {
+        "instructions_retired": 288,
+        "ops": 1048576,
+        "dma_bytes": 12582912,
+        "host_wall_s": 0.029416,
+        "method": "measured: host wall clock of the software emulator on the host CPU (not accelerator speed)"
+      },
+      "cycle": {
+        "simulated_cycles": 49380.0,
+        "simulated_seconds": 4.938e-05,
+        "simulated_tops": 0.021234831915755367,
+        "fraction_of_config_peak": 0.041474281085459704,
+        "unit_utilization": {
+          "DMA": 0.7539616241393277,
+          "VPU": 0.08294856217091941
+        },
+        "mxu_tile_efficiency": 0.0,
+        "hbm_bytes": 12582912,
+        "effective_hbm_gbps": 254.81798298906443,
+        "l2_read_hit_rate": 0.0,
+        "stall_cycles": {
+          "dependency": 2204327.0,
+          "unit_busy": 393748.0,
+          "inflight_limit": 159758.0,
+          "sync_wait": 0.0,
+          "barrier": 0.0
+        },
+        "queue_delay_cycles": 4392435.0,
+        "sync_overhead_fraction": 0.0,
+        "method": "simulated: TITAN-X1 cycle model (transaction-level, cycle-approximate) at the configured clock"
+      },
+      "host_overhead": {
+        "compile_s": 0.003624,
+        "host_io_s": 0.049785,
+        "method": "measured: host wall clock of the software emulator on the host CPU (not accelerator speed)"
+      },
+      "analytical": {
+        "instructions_after_expansion": 288,
+        "mxu_macs_by_dtype": {},
+        "dma_bytes_by_path": {
+          "GLOBAL->LOCAL": 8388608,
+          "LOCAL->GLOBAL": 4194304
+        },
+        "global_bytes": 12582912,
+        "lower_bound_seconds": 4.9152e-05,
+        "bound_by": "global_memory",
+        "time_terms_s": {
+          "mxu_critical_core": 0.0,
+          "global_memory": 4.9152e-05,
+          "vpu": 4.096e-06,
+          "sfu": 0.0
+        },
+        "arithmetic_intensity": 0.0,
+        "label": "analytical estimate (roofline; ideal overlap; not a measurement)"
+      }
+    },
+    {
+      "workload": "MLP training step (16-128-128-8, batch 64, fwd+bwd+SGD)",
+      "precision": "FP32",
+      "config": "titan-x1-dev",
+      "config_hash": "ae5c9f6222b89391",
+      "program": {
+        "instructions": 448,
+        "kernels": 31,
+        "barriers": 8
+      },
+      "verification": {
+        "max_rel_error": 8.889091063224441e-08,
+        "tolerance": 0.0001,
+        "passed": true,
+        "method": "verified: functional emulation vs float64 NumPy reference"
+      },
+      "functional": {
+        "instructions_retired": 472,
+        "ops": 7379559,
+        "dma_bytes": 1738556,
+        "host_wall_s": 0.010652,
+        "method": "measured: host wall clock of the software emulator on the host CPU (not accelerator speed)"
+      },
+      "cycle": {
+        "simulated_cycles": 24560.25,
+        "simulated_seconds": 2.456025e-05,
+        "simulated_tops": 0.3004675848169298,
+        "fraction_of_config_peak": 0.586850751595566,
+        "unit_utilization": {
+          "DMA": 0.08487903790169074,
+          "MXU": 0.5941307600696247,
+          "SFU": 0.02219032786718376,
+          "VPU": 0.015024277033010658
+        },
+        "mxu_tile_efficiency": 0.9649122807017544,
+        "hbm_bytes": 726360,
+        "effective_hbm_gbps": 29.574617522215778,
+        "l2_read_hit_rate": 0.7891832229580574,
+        "stall_cycles": {
+          "dependency": 660912.875,
+          "unit_busy": 38299.0,
+          "inflight_limit": 33013.0,
+          "sync_wait": 0.0,
+          "barrier": 9498.640625
+        },
+        "queue_delay_cycles": 3397079.84375,
+        "sync_overhead_fraction": 0.09668713291802812,
+        "method": "simulated: TITAN-X1 cycle model (transaction-level, cycle-approximate) at the configured clock"
+      },
+      "host_overhead": {
+        "compile_s": 0.006266,
+        "host_io_s": 0.0001,
+        "method": "measured: host wall clock of the software emulator on the host CPU (not accelerator speed)"
+      },
+      "analytical": {
+        "instructions_after_expansion": 472,
+        "mxu_macs_by_dtype": {
+          "FP32": 3604480
+        },
+        "dma_bytes_by_path": {
+          "GLOBAL->LOCAL": 1305572,
+          "LOCAL->GLOBAL": 355160,
+          "GLOBAL->GLOBAL": 77824
+        },
+        "global_bytes": 1738556,
+        "lower_bound_seconds": 1.6128e-05,
+        "bound_by": "mxu_critical_core",
+        "time_terms_s": {
+          "mxu_critical_core": 1.6128e-05,
+          "global_memory": 6.791234375e-06,
+          "vpu": 3.6808203125e-07,
+          "sfu": 5.29e-07
+        },
+        "arithmetic_intensity": 4.146521596083186,
+        "label": "analytical estimate (roofline; ideal overlap; not a measurement)"
+      }
+    },
+    {
+      "workload": "transformer block forward (B4 T32 d64 h4)",
+      "precision": "FP32",
+      "config": "titan-x1-dev",
+      "config_hash": "ae5c9f6222b89391",
+      "program": {
+        "instructions": 772,
+        "kernels": 38,
+        "barriers": 16
+      },
+      "verification": {
+        "max_rel_error": 2.3696230337188385e-07,
+        "tolerance": 0.0001,
+        "passed": true,
+        "method": "verified: functional emulation vs float64 NumPy reference"
+      },
+      "functional": {
+        "instructions_retired": 820,
+        "ops": 14016512,
+        "dma_bytes": 2893824,
+        "host_wall_s": 0.021275,
+        "method": "measured: host wall clock of the software emulator on the host CPU (not accelerator speed)"
+      },
+      "cycle": {
+        "simulated_cycles": 40134.0,
+        "simulated_seconds": 4.0134e-05,
+        "simulated_tops": 0.3492428364977326,
+        "fraction_of_config_peak": 0.682114915034634,
+        "unit_utilization": {
+          "DMA": 0.08256403548113819,
+          "MXU": 0.6633776847560672,
+          "SFU": 0.05102905267354363,
+          "VPU": 0.015149250012458265
+        },
+        "mxu_tile_efficiency": 1.0,
+        "hbm_bytes": 1296896,
+        "effective_hbm_gbps": 32.314147605521505,
+        "l2_read_hit_rate": 0.7461722488038277,
+        "stall_cycles": {
+          "dependency": 1040418.5,
+          "unit_busy": 80609.0,
+          "inflight_limit": 41020.0,
+          "sync_wait": 0.0,
+          "barrier": 6309.0
+        },
+        "queue_delay_cycles": 5318716.5,
+        "sync_overhead_fraction": 0.039299596352220065,
+        "method": "simulated: TITAN-X1 cycle model (transaction-level, cycle-approximate) at the configured clock"
+      },
+      "host_overhead": {
+        "compile_s": 0.009341,
+        "host_io_s": 9.6e-05,
+        "method": "measured: host wall clock of the software emulator on the host CPU (not accelerator speed)"
+      },
+      "analytical": {
+        "instructions_after_expansion": 820,
+        "mxu_macs_by_dtype": {
+          "FP32": 6815744
+        },
+        "dma_bytes_by_path": {
+          "GLOBAL->LOCAL": 2140160,
+          "LOCAL->GLOBAL": 753664
+        },
+        "global_bytes": 2893824,
+        "lower_bound_seconds": 2.6624e-05,
+        "bound_by": "mxu_critical_core",
+        "time_terms_s": {
+          "mxu_critical_core": 2.6624e-05,
+          "global_memory": 1.1304e-05,
+          "vpu": 6.08e-07,
+          "sfu": 1.024e-06
+        },
+        "arithmetic_intensity": 4.710544939844303,
+        "label": "analytical estimate (roofline; ideal overlap; not a measurement)"
+      }
+    }
+  ],
+  "duration_s": 0.91
+}

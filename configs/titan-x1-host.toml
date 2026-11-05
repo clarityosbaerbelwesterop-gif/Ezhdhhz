@@ -1,0 +1,31 @@
+# TITAN-X1 "host": emulation configuration for the LARGEST models that can be trained numerically
+# on a workstation-class host (up to a few hundred million parameters, limited by host RAM).
+# Larger models (up to 100B+) are planned with `titan plan` for the target system.
+name = "titan-x1-host"
+description = "8 cores, 64x64 MXU, 6 GiB emulated global memory; large-model emulation on a host"
+clock_ghz = 1.0
+
+[compute]
+cores = 8
+mxu_rows = 64
+mxu_cols = 64
+vpu_lanes = 256
+sfu_lanes = 64
+
+[memory]
+local_sram_kib = 4096
+gemm_staging_kib = 512
+shared_sram_kib = 16384
+l2_kib = 8192
+l2_ways = 16
+hbm_gbps = 1024.0
+l2_gbps = 4096.0
+shared_gbps = 2048.0
+local_gbps = 2048.0
+noc_link_gbps = 512.0
+emulated_global_mib = 6144
+global_mem_gib = 64.0
+
+[control]
+queue_depth = 128
+semaphores = 64

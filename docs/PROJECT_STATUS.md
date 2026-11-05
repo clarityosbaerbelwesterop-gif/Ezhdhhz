@@ -1,18 +1,79 @@
 # Project status
 
-## Repository
-ROUGE TITAN digital hardware prototype, hosted in the previously empty repository Ezhdhhz.
+## Summary
 
-## Current baseline
-TITAN-X1-D0: 16-lane signed INT8 MAC tile, packed flat interfaces, 32-bit accumulators, directed self-checking testbench, Verilator Makefile, analytical throughput estimator and GitHub Actions verification workflow.
+ROUGE TITAN now has a working digital accelerator platform: TITAN ISA v1.0, a virtual TITAN-X1
+(functional + cycle model), a compiler from computation graphs to ISA, neural-network and
+training runtimes that execute forward, backward and optimizer updates on the virtual hardware,
+a QuickStart CLI, a performance engine, an RTL matrix-engine tile verified bit-exact against the
+emulator, synthesis/P&R reports and a multi-chip scaling model.
+
+Since M12: training on your own data (CSV/NPZ/NPY/TXT), a bit-exact replay executor (21× faster
+steps), a fast IR-kernel executor for large models, meta graphs of any size and a distributed
+training planner up to 175B parameters (`titan plan`, `titan quickstart --params`). For your own
+environment: `accel` backend (PyTorch GPU/CPU), byte corpora streamed from disk, pretrain / continue /
+fine-tune with freezing, AdamW + cosine + clipping + best checkpoint + early stopping, `titan env`,
+Dockerfile (`docs/DEPLOY.md`).
+
+Bring your own architecture and tokenizer (`docs/CUSTOMIZE.md`): configurable decoder transformer
+(LayerNorm/RMSNorm, GELU/ReLU/SiLU/SwiGLU/GeGLU, learned/RoPE/sinusoidal/no positions, MHA/GQA/MQA,
+pre/post-LN, tied embeddings, bias switches) from JSON/TOML/`--set`, model plugins in Python, and
+tokenizers (char, byte, own byte-level BPE trainer, Hugging Face `tokenizer.json`, SentencePiece,
+plugins) with fingerprinted uint16/uint32 token corpora. Training is 2–4× faster for small and medium
+models (compiled execution plans, fused multi-head attention, gather embeddings) and the GPT-100B
+step compiles 23× faster (14,647 instead of 380,485 kernels) — `docs/PERFORMANCE.md` §9.
+
+Mixture of experts, Frankenstein models (soup, SLERP, task arithmetic, TIES, layer stacking, MoE
+upcycling), post-training (SFT with response-only loss), KV-cached generation, test-time compute
+(best-of-n with verifiers, self-consistency, beam) and reasoning RL by rejection sampling (STaR):
+`docs/REASONING.md`. Measured on a synthetic reasoning task: RFT 75.3 % → 98.0 % held-out accuracy.
 
 ## Evidence status
-- Source files committed.
-- Local simulation status: not yet recorded.
-- CI status: pending first workflow execution.
-- FPGA status: not started.
-- ASIC physical-design status: not started.
-- Fabrication status: not started.
+
+| Item | Status |
+|---|---|
+| Software tests | `pytest`: all passing locally (see final commit message); CI runs them on 3.11 / 3.13 |
+| RTL simulation | 4 self-checking simulations pass (Verilator 5.020); Icarus cross-check passes |
+| RTL lint | clean with `-Wall`, warnings fatal |
+| RTL ↔ emulator | 0 mismatches (INT8 and INT4, accumulate, overflow) |
+| Synthesis / P&R | Yosys 0.33 (generic, xc7, ECP5), nextpnr-ecp5 0.6 — `reports/synth/` |
+| Benchmarks | `reports/bench_default_titan-x1-dev.md` (simulated + analytical + measured-host columns) |
+| Training | `reports/TRAINING_AND_SCALING.md` |
+| FPGA hardware | not started — no board, no measurement |
+| ASIC physical design | not started |
+| Fabrication | not started |
+
+## What is incomplete (honest list)
+
+* RTL exists only for the MXU tile and the D0 MAC array. DMA, VPU, SFU, SRAM, command processor
+  and interconnect exist only in the emulator and models.
+* The cycle model is transaction-level and uncalibrated against hardware or full RTL.
+* No FP8/FP4, no sparsity; training is FP32 / BF16 / FP16 mixed precision; INT8/INT4 inference only.
+* Graph tensors are 2-D; batched products use row stacking; no convolution operators.
+* Datasets are small and synthetic (plus optional scikit-learn digits); training runs at host
+  emulation speed (seconds to minutes), which says nothing about accelerator speed.
+* Multi-chip results use assumed link parameters; there is no die-to-die or network RTL.
+* `titan-x1-target` is an unbuilt design point; its numbers are analytical paper figures.
+* 100B-parameter models: the complete full-training step compiles and its exact memory is known
+  (10.4 GB RAM + 1.63 TB storage with offload); full training needs that storage and was not run here
+  (≈20 GB free disk). LoRA fine-tuning of a 100.74B model did run here (2 steps, ~22 min each,
+  7.2 GB RAM) on a procedurally generated frozen base; two steps on different batches do not show
+  learning progress at that scale (learning of the same code path is tested on small models). Speed at that size is storage-bound;
+  the distributed planner's assumptions are not validated against real multi-device runs.
+* The accel backend uses one device per process (no multi-GPU / multi-node runtime yet); its CUDA
+  path is exercised only where a GPU exists (CI and this sandbox test it on CPU).
+* The fast IR executor skips the ISA level; its results agree with ISA-level execution within FP32
+  tolerance but are not bit-identical. The compiled plans are bit-identical to the IR interpreters.
+* Custom models must be expressible in TITAN graph ops (2-D tensors, decoder-only LM interface);
+  encoder-decoder models, convolutions and mixture-of-experts routing are not supported yet.
+  Tokenizer plugins run in Python on the host (pre-tokenize big corpora with `prepare-data`).
+* `--backend auto` measured its crossover on one CPU host; GPU speed is untested here (no GPU).
+* MoE routing tables are built on the host (data-dependent, no ISA lowering; the ISA path uses dense
+  dispatch); no expert parallelism across devices yet. Reasoning results are small-model, synthetic-
+  task measurements; no DPO/GRPO yet.
 
 ## Performance honesty
-The 10× B300 single-package and 100× B300 system goals are aspirations. D0 is a tiny functional RTL tile and is many orders of magnitude below those goals. No silicon or B300-equivalent performance is claimed.
+
+The 10× (package) and 100× (system) B300 goals remain research aspirations. The `titan-x1-target`
+configuration reaches 10.25× B300 only as a BF16 dense *paper peak*, with 4× the memory bandwidth;
+nothing has been measured on hardware. See `docs/PERFORMANCE.md`.

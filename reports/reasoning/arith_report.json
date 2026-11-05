@@ -1,0 +1,112 @@
+{
+  "sft": {
+    "examples": 400,
+    "steps": 600,
+    "parameters": 153487,
+    "train_s": 23.4,
+    "eval_loss": 0.05257661868052837
+  },
+  "ttc": [
+    {
+      "strategy": "greedy",
+      "n": 1,
+      "problems": 300,
+      "accuracy": 0.7533333333333333,
+      "generated_tokens": 5593,
+      "decode_steps": 125,
+      "wall_s": 0.335,
+      "tokens_per_s": 16704.8
+    },
+    {
+      "strategy": "sample",
+      "n": 1,
+      "problems": 300,
+      "accuracy": 0.7066666666666667,
+      "generated_tokens": 5586,
+      "decode_steps": 125,
+      "wall_s": 0.311,
+      "tokens_per_s": 17960.9
+    },
+    {
+      "strategy": "self-consistency",
+      "n": 8,
+      "problems": 300,
+      "accuracy": 0.7366666666666667,
+      "generated_tokens": 44710,
+      "decode_steps": 948,
+      "wall_s": 2.617,
+      "tokens_per_s": 17083.0
+    },
+    {
+      "strategy": "best-of-n",
+      "n": 8,
+      "problems": 300,
+      "accuracy": 0.7533333333333333,
+      "generated_tokens": 44710,
+      "decode_steps": 948,
+      "wall_s": 2.367,
+      "tokens_per_s": 18888.1
+    },
+    {
+      "strategy": "best-of-n+verifier",
+      "n": 8,
+      "problems": 300,
+      "accuracy": 0.82,
+      "generated_tokens": 44710,
+      "decode_steps": 948,
+      "wall_s": 2.257,
+      "tokens_per_s": 19811.9
+    },
+    {
+      "strategy": "beam",
+      "n": 4,
+      "problems": 100,
+      "accuracy": 0.77,
+      "generated_tokens": 7292,
+      "decode_steps": 2378,
+      "wall_s": 1.532,
+      "tokens_per_s": 4759.2
+    }
+  ],
+  "decode": {
+    "kv_cache": {
+      "tokens_per_s": 18593.4,
+      "wall_s": 0.064,
+      "accuracy": 0.765625
+    },
+    "recompute": {
+      "tokens_per_s": 2397.7,
+      "wall_s": 0.5,
+      "accuracy": 0.765625
+    }
+  },
+  "rft": {
+    "rounds": [
+      {
+        "round": 1,
+        "samples": 8000,
+        "kept": 1583,
+        "problems_solved": 1582,
+        "train_eval_loss": 0.00031724007714845987,
+        "run": "runs/reasoning/rft/round1",
+        "heldout_greedy_before": 0.7533333333333333,
+        "heldout_greedy_after": 0.95
+      },
+      {
+        "round": 2,
+        "samples": 8000,
+        "kept": 1863,
+        "problems_solved": 1863,
+        "train_eval_loss": 0.00016308775647213202,
+        "run": "runs/reasoning/rft/round2",
+        "heldout_greedy_before": 0.95,
+        "heldout_greedy_after": 0.98
+      }
+    ],
+    "final_run": "runs/reasoning/rft/round2"
+  },
+  "after_rft": {
+    "greedy": 0.98,
+    "self-consistency": 0.98
+  }
+}

@@ -1,0 +1,29 @@
+# TITAN-X1 "tiny": minimal configuration for fast unit tests.
+name = "titan-x1-tiny"
+description = "2 cores, 4x4 MXU; test configuration"
+clock_ghz = 1.0
+
+[compute]
+cores = 2
+mxu_rows = 4
+mxu_cols = 4
+vpu_lanes = 16
+sfu_lanes = 4
+
+[memory]
+local_sram_kib = 64
+gemm_staging_kib = 16
+shared_sram_kib = 256
+l2_kib = 64
+l2_ways = 4
+hbm_gbps = 64.0
+noc_link_gbps = 32.0
+shared_gbps = 128.0
+l2_gbps = 128.0
+local_gbps = 128.0
+emulated_global_mib = 32
+global_mem_gib = 1.0
+
+[control]
+queue_depth = 16
+semaphores = 16

@@ -1,0 +1,13 @@
+# Llama-style decoder: RMSNorm, SwiGLU, rotary positions, grouped-query attention, no biases, tied embeddings.
+# Train:  python -m titan quickstart --data my.txt --tokenizer tok.json --model-config examples/models/llama_style.toml
+[model]
+d_model = 128
+layers = 4
+heads = 8
+kv_heads = 2
+norm = "rmsnorm"
+activation = "swiglu"
+position = "rope"
+bias = false
+tie_embeddings = true
+seq = 64

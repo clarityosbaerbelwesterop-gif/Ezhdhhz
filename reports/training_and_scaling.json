@@ -1,0 +1,969 @@
+{
+  "provenance": {
+    "titan_version": "0.1.0",
+    "commit": "0a393698401ca76227e2301a798462accbb4036e",
+    "timestamp_utc": "2026-11-04T19:56:32+00:00",
+    "host": {
+      "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+      "logical_cpus": 4,
+      "os": "Linux-6.18.44-fc-v233-x86_64-with-glibc2.39",
+      "python": "3.13.18",
+      "numpy": "2.5.3"
+    }
+  },
+  "training": [
+    {
+      "config": {
+        "model": "mlp",
+        "dataset": "spirals",
+        "profile": "small",
+        "precision": "fp32",
+        "backend": "functional"
+      },
+      "summary": {
+        "steps": 300,
+        "initial_loss": 1.1130011081695557,
+        "final_loss_avg10": 0.0007135999214369804,
+        "eval_examples": 300,
+        "eval_mode": "functional (TITAN outputs, host metrics)",
+        "eval_loss": 0.009713872743036776,
+        "eval_accuracy": 0.9966666666666667,
+        "host_wall_s": 0.407,
+        "parameters": 4547,
+        "titan_instructions_per_step": 816,
+        "backend": "Functional Emulator",
+        "placement": {
+          "titan": [
+            "forward pass",
+            "softmax cross-entropy loss",
+            "backward pass (autodiff)",
+            "optimizer update"
+          ],
+          "host": [
+            "dataset generation and shuffling",
+            "one-hot encoding",
+            "Adam bias-corrected lr scalar (1 value/step)",
+            "evaluation argmax, accuracy and loss from TITAN logits",
+            "checkpoint serialization"
+          ]
+        },
+        "provenance": {
+          "titan_version": "0.1.0",
+          "commit": "0a393698401ca76227e2301a798462accbb4036e",
+          "timestamp_utc": "2026-11-04T19:56:26+00:00",
+          "host": {
+            "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+            "logical_cpus": 4,
+            "os": "Linux-6.18.44-fc-v233-x86_64-with-glibc2.39",
+            "python": "3.13.18",
+            "numpy": "2.5.3"
+          }
+        }
+      },
+      "train_program": {
+        "graph_nodes": 106,
+        "kernels": 67,
+        "kernels_by_kind": {
+          "gemm": 8,
+          "ewise": 40,
+          "reduce": 6,
+          "rownorm": 1,
+          "copy": 12
+        },
+        "fused_nodes": 81,
+        "instructions": 774,
+        "barriers": 14,
+        "barriers_avoided": 33,
+        "global_bytes_peak": 125696,
+        "cores_used": 4,
+        "inplace_updates": 6
+      }
+    },
+    {
+      "config": {
+        "model": "mlp",
+        "dataset": "spirals",
+        "profile": "small",
+        "precision": "bf16",
+        "backend": "functional"
+      },
+      "summary": {
+        "steps": 300,
+        "initial_loss": 1.1131855249404907,
+        "final_loss_avg10": 0.0007456627034116536,
+        "eval_examples": 300,
+        "eval_mode": "functional (TITAN outputs, host metrics)",
+        "eval_loss": 0.011797785030895023,
+        "eval_accuracy": 0.9966666666666667,
+        "host_wall_s": 1.093,
+        "parameters": 4547,
+        "titan_instructions_per_step": 914,
+        "backend": "Functional Emulator",
+        "placement": {
+          "titan": [
+            "forward pass",
+            "softmax cross-entropy loss",
+            "backward pass (autodiff)",
+            "optimizer update"
+          ],
+          "host": [
+            "dataset generation and shuffling",
+            "one-hot encoding",
+            "Adam bias-corrected lr scalar (1 value/step)",
+            "evaluation argmax, accuracy and loss from TITAN logits",
+            "checkpoint serialization"
+          ]
+        },
+        "provenance": {
+          "titan_version": "0.1.0",
+          "commit": "0a393698401ca76227e2301a798462accbb4036e",
+          "timestamp_utc": "2026-11-04T19:56:27+00:00",
+          "host": {
+            "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+            "logical_cpus": 4,
+            "os": "Linux-6.18.44-fc-v233-x86_64-with-glibc2.39",
+            "python": "3.13.18",
+            "numpy": "2.5.3"
+          }
+        }
+      },
+      "train_program": {
+        "graph_nodes": 115,
+        "kernels": 74,
+        "kernels_by_kind": {
+          "ewise": 47,
+          "gemm": 8,
+          "reduce": 6,
+          "rownorm": 1,
+          "copy": 12
+        },
+        "fused_nodes": 85,
+        "instructions": 863,
+        "barriers": 17,
+        "barriers_avoided": 30,
+        "global_bytes_peak": 133376,
+        "cores_used": 4,
+        "inplace_updates": 6
+      }
+    },
+    {
+      "config": {
+        "model": "mlp",
+        "dataset": "blobs",
+        "profile": "small",
+        "precision": "fp32",
+        "backend": "functional",
+        "optimizer": "sgd",
+        "lr": 0.05
+      },
+      "summary": {
+        "steps": 300,
+        "initial_loss": 1.5080151557922363,
+        "final_loss_avg10": 0.00015408670697070193,
+        "eval_examples": 300,
+        "eval_mode": "functional (TITAN outputs, host metrics)",
+        "eval_loss": 0.00011264771434155965,
+        "eval_accuracy": 1.0,
+        "host_wall_s": 0.231,
+        "parameters": 4996,
+        "titan_instructions_per_step": 595,
+        "backend": "Functional Emulator",
+        "placement": {
+          "titan": [
+            "forward pass",
+            "softmax cross-entropy loss",
+            "backward pass (autodiff)",
+            "optimizer update"
+          ],
+          "host": [
+            "dataset generation and shuffling",
+            "one-hot encoding",
+            "Adam bias-corrected lr scalar (1 value/step)",
+            "evaluation argmax, accuracy and loss from TITAN logits",
+            "checkpoint serialization"
+          ]
+        },
+        "provenance": {
+          "titan_version": "0.1.0",
+          "commit": "0a393698401ca76227e2301a798462accbb4036e",
+          "timestamp_utc": "2026-11-04T19:56:27+00:00",
+          "host": {
+            "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+            "logical_cpus": 4,
+            "os": "Linux-6.18.44-fc-v233-x86_64-with-glibc2.39",
+            "python": "3.13.18",
+            "numpy": "2.5.3"
+          }
+        }
+      },
+      "train_program": {
+        "graph_nodes": 58,
+        "kernels": 43,
+        "kernels_by_kind": {
+          "gemm": 8,
+          "ewise": 22,
+          "reduce": 6,
+          "rownorm": 1,
+          "copy": 6
+        },
+        "fused_nodes": 39,
+        "instructions": 562,
+        "barriers": 11,
+        "barriers_avoided": 21,
+        "global_bytes_peak": 113152,
+        "cores_used": 4,
+        "inplace_updates": 6
+      }
+    },
+    {
+      "config": {
+        "model": "transformer",
+        "dataset": "text",
+        "profile": "small",
+        "precision": "fp32",
+        "backend": "functional"
+      },
+      "summary": {
+        "steps": 300,
+        "initial_loss": 3.9904022216796875,
+        "final_loss_avg10": 0.9614795267581939,
+        "eval_examples": 176,
+        "eval_mode": "functional (TITAN outputs, host metrics)",
+        "eval_loss": 1.1632409478869847,
+        "eval_accuracy": 0.6193181818181818,
+        "host_wall_s": 3.793,
+        "parameters": 19032,
+        "titan_instructions_per_step": 7167,
+        "backend": "Functional Emulator",
+        "placement": {
+          "titan": [
+            "forward pass",
+            "softmax cross-entropy loss",
+            "backward pass (autodiff)",
+            "optimizer update"
+          ],
+          "host": [
+            "dataset generation and shuffling",
+            "one-hot encoding",
+            "Adam bias-corrected lr scalar (1 value/step)",
+            "evaluation argmax, accuracy and loss from TITAN logits",
+            "checkpoint serialization"
+          ]
+        },
+        "provenance": {
+          "titan_version": "0.1.0",
+          "commit": "0a393698401ca76227e2301a798462accbb4036e",
+          "timestamp_utc": "2026-11-04T19:56:31+00:00",
+          "host": {
+            "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+            "logical_cpus": 4,
+            "os": "Linux-6.18.44-fc-v233-x86_64-with-glibc2.39",
+            "python": "3.13.18",
+            "numpy": "2.5.3"
+          }
+        }
+      },
+      "train_program": {
+        "graph_nodes": 758,
+        "kernels": 487,
+        "kernels_by_kind": {
+          "gemm": 91,
+          "rownorm": 10,
+          "ewise": 262,
+          "reduce": 44,
+          "copy": 80
+        },
+        "fused_nodes": 552,
+        "instructions": 6906,
+        "barriers": 87,
+        "barriers_avoided": 225,
+        "global_bytes_peak": 873216,
+        "cores_used": 4,
+        "inplace_updates": 40
+      }
+    },
+    {
+      "config": {
+        "model": "mlp",
+        "dataset": "spirals",
+        "profile": "small",
+        "precision": "fp32",
+        "backend": "cycle",
+        "steps": 20
+      },
+      "summary": {
+        "steps": 20,
+        "initial_loss": 1.1130011081695557,
+        "final_loss_avg10": 0.4612651228904724,
+        "eval_examples": 300,
+        "eval_mode": "functional (TITAN outputs, host metrics)",
+        "eval_loss": 0.371852595761562,
+        "eval_accuracy": 0.7833333333333333,
+        "host_wall_s": 0.094,
+        "parameters": 4547,
+        "titan_instructions_per_step": 816,
+        "backend": "Cycle Simulator",
+        "placement": {
+          "titan": [
+            "forward pass",
+            "softmax cross-entropy loss",
+            "backward pass (autodiff)",
+            "optimizer update"
+          ],
+          "host": [
+            "dataset generation and shuffling",
+            "one-hot encoding",
+            "Adam bias-corrected lr scalar (1 value/step)",
+            "evaluation argmax, accuracy and loss from TITAN logits",
+            "checkpoint serialization"
+          ]
+        },
+        "provenance": {
+          "titan_version": "0.1.0",
+          "commit": "0a393698401ca76227e2301a798462accbb4036e",
+          "timestamp_utc": "2026-11-04T19:56:31+00:00",
+          "host": {
+            "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+            "logical_cpus": 4,
+            "os": "Linux-6.18.44-fc-v233-x86_64-with-glibc2.39",
+            "python": "3.13.18",
+            "numpy": "2.5.3"
+          }
+        },
+        "simulated_cycles_per_step": 15186.71875,
+        "simulated_step_s_at_clock": 1.518671875e-05
+      },
+      "train_program": {
+        "graph_nodes": 106,
+        "kernels": 67,
+        "kernels_by_kind": {
+          "gemm": 8,
+          "ewise": 40,
+          "reduce": 6,
+          "rownorm": 1,
+          "copy": 12
+        },
+        "fused_nodes": 81,
+        "instructions": 774,
+        "barriers": 14,
+        "barriers_avoided": 33,
+        "global_bytes_peak": 125696,
+        "cores_used": 4,
+        "inplace_updates": 6
+      }
+    }
+  ],
+  "data_parallel": {
+    "devices": 4,
+    "system": {
+      "name": "4-ring",
+      "devices": 4,
+      "levels": [
+        {
+          "name": "inter-package",
+          "size": 4,
+          "topology": "ring",
+          "link_gbps": 900.0,
+          "latency_us": 2.0
+        }
+      ],
+      "note": "ASSUMED link parameters for modelling: inter-package 900 GB/s/link, 2.0 us/hop; d2d 2000 GB/s, 0.5 us"
+    },
+    "steps": 100,
+    "final_loss": 0.0519029307179153,
+    "replicas_identical": true,
+    "eval_accuracy": 0.9966666666666667,
+    "last_step": {
+      "step": 99,
+      "loss": 0.0519029307179153,
+      "host_s": 0.002211109999961991,
+      "allreduce_bytes_per_rank": 54568,
+      "replicas_identical": true,
+      "sim_compute_s": 8.36653125e-06,
+      "sim_update_s": 2.7501875e-06,
+      "model_comm_s": 1.2030313333333334e-05,
+      "step_s": 2.3147032083333335e-05
+    }
+  },
+  "scaling_flat": {
+    "workload": "MLP 64-256-256-16, global batch 256, one SGD step",
+    "arch": "titan-x1-dev",
+    "rows": [
+      {
+        "devices": 1,
+        "system": "1-ring",
+        "local_batch": 256,
+        "sim_compute_s": 0.000274006125,
+        "model_comm_s": 0.0,
+        "step_s": 0.000274006125,
+        "speedup": 1.0,
+        "efficiency": 1.0,
+        "comm_fraction": 0.0
+      },
+      {
+        "devices": 2,
+        "system": "2-ring",
+        "local_batch": 128,
+        "sim_compute_s": 0.000146502,
+        "model_comm_s": 4.38464e-06,
+        "step_s": 0.00015088664,
+        "speedup": 1.815973402283993,
+        "efficiency": 0.9079867011419965,
+        "comm_fraction": 0.029059166537209656
+      },
+      {
+        "devices": 4,
+        "system": "4-ring",
+        "local_batch": 64,
+        "sim_compute_s": 8.16684375e-05,
+        "model_comm_s": 1.257696e-05,
+        "step_s": 9.42453975e-05,
+        "speedup": 2.907368765673677,
+        "efficiency": 0.7268421914184192,
+        "comm_fraction": 0.1334490631226846
+      },
+      {
+        "devices": 8,
+        "system": "8-ring",
+        "local_batch": 32,
+        "sim_compute_s": 5.258240625e-05,
+        "model_comm_s": 2.867312e-05,
+        "step_s": 8.125552625e-05,
+        "speedup": 3.372153718590925,
+        "efficiency": 0.4215192148238656,
+        "comm_fraction": 0.35287593746893
+      },
+      {
+        "devices": 16,
+        "system": "16-ring",
+        "local_batch": 16,
+        "sim_compute_s": 3.5190640625e-05,
+        "model_comm_s": 6.07212e-05,
+        "step_s": 9.5911840625e-05,
+        "speedup": 2.856853994402216,
+        "efficiency": 0.1785533746501385,
+        "comm_fraction": 0.6330938870979466
+      },
+      {
+        "devices": 32,
+        "system": "32-ring",
+        "local_batch": 8,
+        "sim_compute_s": 3.17750625e-05,
+        "model_comm_s": 0.00012474524000000002,
+        "step_s": 0.0001565203025,
+        "speedup": 1.7506107554321906,
+        "efficiency": 0.054706586107255956,
+        "comm_fraction": 0.7969907929356321
+      }
+    ],
+    "method": "compute: simulated (cycle model, one device; ranks are symmetric); communication: analytical alpha-beta model with ASSUMED link parameters",
+    "provenance": {
+      "titan_version": "0.1.0",
+      "commit": "0a393698401ca76227e2301a798462accbb4036e",
+      "timestamp_utc": "2026-11-04T19:56:32+00:00",
+      "host": {
+        "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+        "logical_cpus": 4,
+        "os": "Linux-6.18.44-fc-v233-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "numpy": "2.5.3"
+      },
+      "arch_hash": "ae5c9f6222b89391"
+    }
+  },
+  "scaling_hierarchical": {
+    "workload": "MLP 64-256-256-16, global batch 256, one SGD step",
+    "arch": "titan-x1-dev",
+    "rows": [
+      {
+        "devices": 4,
+        "system": "4-ring",
+        "local_batch": 64,
+        "sim_compute_s": 8.16684375e-05,
+        "model_comm_s": 1.257696e-05,
+        "step_s": 9.42453975e-05,
+        "speedup": 2.907368765673677,
+        "efficiency": 0.7268421914184192,
+        "comm_fraction": 0.1334490631226846
+      },
+      {
+        "devices": 8,
+        "system": "2x4-hier-ring",
+        "local_batch": 32,
+        "sim_compute_s": 5.258240625e-05,
+        "model_comm_s": 7.355792e-06,
+        "step_s": 5.993819825e-05,
+        "speedup": 4.571477505165081,
+        "efficiency": 0.5714346881456351,
+        "comm_fraction": 0.12272294154254128
+      },
+      {
+        "devices": 16,
+        "system": "4x4-hier-ring",
+        "local_batch": 16,
+        "sim_compute_s": 3.5190640625e-05,
+        "model_comm_s": 1.5403872e-05,
+        "step_s": 5.0594512625e-05,
+        "speedup": 5.41572812512096,
+        "efficiency": 0.33848300782006,
+        "comm_fraction": 0.304457365054023
+      },
+      {
+        "devices": 32,
+        "system": "8x4-hier-ring",
+        "local_batch": 8,
+        "sim_compute_s": 3.17750625e-05,
+        "model_comm_s": 3.1427912e-05,
+        "step_s": 6.32029745e-05,
+        "speedup": 4.335335910495795,
+        "efficiency": 0.1354792472029936,
+        "comm_fraction": 0.4972536854258338
+      }
+    ],
+    "method": "compute: simulated (cycle model, one device; ranks are symmetric); communication: analytical alpha-beta model with ASSUMED link parameters",
+    "provenance": {
+      "titan_version": "0.1.0",
+      "commit": "0a393698401ca76227e2301a798462accbb4036e",
+      "timestamp_utc": "2026-11-04T19:56:32+00:00",
+      "host": {
+        "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+        "logical_cpus": 4,
+        "os": "Linux-6.18.44-fc-v233-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "numpy": "2.5.3"
+      },
+      "arch_hash": "ae5c9f6222b89391"
+    }
+  },
+  "duration_s": 8.2,
+  "speed": [
+    {
+      "workload": "MLP small, spirals, 300 steps",
+      "path": "ISA level, reference engine (before)",
+      "seconds": 5.948933959999977,
+      "final_loss": 0.0005269687389954925
+    },
+    {
+      "workload": "MLP small, spirals, 300 steps",
+      "path": "ISA level, bit-exact replay",
+      "seconds": 0.35557443100015007,
+      "final_loss": 0.0005269687389954925
+    },
+    {
+      "workload": "MLP small, spirals, 300 steps",
+      "path": "TITAN IR kernels (fast)",
+      "seconds": 0.3174270810000053,
+      "final_loss": 0.0005269687389954925
+    },
+    {
+      "workload": "Transformer small (19k params), 300 steps",
+      "path": "ISA level, reference engine (before)",
+      "seconds": 50.04311954599984,
+      "final_loss": 0.957919716835022
+    },
+    {
+      "workload": "Transformer small (19k params), 300 steps",
+      "path": "ISA level, bit-exact replay",
+      "seconds": 3.3601207960000465,
+      "final_loss": 0.957919716835022
+    },
+    {
+      "workload": "Transformer small (19k params), 300 steps",
+      "path": "TITAN IR kernels (fast)",
+      "seconds": 3.1306162980001773,
+      "final_loss": 0.957912802696228
+    }
+  ],
+  "real_large_training": [
+    {
+      "requested": "1m",
+      "parameters": 806168,
+      "backend": "Functional Emulator",
+      "arch": "titan-x1-dev",
+      "steps": 12,
+      "initial_loss": 3.6505050659179688,
+      "eval_loss": 2.5554187661949115,
+      "seconds": 5.74069831099996,
+      "peak_rss_gb_all_children": 0.159716,
+      "rc": 0
+    },
+    {
+      "requested": "20m",
+      "parameters": 19759384,
+      "backend": "Functional Emulator",
+      "arch": "titan-x1-host",
+      "steps": 12,
+      "initial_loss": 3.7456443309783936,
+      "eval_loss": 2.643975389020776,
+      "seconds": 54.5155666579999,
+      "peak_rss_gb_all_children": 0.952728,
+      "rc": 0
+    },
+    {
+      "requested": "100m",
+      "parameters": 100861976,
+      "backend": "Fast IR Executor",
+      "arch": "titan-x1-host",
+      "steps": 12,
+      "initial_loss": 3.7949209213256836,
+      "eval_loss": 3.251988551169752,
+      "seconds": 84.56098761900012,
+      "peak_rss_gb_all_children": 2.308912,
+      "rc": 0
+    },
+    {
+      "requested": "250m",
+      "parameters": 255119640,
+      "backend": "Fast IR Executor",
+      "arch": "titan-x1-host",
+      "steps": 12,
+      "initial_loss": 3.737931728363037,
+      "eval_loss": 3.4754753574509603,
+      "seconds": 203.9664031100001,
+      "peak_rss_gb_all_children": 5.386228,
+      "rc": 0
+    }
+  ],
+  "plans": [
+    {
+      "model": "gpt-1.3b",
+      "devices": 8,
+      "titan": {
+        "tp": 1,
+        "pp": 1,
+        "dp": 8,
+        "micro_batch": 1,
+        "micro_batches": 128,
+        "zero": 1,
+        "recompute": false,
+        "fits": true,
+        "memory_gb": {
+          "weights": 2.83748992,
+          "grads": 2.83748992,
+          "optimizer": 2.12811744,
+          "activations": 11.475615744,
+          "logits": 0.412090368,
+          "total": 19.690803392,
+          "capacity_usable": 556.6277615616001
+        },
+        "time_s": {
+          "step": 0.5157716890952727,
+          "pipeline_compute": 0.5031103275752727,
+          "tensor_parallel_comm": 0.0,
+          "data_parallel_comm": 0.012484018400000001,
+          "optimizer": 0.00017734312,
+          "pipeline_bubble_fraction": 0.0
+        },
+        "tokens_per_s": 4066047.1374042723,
+        "mfu": 0.19991783467913565,
+        "params_per_device": 1418744960.0
+      },
+      "b300": {
+        "tp": 1,
+        "pp": 1,
+        "dp": 8,
+        "micro_batch": 1,
+        "micro_batches": 128,
+        "zero": 1,
+        "recompute": false,
+        "fits": true,
+        "memory_gb": {
+          "weights": 2.83748992,
+          "grads": 2.83748992,
+          "optimizer": 2.12811744,
+          "activations": 11.475615744,
+          "logits": 0.412090368,
+          "total": 19.690803392,
+          "capacity_usable": 259.2
+        },
+        "time_s": {
+          "step": 2.7242626474611202,
+          "pipeline_compute": 2.7110692565811205,
+          "tensor_parallel_comm": 0.0,
+          "data_parallel_comm": 0.012484018400000001,
+          "optimizer": 0.00070937248,
+          "pipeline_bubble_fraction": 0.0
+        },
+        "tokens_per_s": 769805.3643816037,
+        "mfu": 0.38806112585798747,
+        "params_per_device": 1418744960.0
+      },
+      "params": 1418744960,
+      "ratio": 5.28191582643827,
+      "min_titan": 1,
+      "min_b300": 1
+    },
+    {
+      "model": "gpt-13b",
+      "devices": 16,
+      "titan": {
+        "tp": 1,
+        "pp": 2,
+        "dp": 8,
+        "micro_batch": 1,
+        "micro_batches": 128,
+        "zero": 1,
+        "recompute": false,
+        "fits": true,
+        "memory_gb": {
+          "weights": 13.110619264,
+          "grads": 13.110619264,
+          "optimizer": 9.832964448,
+          "activations": 47.8150656,
+          "logits": 0.412090368,
+          "total": 84.281358944,
+          "capacity_usable": 556.6277615616001
+        },
+        "time_s": {
+          "step": 1.457151363820364,
+          "pipeline_compute": 1.398902990836364,
+          "tensor_parallel_comm": 0.0,
+          "data_parallel_comm": 0.057428959280000004,
+          "optimizer": 0.000819413704,
+          "pipeline_bubble_fraction": 0.007751937984496124
+        },
+        "tokens_per_s": 1439213.5587765437,
+        "mfu": 0.3200359156144474,
+        "params_per_device": 6555309632.0
+      },
+      "b300": {
+        "tp": 1,
+        "pp": 1,
+        "dp": 16,
+        "micro_batch": 1,
+        "micro_batches": 64,
+        "zero": 1,
+        "recompute": false,
+        "fits": true,
+        "memory_gb": {
+          "weights": 26.221238528,
+          "grads": 26.221238528,
+          "optimizer": 9.832964448,
+          "activations": 47.8150656,
+          "logits": 0.412090368,
+          "total": 110.502597472,
+          "capacity_usable": 259.2
+        },
+        "time_s": {
+          "step": 8.9979167828512,
+          "pipeline_compute": 8.871577072435201,
+          "tensor_parallel_comm": 0.0,
+          "data_parallel_comm": 0.1230620556,
+          "optimizer": 0.003277654816,
+          "pipeline_bubble_fraction": 0.0
+        },
+        "tokens_per_s": 233070.83746283196,
+        "mfu": 0.5313754552032397,
+        "params_per_device": 13110619264.0
+      },
+      "params": 13110619264,
+      "ratio": 6.1750048802482915,
+      "min_titan": 1,
+      "min_b300": 1
+    },
+    {
+      "model": "gpt-70b",
+      "devices": 64,
+      "titan": {
+        "tp": 1,
+        "pp": 8,
+        "dp": 8,
+        "micro_batch": 1,
+        "micro_batches": 128,
+        "zero": 1,
+        "recompute": false,
+        "fits": true,
+        "memory_gb": {
+          "weights": 16.31802192,
+          "grads": 16.31802192,
+          "optimizer": 12.23851644,
+          "activations": 153.00820992,
+          "logits": 0.412090368,
+          "total": 198.294860568,
+          "capacity_usable": 556.6277615616001
+        },
+        "time_s": {
+          "step": 1.5434474247427274,
+          "pipeline_compute": 1.4709662024727275,
+          "tensor_parallel_comm": 0.0,
+          "data_parallel_comm": 0.0714613459,
+          "optimizer": 0.00101987637,
+          "pipeline_bubble_fraction": 0.05185185185185185
+        },
+        "tokens_per_s": 1358745.3426536818,
+        "mfu": 0.37284242407456764,
+        "params_per_device": 8159010960.0
+      },
+      "b300": {
+        "tp": 1,
+        "pp": 1,
+        "dp": 64,
+        "micro_batch": 1,
+        "micro_batches": 16,
+        "zero": 3,
+        "recompute": false,
+        "fits": true,
+        "memory_gb": {
+          "weights": 2.03975274,
+          "grads": 2.03975274,
+          "optimizer": 12.23851644,
+          "activations": 153.00820992,
+          "logits": 0.412090368,
+          "total": 169.738322208,
+          "capacity_usable": 259.2
+        },
+        "time_s": {
+          "step": 10.338309925928481,
+          "pipeline_compute": 9.691078307348482,
+          "tensor_parallel_comm": 0.0,
+          "data_parallel_comm": 0.6431521131,
+          "optimizer": 0.00407950548,
+          "pipeline_bubble_fraction": 0.0
+        },
+        "tokens_per_s": 202852.49862168892,
+        "mfu": 0.5706997626195767,
+        "params_per_device": 65272087680.0
+      },
+      "params": 65272087680,
+      "ratio": 6.698193770773723,
+      "min_titan": 2,
+      "min_b300": 5
+    },
+    {
+      "model": "gpt-100b",
+      "devices": 64,
+      "titan": {
+        "tp": 1,
+        "pp": 8,
+        "dp": 8,
+        "micro_batch": 1,
+        "micro_batches": 128,
+        "zero": 1,
+        "recompute": false,
+        "fits": true,
+        "memory_gb": {
+          "weights": 25.430689056,
+          "grads": 25.430689056,
+          "optimizer": 19.073016792,
+          "activations": 191.2602624,
+          "logits": 0.412090368,
+          "total": 261.606747672,
+          "capacity_usable": 556.6277615616001
+        },
+        "time_s": {
+          "step": 2.177499844867818,
+          "pipeline_compute": 2.0645811621818178,
+          "tensor_parallel_comm": 0.0,
+          "data_parallel_comm": 0.11132926462,
+          "optimizer": 0.001589418066,
+          "pipeline_bubble_fraction": 0.05185185185185185
+        },
+        "tokens_per_s": 963100.8722883764,
+        "mfu": 0.4091451555448236,
+        "params_per_device": 12715344528.0
+      },
+      "b300": {
+        "tp": 2,
+        "pp": 1,
+        "dp": 32,
+        "micro_batch": 2,
+        "micro_batches": 16,
+        "zero": 3,
+        "recompute": false,
+        "fits": true,
+        "memory_gb": {
+          "weights": 3.178836132,
+          "grads": 3.178836132,
+          "optimizer": 19.073016792,
+          "activations": 191.2602624,
+          "logits": 0.412090368,
+          "total": 217.103041824,
+          "capacity_usable": 259.2
+        },
+        "time_s": {
+          "step": 15.299717000906046,
+          "pipeline_compute": 14.800329728182046,
+          "tensor_parallel_comm": 0.4874585884444444,
+          "data_parallel_comm": 0.49302960046,
+          "optimizer": 0.006357672264,
+          "pipeline_bubble_fraction": 0.0
+        },
+        "tokens_per_s": 137071.2935328024,
+        "mfu": 0.5970245972307471,
+        "params_per_device": 50861378112.0
+      },
+      "params": 101722756224,
+      "ratio": 7.02627696482559,
+      "min_titan": 3,
+      "min_b300": 7
+    },
+    {
+      "model": "gpt-175b",
+      "devices": 128,
+      "titan": {
+        "tp": 1,
+        "pp": 16,
+        "dp": 8,
+        "micro_batch": 1,
+        "micro_batches": 128,
+        "zero": 1,
+        "recompute": false,
+        "fits": true,
+        "memory_gb": {
+          "weights": 21.902435472,
+          "grads": 21.902435472,
+          "optimizer": 16.426826604,
+          "activations": 275.414777856,
+          "logits": 0.412090368,
+          "total": 336.058565772,
+          "capacity_usable": 556.6277615616001
+        },
+        "time_s": {
+          "step": 1.8783677266317274,
+          "pipeline_compute": 1.7811056692247274,
+          "tensor_parallel_comm": 0.0,
+          "data_parallel_comm": 0.09589315519,
+          "optimizer": 0.001368902217,
+          "pipeline_bubble_fraction": 0.1048951048951049
+        },
+        "tokens_per_s": 1116475.7412866089,
+        "mfu": 0.40698752223556134,
+        "params_per_device": 10951217736.0
+      },
+      "b300": {
+        "tp": 2,
+        "pp": 2,
+        "dp": 32,
+        "micro_batch": 1,
+        "micro_batches": 32,
+        "zero": 2,
+        "recompute": false,
+        "fits": true,
+        "memory_gb": {
+          "weights": 87.609741888,
+          "grads": 2.737804434,
+          "optimizer": 16.426826604,
+          "activations": 137.707388928,
+          "logits": 0.206045184,
+          "total": 244.687807038,
+          "capacity_usable": 259.2
+        },
+        "time_s": {
+          "step": 13.087456860267277,
+          "pipeline_compute": 12.657311564129277,
+          "tensor_parallel_comm": 0.36700680191999996,
+          "data_parallel_comm": 0.42466968727,
+          "optimizer": 0.005475608868,
+          "pipeline_bubble_fraction": 0.030303030303030304
+        },
+        "tokens_per_s": 160241.36869301368,
+        "mfu": 0.5988892602865765,
+        "params_per_device": 43804870944.0
+      },
+      "params": 175219483776,
+      "ratio": 6.9674625871770015,
+      "min_titan": 6,
+      "min_b300": 11
+    }
+  ]
+}
