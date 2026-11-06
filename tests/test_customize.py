@@ -229,7 +229,11 @@ def test_cli_tokenizer_prepare_and_custom_quickstart(tmp_path, capsys):
     assert cfg["backend_kind"] in ("ir", "ir-accel") or cfg["train_config"]["backend"] in ("fast", "accel")
 
 
-def test_compile_is_fp32_only_and_auto_by_default():
+def test_compile_auto_by_default_and_bf16_program_detection(tmp_path):
     assert TrainConfig(model="transformer").torch_compile is None                   # auto
-    with pytest.raises(ValueError, match="FP32"):
-        TrainConfig(model="transformer", precision="bf16", torch_compile=True).resolve()
+    if not _torch():
+        pytest.skip("PyTorch not installed")
+    from titan.runtime.plan import reduced_gemm_program
+    tr = Trainer(TrainConfig(model="transformer", profile="tiny", backend="accel", precision="bf16", steps=1,
+                             eval_every=0, ckpt_every=0, out_dir=str(tmp_path)), log=None)
+    assert reduced_gemm_program(tr.dev, tr.train_exe) == bool(tr.dev.exact_reduced)

@@ -375,16 +375,21 @@ class AccelDevice:
         if self.compiled and not getattr(self, "regen", None):
             plan = self._plans.get(id(exe))
             if plan is None:
-                from .plan import torch_plan
-                plan = torch_plan(self, exe)
+                from .plan import reduced_gemm_program, torch_plan
+                glob = bool(self.torch_compile) and reduced_gemm_program(self, exe)
+                fn, ops = torch_plan(self, exe, global_reduced=glob)
                 if self.torch_compile:
                     import logging
                     logging.getLogger("torch._dynamo").setLevel(logging.ERROR)
                     self.torch._dynamo.config.suppress_errors = True     # a frame that fails to compile runs eagerly
-                    plan = (self.torch.compile(plan[0], dynamic=False), plan[1])
-                self._plans[id(exe)] = plan
+                    fn = self.torch.compile(fn, dynamic=False)
+                plan = self._plans[id(exe)] = (fn, ops, glob)
             with self.torch.no_grad():
-                plan[0](self.mem)
+                if plan[2]:                       # BF16 program: exact reduced-precision GEMMs for the whole call
+                    with self._reduced_matmul():
+                        plan[0](self.mem)
+                else:
+                    plan[0](self.mem)
             self.compiled_steps += bool(self.torch_compile)
             return self._finish(exe, fetch, t0, t1, plan[1])
         env: dict[int, object] = {}

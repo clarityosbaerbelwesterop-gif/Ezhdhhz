@@ -31,7 +31,8 @@ Custom architectures and tokenizers (`--model-config`, `--set`, `--model-file`, 
 
 `--compile auto` (default) runs the FP32 accel program through `torch.compile` once a run's
 measured remaining time exceeds 10 min (one-time 0.5–2 min compile, then 1.3–5× faster steps
-measured on CPU); `--compile on|off` forces it. BF16/FP16 programs stay eager (faster there).
+measured on CPU); `--compile on|off` forces it. With `--precision bf16` the compiled program uses
+the exact AMX/TF32 GEMM path: fastest mode measured (100.9 M: 706 vs 1,272 ms/step FP32 eager).
 
 All backends run the same compiled program (autodiff, fusion, optimizer on TITAN) with TITAN
 numerics; `fast`/`accel` differ from ISA level only in FP32 summation order. Measured on a

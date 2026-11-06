@@ -225,11 +225,32 @@ _T_BIN = {**_BIN, "maximum": "_t.maximum({0}, {1})"}
 _T_SCALE = "_f32({1!r}) * {0} + _f32({2!r})"
 
 
-def torch_plan(dev, exe):
-    """PyTorch dialect of the same plan (CPU or CUDA tensors); non-FP32 kernels use AccelDevice._kernel."""
+def _float_kernel(K) -> bool:
+    """Only FP32/BF16/FP16 values; casts between float types only (no integer arithmetic)."""
+    fl = (DType.FP32, DType.BF16, DType.FP16)
+    if K.output.dtype not in fl or any(b.dtype not in fl for b in K.inputs):
+        return False
+    return all(st.dtype in fl and (st.op != "cast" or st.attrs["src_dtype"] in fl) for st in K.steps)
+
+
+def reduced_gemm_program(dev, exe) -> bool:
+    """True if the compiled program can run under the host's exact reduced-precision GEMM mode as a whole:
+    it has BF16/FP16 GEMMs and that mode is exact for them (FP32 GEMMs are then emitted in FP64)."""
+    gem = [K for K in exe.module.kernels if K.kind == "gemm" and _float_kernel(K)]
+    low = [K for K in gem if K.inputs[0].dtype != DType.FP32]
+    return bool(low) and all(K.inputs[0].dtype in dev.exact_reduced for K in low)
+
+
+def torch_plan(dev, exe, global_reduced: bool = False):
+    """PyTorch dialect of the same plan (CPU or CUDA tensors). Float kernels of any precision are inline
+    (BF16/FP16 rounding after every step exactly as AccelDevice); integer kernels use AccelDevice._kernel.
+    ``global_reduced``: the caller runs the whole program under the exact reduced-precision GEMM mode
+    (for torch.compile, which cannot trace a mode switch per GEMM); FP32 GEMMs then run in FP64."""
     import torch
     g = {"_t": torch, "_np": np, "_f32": np.float32, "_kern": dev._kernel, "_conv": dev._conv, "_exe": exe,
-         "_fitt": _fit_torch}
+         "_fitt": _fit_torch, "_bf16": torch.bfloat16, "_fp16": torch.float16, "_f32t": torch.float32,
+         "_red": dev._reduced_matmul}
+    rnd = {DType.FP32: "{}", DType.BF16: "({}).to(_bf16).to(_f32t)", DType.FP16: "({}).to(_fp16).to(_f32t)"}
     for op, act in UNARY.items():
         g[f"_u_{op}"] = dev.act[act]
     B = _Builder(dev, exe, g, dev._key)
@@ -245,16 +266,22 @@ def torch_plan(dev, exe):
         ins = [B.ref(b) for b in K.inputs]
         if K.kind == "gemm":
             ops += gemm_ops(K)
-        if _fp32_kernel(K) and K.kind in ("gemm", "ewise", "rownorm", "reduce", "transpose", "copy"):
+        fp32 = _fp32_kernel(K)
+        if not fp32 and _float_kernel(K) and K.kind in ("gemm", "ewise"):         # BF16 / FP16 inline
             if K.kind == "gemm":
-                bt, ta, tb = K.attrs["batch"], K.attrs["ta"], K.attrs["tb"]
-                a, b = K.inputs[0].shape, K.inputs[1].shape
-                if bt == 1:
-                    B.emit(f"acc = _t.matmul({ins[0]}{'.t()' if ta else ''}, {ins[1]}{'.t()' if tb else ''})")
+                low = K.inputs[0].dtype != DType.FP32 and K.inputs[0].dtype in dev.exact_reduced
+                mm = _torch_mm(K, ins)
+                if low and not global_reduced:
+                    B.emit("with _red():")
+                    B.emit(f"    acc = {mm}")
                 else:
-                    A_ = f"{ins[0]}.reshape({bt}, {a[0] // bt}, {a[1]})" + (".transpose(1, 2)" if ta else "")
-                    B_ = f"{ins[1]}.reshape({bt}, {b[0] // bt}, {b[1]})" + (".transpose(1, 2)" if tb else "")
-                    B.emit(f"acc = _t.matmul({A_}, {B_}).reshape(-1, {K.shape[1]})")
+                    B.emit(f"acc = {mm}")
+            val = _round_steps(B, K, ins, rnd, "acc" if K.kind == "gemm" else None) if K.steps else "acc"
+            B.emit(f"{B.ref(out)} = _fitt({rnd[out.dtype].format(val)}, {shape})")
+        elif fp32 and K.kind in ("gemm", "ewise", "rownorm", "reduce", "transpose", "copy"):
+            if K.kind == "gemm":
+                mm = _torch_mm(K, ins, fp64=global_reduced)
+                B.emit(f"acc = {mm}")
                 val = ((B.steps_inplace(K, ins, "torch", "acc") if INPLACE else B.steps(K, ins, _T_BIN, _T_SCALE, "acc"))
                        if K.steps else "acc")
             elif K.kind == "ewise":
@@ -286,6 +313,40 @@ def torch_plan(dev, exe):
             B.emit(f"{B.ref(out)} = _conv(_B{i}, _kern(_exe, _K{i}, {{{env}}}))")
         B.free(frees[i])
     return B.finish("torch"), ops
+
+
+def _torch_mm(K, ins, fp64: bool = False) -> str:
+    bt, ta, tb = K.attrs["batch"], K.attrs["ta"], K.attrs["tb"]
+    a, b = K.inputs[0].shape, K.inputs[1].shape
+    up = ".double()" if fp64 else ""
+    if bt == 1:
+        e = f"_t.matmul({ins[0]}{up}{'.t()' if ta else ''}, {ins[1]}{up}{'.t()' if tb else ''})"
+    else:
+        A_ = f"{ins[0]}{up}.reshape({bt}, {a[0] // bt}, {a[1]})" + (".transpose(1, 2)" if ta else "")
+        B_ = f"{ins[1]}{up}.reshape({bt}, {b[0] // bt}, {b[1]})" + (".transpose(1, 2)" if tb else "")
+        e = f"_t.matmul({A_}, {B_}).reshape(-1, {K.shape[1]})"
+    return e + (".float()" if fp64 else "")
+
+
+def _round_steps(B, K, ins, rnd, acc=None) -> str:
+    """Fused chain with per-step rounding to the step dtype (AccelDevice._steps semantics)."""
+    for j, st in enumerate(K.steps):
+        a = [acc if x[0] == "acc" else ins[x[1]] if x[0] == "in" else f"s{x[1]}" for x in st.args]
+        if st.op == "cast":
+            sc = float(st.attrs["scale"])
+            e = a[0] if sc == 1.0 else f"{a[0]} * _f32({sc!r})"
+        elif st.op in _T_BIN:
+            e = _T_BIN[st.op].format(*a)
+        elif st.op == "scale":
+            e = _T_SCALE.format(a[0], float(st.attrs["alpha"]), float(st.attrs["beta"]))
+        elif st.op == "broadcast":
+            e = a[0]
+        elif st.op in UNARY:
+            e = f"_u_{st.op}({a[0]})"
+        else:
+            raise NotImplementedError(st.op)
+        B.emit(f"s{j} = {rnd[st.dtype].format(e)}")
+    return f"s{len(K.steps) - 1}"
 
 
 def _fit_torch(r, shape):
