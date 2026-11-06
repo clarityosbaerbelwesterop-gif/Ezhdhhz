@@ -37,6 +37,7 @@ python -m titan generate runs/RUN --prompt "47+38=" --strategy self-consistency 
 python -m titan reason runs/RUN --data heldout.jsonl --strategy greedy best-of-n beam  # test-time compute
 python -m titan rft runs/RUN --data problems.jsonl --eval-data heldout.jsonl         # reasoning RL (STaR)
 python -m titan merge stack --models runA runB --layers 0:0-5 1:2-7 --out deep      # Frankenstein models
+python -m titan transplant --donors runA runB --layers 0:0-3 1:4-7 --calib text.txt --out frank  # any tokenizers/widths
 python -m titan quickstart --params 100m       # sized transformer, trained for real on this host
 python -m titan quickstart --params 100b --offload-dir /mnt/nvme   # 100B on ONE machine (needs ~1.7 TB NVMe)
 python -m titan plan --params 100b --single-machine   # compiles the full 100B training step, exact RAM/storage
@@ -48,7 +49,7 @@ python -m titan quickstart --data corpus.bin --params 300m --backend auto       
 python -m titan quickstart --data domain.txt --tokenizer byte --params 300m \
        --init-from runs/.../checkpoints/best.npz --freeze tlm.tok_emb --lr 1e-4  # fine-tune
 python -m titan bench --suite default          # reproducible report (reports/)
-python -m pytest -q                            # 360 tests (RTL tests need Verilator)
+python -m pytest -q                            # 363 tests (RTL tests need Verilator)
 make lint test                                 # RTL lint (warnings = errors) + 4 RTL simulations
 ```
 
@@ -95,7 +96,7 @@ make lint test                                 # RTL lint (warnings = errors) + 
 | GPT-100B training program compile | 23.1 s → 1.0 s (380,485 → 14,647 kernels) | measured on the host, A/B |
 | Reasoning post-training (RFT), 2-digit addition with chain of thought, 153 k params | held-out accuracy 75.3 % → 95.0 % → 98.0 % (2 rounds); best-of-8 with a process verifier 82.0 % vs greedy 75.3 % | measured on the host (`examples/reasoning/arith.py`) |
 | KV-cached generation vs window recomputation | 17.6–18.6 k vs 2.3–2.4 k tokens/s (7.5–7.8×), identical outputs | measured on the host |
-| `--compile` (torch.compile of the generated program) | 2.2× (72 k model), 1.9× (3.2 M), 1.44× (17.9 M MoE), 1.34× (101 M) per step | measured on the host |
+| `--compile` (torch.compile of the generated program, automatic for long runs, 0 graph breaks) | FP32: 5.1× (406 k), 2.2× (72 k), 2.0× (3.2 M), 1.44× (17.9 M MoE); with BF16 (exact AMX GEMMs): 3.2 M 105 → 36 ms, 100.9 M 1,272 → 706 ms per step | measured on the host |
 | **100.74 B-parameter transformer trained on this 16 GB host** (LoRA rank 8, frozen base regenerated on demand) | 2 steps, 12.85 Tera-ops and ~22 min per step, peak RAM 7.2 GB | measured on the host (procedural base, not pretrained) |
 | GPT-2 initialization for large transformers (101 M, 12 steps) | eval loss 2.83 vs 3.51 with Xavier | measured, `accel` backend |
 | GPT-100B on 64 × `titan-x1-target` | ~2.2 s/step, ~0.96 M tokens/s, MFU 41 %; 7.0× the same plan on 64 × B300 | analytical planner, assumed links (Mode C) |

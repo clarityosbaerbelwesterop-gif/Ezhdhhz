@@ -61,6 +61,47 @@ the identity; MoE upcycling preserves the function exactly (identical experts, r
 a stacked 4-layer model loads every weight and keeps training. Models must share tokenizer and
 widths (stacking may change depth only); LoRA runs (adapters only) cannot be merged.
 
+### Transplantation: donors with different tokenizers, widths and architectures
+
+```bash
+titan transplant --donors runA runB --layers 0:0-3 1:4-7 --tokenizer 1 --calib text.txt \
+      --heal-steps 300 --full-steps 300 --out frank
+```
+
+`titan/transplant.py` + `titan/nn/stitch.py`:
+
+1. **Vocabulary transplant** to one target tokenizer: a target token whose bytes are a single donor
+   token is copied exactly; others are the mean of the donor rows of their byte decomposition; tokens
+   the donor never had get the donor's mean embedding and a −30 logit bias (≈ zero probability,
+   trainable), so the donor's distribution over shared tokens is preserved.
+2. **Stitched model**: every segment keeps its donor's architecture exactly (width, heads/kv_heads,
+   norm, activation, RoPE, MoE); linear bridges join different widths.
+3. **Bridge fit**: both donors run the same target-tokenized calibration text; the bridge is the
+   ridge least-squares map between their residual streams at the cut (closed form, R² reported).
+4. **Healing**: bridges only, then everything (lr/3).
+5. **Bits per byte** on held-out text for every donor (own tokenizer), the stitched model and each
+   healing phase — the tokenizer-independent comparison.
+
+Exact where mathematically possible (tests): one donor split in two → bridge R² > 0.9999 and the
+same bits/byte as the donor; char → byte tokenizer transplant → the same bits/byte on ASCII text.
+
+Measured, two incompatible donors on the same text — A: char tokenizer, d 32, GPT style;
+B: byte-level BPE (300), d 48, RMSNorm/SwiGLU/RoPE, no biases. Stitched: block 0 of A + block 1
+of B on B's tokenizer (25 exact, 44 composed, 231 unknown tokens from A's vocabulary):
+
+| | bits/byte (held-out) |
+|---|---|
+| donor A | 0.542 |
+| donor B | 0.082 |
+| stitched, least-squares bridge (R² 0.24) | 3.781 |
+| after 300 bridge-only steps | 1.627 |
+| after 300 more full steps | **0.125** |
+
+The 3.4 s pipeline turns two models that share no tokenizer and no width into one working model
+(4.3× better than donor A); a linear bridge alone cannot align independently trained
+representations (R² 0.24), healing does. Generation works on the result (window recomputation;
+stitched models have no KV-cache decode program yet).
+
 ## 3. Post-training: SFT with response-only loss
 
 ```jsonl

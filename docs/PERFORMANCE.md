@@ -143,6 +143,34 @@ numbers are **not measured** here (no GPU in this environment).
 Losses agree to 4 decimals (fused kernels may round differently; the eager plan is bit-identical
 to the interpreters). Compile pays off after a few hundred to a few thousand steps.
 
+## 11. Fusion without manual kernels (measured)
+
+* **Zero graph breaks.** The generated program now compiles into ONE graph (before: 9 graphs,
+  8 breaks, all from a data-dependent `(ids < 0).any()` check in gathers/scatter-adds; the plan now
+  knows statically that only MoE routing tables contain empty slots). 3.2 M model: eager 83.3 ms →
+  compiled 42.1 ms per step (1.98×), identical loss.
+* **Automatic compile** (`--compile auto`, default): the trainer measures 10 eager steps and
+  compiles the FP32 training program when the remaining run exceeds 10 min
+  (`TITAN_AUTO_COMPILE_S`). 406 k model: 22.4 → 4.4 ms per program execution (5.1×) after the switch.
+* **In-place element-wise chains** in the generated code (a fresh value used for the last time is
+  overwritten): bit-identical, 3–10 % on eager steps (allocation was not the bottleneck; the
+  number of passes over memory is — which is what compile fuses away).
+* **BF16 compiled end to end.** First attempt: BF16 kernels ran through the interpreter fallback and
+  switched the GEMM engine's precision mode per product — 100.9 M: 1,599 ms/step after an 18-min
+  compile, slower than eager. Now BF16/FP16 kernels are generated inline (per-step rounding as
+  fusable tensor ops, bit-identical to the interpreter when eager), and a compiled BF16 program runs
+  as a whole under the exact reduced-precision GEMM mode (AMX via oneDNN; TF32 on CUDA) — BF16
+  operands, exact products, FP32 accumulation and output; the few genuine FP32 GEMMs (RoPE rotation,
+  MoE router) are computed in FP64 there, so nothing is rounded to BF16 that TITAN keeps in FP32.
+
+| per step (accel, same session) | FP32 eager | FP32 compiled | BF16 eager | **BF16 compiled** | compile |
+|---|---|---|---|---|---|
+| 3.2 M (d 256, L 4, seq 64, batch 8) | 105 ms | 41 ms | 102 ms | **36 ms** (2.9× vs FP32 eager) | 52 s |
+| 100.9 M (d 1024, L 8, seq 64, batch 8) | 1,272 ms | 1,076 ms | 1,063 ms | **706 ms** (1.8× vs FP32 eager) | 93 s |
+
+  Loss after 3 steps agrees within 3·10⁻⁴ across all four modes. Absolute times on this shared host
+  vary by ±20 % between sessions; each row was measured in one process, back to back.
+
 Generation: KV-cached decode 17.6 k tokens/s vs 2.3 k tokens/s with full-window recomputation
 (153 k model, 64 rows, fast backend). Mixture of experts: see docs/REASONING.md §1 (2.8× the
 parameters of an equal-FLOP dense model for +16 % step time).

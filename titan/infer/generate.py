@@ -52,7 +52,10 @@ def load_run(run, ckpt: str | None = None):
     info = json.loads((run / "config.json").read_text())
     m = info["model"]
     tc = info["train_config"]
-    if tc.get("model_file"):
+    if m.get("architecture") == "stitched":
+        from ..nn.stitch import StitchedLM
+        model = StitchedLM.from_dict(m)
+    elif tc.get("model_file"):
         model = load_model_plugin(tc["model_file"], m.get("vocab") or info["dataset"]["classes"],
                                   tc["overrides"]["seq"], **{k: v for k, v in tc["overrides"].items() if k != "seq"})
     else:
