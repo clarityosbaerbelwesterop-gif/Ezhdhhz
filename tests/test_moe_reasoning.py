@@ -281,3 +281,51 @@ def test_cli_generate_reason_merge(sft_run, tmp_path, capsys):
     assert main(["merge", "upcycle-moe", "--models", str(tr.out), "--experts", "2", "--top-k", "1",
                  "--out", str(tmp_path / "moe")]) == 0
     assert json.loads((tmp_path / "moe" / "model.json").read_text())["experts"] == 2
+
+
+# ------------------------------------------------------------------ transplantation
+@pytest.fixture(scope="module")
+def donors(tmp_path_factory):
+    from titan.train.datasets import CORPUS
+    from titan.train.tokenizers import BPETokenizer
+    sp = tmp_path_factory.mktemp("donors")
+    txt = sp / "c.txt"
+    txt.write_text((CORPUS + "\n") * 40)
+    BPETokenizer.train([txt.read_text()], 300).save(sp / "bpe.json")
+    runs = []
+    for name, kw in [("A", dict(tokenizer="char", overrides={"seq": 16, "d_model": 32, "heads": 2, "layers": 2})),
+                     ("B", dict(tokenizer=str(sp / "bpe.json"),
+                                overrides={"seq": 16, "d_model": 48, "heads": 4, "layers": 2, "norm": "rmsnorm",
+                                           "activation": "swiglu", "position": "rope", "bias": False}))]:
+        tr = Trainer(TrainConfig(data=str(txt), backend="fast", steps=150, eval_every=150, ckpt_every=150,
+                                 out_dir=str(sp / name), **kw), log=None)
+        tr.run()
+        tr.close()
+        runs.append(str(tr.out))
+    return runs, txt
+
+
+def test_transplant_is_exact_where_possible(donors, tmp_path):
+    from titan.transplant import transplant
+    runs, txt = donors
+    same = transplant([runs[1]], [(0, 0, 0), (0, 1, 1)], str(txt), 0, tmp_path / "self", heal_steps=0, log=None)
+    assert same["bridges"][0]["r2"] > 0.9999                           # identical donor: identity bridge
+    bpb = same["bits_per_byte"]
+    assert abs(bpb["stitched"] - bpb["donor0"]) < 1e-3 * max(1.0, bpb["donor0"])
+    tok = transplant([runs[0]], [(0, 0, 1)], str(txt), "byte", tmp_path / "bytes", heal_steps=0, log=None)
+    vt = tok["vocab_transplant"][0]
+    assert vt["exact"] > 20 and vt["exact"] + vt["unknown"] + vt["composed"] == 256
+    assert abs(tok["bits_per_byte"]["stitched"] - tok["bits_per_byte"]["donor0"]) < 1e-3   # char -> byte, ASCII text
+
+
+def test_transplant_across_tokenizers_and_widths_heals(donors, tmp_path):
+    from titan.infer import generator_for_run
+    from titan.transplant import transplant
+    runs, txt = donors
+    rep = transplant(runs, [(0, 0, 0), (1, 1, 1)], str(txt), 1, tmp_path / "frank", heal_steps=60, full_steps=60,
+                     log=None)
+    assert rep["bridges"][0]["shape"] == [32, 48]
+    b = rep["bits_per_byte"]
+    assert b["after_bridges"] < b["stitched"] and b["after_full"] < b["after_bridges"]
+    gen = generator_for_run(rep["final_run"], batch=2)
+    assert gen.generate(["the "], max_new=4, temperature=0)[0]["tokens"] >= 1

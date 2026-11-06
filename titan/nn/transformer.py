@@ -291,6 +291,11 @@ class TransformerLM:
     # ------------------------------------------------------------------ model
     def build(self, g: Graph, ps: ParamStore, batch: int, compute: DType = DType.FP32) -> tuple[Tensor, Tensor]:
         """Input ``x``: token ids [batch*seq, 1] (INT32). Returns (ids input, logits [batch*seq, vocab])."""
+        ids, h, tok = self.build_hidden(g, ps, batch, self.config.layers, compute)
+        return ids, self._head(g, ps, h, tok, compute)
+
+    def build_hidden(self, g: Graph, ps: ParamStore, batch: int, upto: int, compute: DType = DType.FP32):
+        """Residual stream after the first ``upto`` blocks (0 = embeddings): (ids input, h [B*T, d], tok_emb)."""
         c = self.config
         ps.layers = c.layers
         T, d = c.seq, c.d_model
@@ -306,11 +311,11 @@ class TransformerLM:
         if c.causal:
             m = np.triu(np.full((T, T), -1e9), 1)
             mask = g.const(np.tile(m, (batch * c.heads, 1)), name=f"{c.name}.mask")
-        for i in range(c.layers):
+        for i in range(upto):
             self._layer = i
             h = self._block(g, ps, h, batch, f"{c.name}.b{i}", compute, mask)
         self._layer = None
-        return ids, self._head(g, ps, h, tok, compute)
+        return ids, h, tok
 
     def _head(self, g, ps, h, tok, compute):
         c = self.config

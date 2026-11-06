@@ -139,16 +139,20 @@ def upcycle_moe(w, cfg, experts: int, top_k: int, noise: float = 0.0, seed: int 
     return out, {**cfg, "experts": E, "top_k": top_k}
 
 
-def write_run(out, weights: dict, cfg: dict, tokenizer: dict | None, recipe: dict) -> Path:
+def write_run(out, weights: dict, cfg: dict, tokenizer: dict | None, recipe: dict, model_dict: dict | None = None) -> Path:
     out = Path(out)
     (out / "checkpoints").mkdir(parents=True, exist_ok=True)
     ck = out / "checkpoints" / "best.npz"
     np.savez(ck, **weights)
     digest = hashlib.sha256(ck.read_bytes()).hexdigest()
     ck.with_suffix(".json").write_text(json.dumps({"sha256": digest, "params": sorted(weights), "merge": recipe}))
-    TransformerConfig.from_dict(cfg)                          # validates the merged architecture
+    if model_dict is None:
+        TransformerConfig.from_dict(cfg)                      # validates the merged architecture
+        model_dict = {"kind": "lm", **cfg}
+    else:
+        cfg = model_dict
     (out / "model.json").write_text(json.dumps(cfg, indent=2))
-    info = {"model": {"kind": "lm", **cfg}, "tokenizer": tokenizer, "merge": recipe,
+    info = {"model": model_dict, "tokenizer": tokenizer, "merge": recipe,
             "parameters": int(sum(v.size for v in weights.values())),
             "train_config": {"seed": 0, "lora_rank": 0, "overrides": {"seq": cfg.get("seq")}}}
     (out / "config.json").write_text(json.dumps(info, indent=2, default=str))

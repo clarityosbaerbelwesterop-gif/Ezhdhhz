@@ -319,6 +319,9 @@ class Trainer:
         vocab = vocab or ds.classes                               # larger vocab = padding (e.g. multiple of 64)
         if tc.model_file:
             return load_model_plugin(tc.model_file, vocab, arch.pop("seq"), **arch)
+        if "segments" in arch:                                    # stitched (transplanted) model
+            from ..nn.stitch import StitchedLM
+            return StitchedLM.from_dict({**arch, "vocab": vocab})
         unknown = set(arch) - keys
         if unknown:
             raise ValueError(f"unknown transformer settings {sorted(unknown)}; valid: {sorted(keys)}")

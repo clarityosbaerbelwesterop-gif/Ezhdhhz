@@ -355,6 +355,20 @@ def cmd_rft(a) -> int:
     return 0
 
 
+def cmd_transplant(a) -> int:
+    from .transplant import transplant
+    layers = []
+    for r in a.layers:
+        src, _, span = r.partition(":")
+        first, _, last = span.partition("-")
+        layers.append((int(src), int(first), int(last or first)))
+    tt = int(a.tokenizer) if a.tokenizer.isdigit() else a.tokenizer
+    rep = transplant(a.donors, layers, a.calib, tt, a.out, a.heal_steps, a.full_steps, a.lr, a.batch,
+                     a.calib_windows, backend=a.backend, seq=a.seq)
+    print(json.dumps({k: rep[k] for k in ("vocab_transplant", "bridges", "bits_per_byte", "final_run")}, indent=2))
+    return 0
+
+
 def cmd_merge(a) -> int:
     from .merge import merge_cli
     return merge_cli(a)
@@ -778,6 +792,22 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--seed", type=int, default=0)
     s.add_argument("--out", required=True, help="output checkpoint .npz (+ .json, .model.json)")
     s.set_defaults(fn=cmd_merge)
+
+    s = sub.add_parser("transplant", help="Frankenstein transplant: donors with different tokenizers/widths, "
+                                          "least-squares bridges, healing, bits-per-byte report")
+    s.add_argument("--donors", nargs="+", required=True, help="donor run directories")
+    s.add_argument("--layers", nargs="+", required=True, help="DONOR:FIRST-LAST blocks in model order, e.g. 0:0-3 1:2-5")
+    s.add_argument("--calib", required=True, help="calibration / healing text (.txt); last 10%% is held out")
+    s.add_argument("--tokenizer", default="0", help="target tokenizer: donor index or any tokenizer spec")
+    s.add_argument("--heal-steps", type=int, default=300, help="phase 1: train the bridges only")
+    s.add_argument("--full-steps", type=int, default=0, help="phase 2: train everything (lr / 3)")
+    s.add_argument("--lr", type=float, default=3e-3)
+    s.add_argument("--batch", type=int, default=8)
+    s.add_argument("--calib-windows", type=int, default=64)
+    s.add_argument("--seq", type=int, default=None)
+    s.add_argument("--backend", default="auto", choices=["auto", "fast", "accel", "functional"])
+    s.add_argument("--out", required=True)
+    s.set_defaults(fn=cmd_transplant)
 
     s = sub.add_parser("tokenizer", help="train or inspect tokenizers")
     tsub = s.add_subparsers(dest="tcmd", required=True)
