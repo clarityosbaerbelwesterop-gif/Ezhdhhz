@@ -234,7 +234,7 @@ def cmd_quickstart(a) -> int:
                      clip_grad=a.clip_grad, early_stop=a.early_stop, warmup=a.warmup,
                      offload_dir=a.offload_dir, offload_mb=a.offload_mb, init_scheme=a.init,
                      lora_rank=a.lora_rank, lora_alpha=a.lora_alpha, model_config=a.model_config,
-                     torch_compile=a.compile,
+                     torch_compile={"auto": None, "on": True, "off": False}[a.compile],
                      model_file=a.model_file)
     try:
         tr = Trainer(tc)
@@ -681,9 +681,9 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--lora-rank", type=int, default=0,
                    help="LoRA fine-tuning: train rank-R adapters, base weights frozen (regenerated, never stored)")
     s.add_argument("--lora-alpha", type=float, default=16.0)
-    s.add_argument("--compile", action="store_true",
+    s.add_argument("--compile", default="auto", choices=["auto", "on", "off"],
                    help="accel: torch.compile the training program (one-time compile of ~0.5-2 min, then faster "
-                        "steps; for long runs)")
+                        "steps); auto: on when the run's measured remaining time exceeds 10 min")
     s.add_argument("--init", default="auto", choices=["auto", "xavier", "gpt2"],
                    help="weight initialization (auto: GPT-2 scheme for transformers with d_model >= 256)")
     s.add_argument("--profile", default="small", choices=["tiny", "small", "medium"])

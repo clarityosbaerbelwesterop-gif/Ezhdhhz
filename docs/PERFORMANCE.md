@@ -143,6 +143,23 @@ numbers are **not measured** here (no GPU in this environment).
 Losses agree to 4 decimals (fused kernels may round differently; the eager plan is bit-identical
 to the interpreters). Compile pays off after a few hundred to a few thousand steps.
 
+## 11. Fusion without manual kernels (measured)
+
+* **Zero graph breaks.** The generated program now compiles into ONE graph (before: 9 graphs,
+  8 breaks, all from a data-dependent `(ids < 0).any()` check in gathers/scatter-adds; the plan now
+  knows statically that only MoE routing tables contain empty slots). 3.2 M model: eager 83.3 ms →
+  compiled 42.1 ms per step (1.98×), identical loss.
+* **Automatic compile** (`--compile auto`, default): the trainer measures 10 eager steps and
+  compiles the FP32 training program when the remaining run exceeds 10 min
+  (`TITAN_AUTO_COMPILE_S`). 406 k model: 22.4 → 4.4 ms per program execution (5.1×) after the switch.
+* **In-place element-wise chains** in the generated code (a fresh value used for the last time is
+  overwritten): bit-identical, 3–10 % on eager steps (allocation was not the bottleneck; the
+  number of passes over memory is — which is what compile fuses away).
+* **Not used:** BF16 + compile. Measured 100.9 M: BF16 eager 1,005 ms/step, BF16 compiled
+  1,599 ms/step after an 18-min compile (BF16 kernels round per step and switch the GEMM engine's
+  precision mode, which the compiler cannot fuse). `--compile` is therefore FP32-only; BF16 stays
+  eager and uses the exact AMX/TF32 GEMM path (100.9 M: 1,333 → 1,005 ms/step vs FP32 eager).
+
 Generation: KV-cached decode 17.6 k tokens/s vs 2.3 k tokens/s with full-window recomputation
 (153 k model, 64 rows, fast backend). Mixture of experts: see docs/REASONING.md §1 (2.8× the
 parameters of an equal-FLOP dense model for +16 % step time).

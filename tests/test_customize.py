@@ -227,3 +227,9 @@ def test_cli_tokenizer_prepare_and_custom_quickstart(tmp_path, capsys):
     cfg = json.loads((tmp_path / "run" / "config.json").read_text())
     assert cfg["model"]["kv_heads"] == 1 and cfg["model"]["tie_embeddings"] is True
     assert cfg["backend_kind"] in ("ir", "ir-accel") or cfg["train_config"]["backend"] in ("fast", "accel")
+
+
+def test_compile_is_fp32_only_and_auto_by_default():
+    assert TrainConfig(model="transformer").torch_compile is None                   # auto
+    with pytest.raises(ValueError, match="FP32"):
+        TrainConfig(model="transformer", precision="bf16", torch_compile=True).resolve()

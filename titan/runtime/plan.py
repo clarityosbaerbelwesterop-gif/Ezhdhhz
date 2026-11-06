@@ -86,6 +86,60 @@ class _Builder:
             self.emit(f"s{j} = {e}")
         return f"s{len(K.steps) - 1}"
 
+    def steps_inplace(self, K, ins, dialect: str, acc=None) -> str:
+        """Same arithmetic as ``steps`` (bit-identical), but a value that is fresh (produced by an earlier
+        step or the GEMM) and used for the last time is overwritten instead of allocating a new array."""
+        refs = [[("acc",) if x[0] == "acc" else x for x in st.args] for st in K.steps]
+        last = {}
+        for j, args in enumerate(refs):
+            for x in args:
+                if x[0] != "in":
+                    last[x] = j
+        shape = {("acc",): tuple(K.shape)}
+        owned = {("acc",)} if acc is not None else set()
+        name = lambda x: acc if x[0] == "acc" else ins[x[1]] if x[0] == "in" else f"s{x[1]}"   # noqa: E731
+        shp = lambda x: tuple(K.inputs[x[1]].shape) if x[0] == "in" else shape[x]             # noqa: E731
+        np_ = dialect == "np"
+        for j, (st, args) in enumerate(zip(K.steps, refs)):
+            me = ("s", j)
+            out_shape = tuple(np.broadcast_shapes(*[shp(x) for x in args]))
+            reuse = [x for x in args if x in owned and last.get(x) == j and shp(x) == out_shape]
+            a = [name(x) for x in args]
+            op = st.op
+            line = None
+            if reuse and (op in _BIN or op == "scale" or op in _INPL_UNARY):
+                o = name(reuse[0])
+                if op in _BIN:
+                    fn = {"add": "add", "sub": "subtract" if np_ else "sub", "mul": "multiply" if np_ else "mul",
+                          "div": "divide" if np_ else "div", "maximum": "maximum"}[op]
+                    line = f"s{j} = {'_np' if np_ else '_t'}.{fn}({a[0]}, {a[1]}, out={o})"
+                elif op == "scale":
+                    al, be = float(st.attrs["alpha"]), float(st.attrs["beta"])
+                    line = (f"_np.multiply({o}, _f32({al!r}), out={o}); s{j} = _np.add({o}, _f32({be!r}), out={o})"
+                            if np_ else f"s{j} = {o}.mul_(_f32({al!r})).add_(_f32({be!r}))")
+                else:
+                    line = (_INPL_UNARY[op][0] if np_ else _INPL_UNARY[op][1]).format(x=o, j=j)
+                owned.discard(reuse[0])
+            if line is None:
+                if op in _BIN:
+                    e = (_BIN if np_ else _T_BIN)[op].format(*a)
+                elif op == "scale":
+                    e = (_NP_SCALE if np_ else _T_SCALE).format(a[0], float(st.attrs["alpha"]), float(st.attrs["beta"]))
+                elif op == "broadcast":
+                    e = a[0]
+                elif op in UNARY:
+                    e = f"_u_{op}({a[0]})"
+                else:
+                    raise NotImplementedError(op)
+                line = f"s{j} = {e}"
+            self.emit(line)
+            shape[me] = out_shape
+            if op != "broadcast":
+                owned.add(me)
+            else:
+                owned.discard(args[0])                 # aliased: never overwrite it afterwards
+        return f"s{len(K.steps) - 1}"
+
     def free(self, bids) -> None:
         for bid in bids:
             if bid in self.names:
@@ -126,9 +180,10 @@ def numpy_plan(dev, exe):
                     A_ = f"{ins[0]}.reshape({bt}, {a[0] // bt}, {a[1]})" + (".swapaxes(1, 2)" if ta else "")
                     B_ = f"{ins[1]}.reshape({bt}, {b[0] // bt}, {b[1]})" + (".swapaxes(1, 2)" if tb else "")
                     B.emit(f"acc = _np.matmul({A_}, {B_}).reshape(-1, {K.shape[1]})")
-                val = B.steps(K, ins, _BIN, _NP_SCALE, "acc") if K.steps else "acc"
+                val = ((B.steps_inplace(K, ins, "np", "acc") if INPLACE else B.steps(K, ins, _BIN, _NP_SCALE, "acc"))
+                       if K.steps else "acc")
             elif K.kind == "ewise":
-                val = B.steps(K, ins, _BIN, _NP_SCALE)
+                val = B.steps_inplace(K, ins, "np") if INPLACE else B.steps(K, ins, _BIN, _NP_SCALE)
             elif K.kind == "rownorm":
                 g[f"_N{i}"] = _NORM[K.attrs["fn"]]
                 val = f"_norm(_N{i}, {ins[0]}, {K.attrs['eps'] or 1e-5!r})"
@@ -152,6 +207,20 @@ def numpy_plan(dev, exe):
 
 
 _NP_SCALE = "_f32({1!r}) * {0} + _f32({2!r})"
+# in-place forms of unary activations, op for op identical to titan.emu.semantics / AccelDevice.act
+_INPL_UNARY = {
+    "exp": ("s{j} = _np.exp({x}, out={x})", "s{j} = {x}.exp_()"),
+    "log": ("s{j} = _np.log({x}, out={x})", "s{j} = {x}.log_()"),
+    "sqrt": ("s{j} = _np.sqrt({x}, out={x})", "s{j} = {x}.sqrt_()"),
+    "tanh": ("s{j} = _np.tanh({x}, out={x})", "s{j} = {x}.tanh_()"),
+    "square": ("s{j} = _np.multiply({x}, {x}, out={x})", "s{j} = {x}.mul_({x})"),
+    "relu": ("s{j} = _np.maximum({x}, _f32(0), out={x})", "s{j} = {x}.relu_()"),
+    "recip": ("s{j} = _np.divide(_f32(1), {x}, out={x})", "s{j} = {x}.reciprocal_()"),
+    "rsqrt": ("_np.sqrt({x}, out={x}); s{j} = _np.divide(_f32(1), {x}, out={x})", "s{j} = {x}.rsqrt_()"),
+    "sigmoid": ("_np.negative({x}, out={x}); _np.exp({x}, out={x}); _np.add(_f32(1), {x}, out={x}); "
+                "s{j} = _np.divide(_f32(1), {x}, out={x})", "s{j} = {x}.sigmoid_()"),
+}
+INPLACE = __import__("os").environ.get("TITAN_PLAN_INPLACE", "1") != "0"
 _T_BIN = {**_BIN, "maximum": "_t.maximum({0}, {1})"}
 _T_SCALE = "_f32({1!r}) * {0} + _f32({2!r})"
 
@@ -165,6 +234,10 @@ def torch_plan(dev, exe):
         g[f"_u_{op}"] = dev.act[act]
     B = _Builder(dev, exe, g, dev._key)
     frees = dev._np._frees(exe)
+    producer = {id(K.output): K.kind for K in exe.module.kernels}
+    for K in exe.module.kernels:                      # negative ids only come from MoE routing tables
+        if K.kind in ("embedding", "embedding_grad"):
+            K.attrs["neg_ids"] = producer.get(id(K.inputs[0])) == "moe_slots"
     ops = 0
     for i, K in enumerate(exe.module.kernels):
         out = K.output
@@ -182,9 +255,10 @@ def torch_plan(dev, exe):
                     A_ = f"{ins[0]}.reshape({bt}, {a[0] // bt}, {a[1]})" + (".transpose(1, 2)" if ta else "")
                     B_ = f"{ins[1]}.reshape({bt}, {b[0] // bt}, {b[1]})" + (".transpose(1, 2)" if tb else "")
                     B.emit(f"acc = _t.matmul({A_}, {B_}).reshape(-1, {K.shape[1]})")
-                val = B.steps(K, ins, _T_BIN, _T_SCALE, "acc") if K.steps else "acc"
+                val = ((B.steps_inplace(K, ins, "torch", "acc") if INPLACE else B.steps(K, ins, _T_BIN, _T_SCALE, "acc"))
+                       if K.steps else "acc")
             elif K.kind == "ewise":
-                val = B.steps(K, ins, _T_BIN, _T_SCALE)
+                val = B.steps_inplace(K, ins, "torch") if INPLACE else B.steps(K, ins, _T_BIN, _T_SCALE)
             elif K.kind == "rownorm":
                 x, eps = ins[0], K.attrs["eps"] or 1e-5
                 fn = K.attrs["fn"]
