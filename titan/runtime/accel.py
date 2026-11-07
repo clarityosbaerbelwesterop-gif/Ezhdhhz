@@ -159,6 +159,10 @@ class AccelDevice:
 
     def write(self, exe: Executable, name: str, value) -> None:
         b = exe.buffers[name]
+        if isinstance(value, self.torch.Tensor) and not b.dtype.is_int:     # device-to-device, no host copy
+            v = value.to(self.device, self.torch.float32).reshape(b.shape)
+            self.mem[self._key(b)] = self._round(v, b.dtype)
+            return
         v = np.asarray(value)
         if v.ndim < 2:
             v = v.reshape(1, -1) if v.ndim == 1 else v.reshape(1, 1)
@@ -362,8 +366,16 @@ class AccelDevice:
         T, dh = x.shape[0] // (B * H * G), x.shape[1]
         return x.reshape(B, H, G, T, dh).sum(dim=2).reshape(B * H * T, dh)
 
+    def sync(self) -> None:
+        if self.device.type == "cuda":
+            self.torch.cuda.synchronize(self.device)
+
+    def tensor(self, exe: Executable, name: str):
+        """Device tensor of a buffer (no host copy)."""
+        return self.mem[self._key(exe.buffers[name])]
+
     def run(self, exe: Executable, feeds: dict | None = None, mode: str = MODE, trace: bool = False,
-            fetch: list[str] | None = None, matmul_hook=None) -> RunOutput:
+            fetch: list[str] | None = None, matmul_hook=None, sync: bool = True) -> RunOutput:
         if trace or matmul_hook is not None:
             raise ValueError("the accelerated executor has no instruction trace and no RTL offload")
         if id(exe) not in self._loaded:
@@ -391,6 +403,8 @@ class AccelDevice:
                 else:
                     plan[0](self.mem)
             self.compiled_steps += bool(self.torch_compile)
+            if not sync:                                   # caller synchronizes (multi-device overlap)
+                return None
             return self._finish(exe, fetch, t0, t1, plan[1])
         env: dict[int, object] = {}
         frees = self._np._frees(exe)

@@ -93,6 +93,7 @@ class TrainConfig:
     init_scheme: str = "auto"         # auto | xavier | gpt2 (auto: gpt2 for transformers with d_model >= 256)
     torch_compile: bool | None = None # accel: torch.compile the program; None = auto (when the remaining run
                                       # is long enough to repay the one-time compile, measured after 10 steps)
+    accelerators: str = "auto"        # data parallel over connected devices: auto (all GPUs if >= 2) | N | cuda:0,cuda:1
     lora_rank: int = 0                # > 0: LoRA fine-tuning; base weights frozen (and regenerated if lazy)
     lora_alpha: float = 16.0
 
@@ -110,6 +111,11 @@ class TrainConfig:
             raise ValueError(f"unknown model {self.model!r}; choose from {sorted(PROFILES)}")
         if self.profile not in PROFILES[self.model]:
             raise ValueError(f"unknown profile {self.profile!r}; choose from {sorted(PROFILES[self.model])}")
+        if self.precision == "auto":                      # BF16 where the exact reduced-precision GEMM path exists
+            arch = {**PROFILES[self.model][self.profile],
+                    **(read_model_config(self.model_config) if self.model_config else {}), **self.overrides}
+            self.precision = auto_precision(self.backend, arch.get("d_model", 0) if self.model == "transformer" else 0,
+                                            self.torch_compile is True)
         if self.precision not in PRECISION:
             raise ValueError(f"precision {self.precision!r} not supported for training; choose from "
                              f"{sorted(PRECISION)} (INT8/INT4 are inference-only)")
@@ -176,6 +182,18 @@ def auto_backend(lm: bool, d_model: int) -> str:
     return "fast"
 
 
+def auto_precision(backend: str, d_model: int, compiled: bool = False) -> str:
+    """bf16 where it is measured faster on a host with an exact BF16 GEMM path (AMX / CUDA TF32): eager for
+    d_model >= 1024 (100.9M: 1,063 vs 1,272 ms/step), compiled for d_model >= 256 (3.2M: 36 vs 41 ms); eager
+    BF16 at d_model 256 is slower (67.9 vs 55.1 ms), so fp32 there."""
+    from ..runtime.accel import torch_available
+    if d_model < (256 if compiled else 1024) or backend not in ("accel", "auto") or not torch_available():
+        return "fp32"
+    from ..dtypes import DType
+    from ..runtime.accel import AccelDevice
+    return "bf16" if DType.BF16 in AccelDevice("dev").exact_reduced else "fp32"
+
+
 def check_backend(backend: str, workload: str = "training") -> None:
     if backend not in BACKENDS:
         raise ValueError(f"unknown backend {backend!r}; choose from {sorted(BACKENDS)}")
@@ -226,11 +244,19 @@ class Trainer:
         self.opt = make_optimizer(tc.optimizer, tc.lr, tc.warmup, schedule=tc.schedule, total_steps=tc.steps,
                                   min_lr_ratio=tc.min_lr_ratio, weight_decay=tc.weight_decay)
         t0 = time.perf_counter()
+        from ..runtime.multidevice import DataParallel, parse_accelerators
+        acc = parse_accelerators(tc.accelerators, tc.backend)
+        self.dp = None
         self.train_exe, self.n_params = self._build_train()
-        self.eval_batch = tc.batch
+        if acc:
+            self.dp = DataParallel(self, acc)
+            self.train_exe = self.dp.grad_exe                 # parameters of replica 0 (eval shares them)
+        self.eval_batch = self.dp.shard if self.dp is not None else tc.batch   # eval shares replica 0's buffers
         self.eval_exe = self._build_eval() if tc.eval_every else None
         self.compile_s = time.perf_counter() - t0
-        if tc.backend == "accel":
+        if self.dp is not None:                       # device 0 of the replicas evaluates and checkpoints
+            self.dev, self.train_exe = self.dp.devs[0], self.dp.grad_exe
+        elif tc.backend == "accel":
             from ..runtime.accel import AccelDevice
             self.dev = AccelDevice(self.cfg, torch_compile=bool(tc.torch_compile))
         elif tc.backend == "fast":
@@ -239,7 +265,9 @@ class Trainer:
             self.dev = Device(self.cfg)
         # frozen lazily-initialized weights (LoRA base) are regenerated from their seeds, never stored
         self.regenerated = [n for n in self.frozen if n in self.train_exe.lazy_init] if tc.lora_rank else []
-        if self.regenerated:
+        if self.dp is not None:
+            pass                                      # replicas were loaded by DataParallel
+        elif self.regenerated:
             self.dev.load(self.train_exe, regenerate=self.regenerated)
         else:
             self.dev.load(self.train_exe)
@@ -259,6 +287,8 @@ class Trainer:
         self._logf = open(self.out / "log.txt", "a")
         self._metf = open(self.out / "metrics.jsonl", "a")
         self.init_info = self.init_from_checkpoint(tc.init_from) if tc.init_from else None
+        if self.dp is not None and tc.init_from:
+            self.dp.sync_params()
         self._write_config()
 
     # ------------------------------------------------------------ build
@@ -266,6 +296,21 @@ class Trainer:
         g = Graph(f"{self.model.name}-train")
         ps = self._store(g)
         _, logits = self.model.build(g, ps, self.tc.batch, self.compute)
+        loss = self._loss(g, logits)
+        params = list(ps.params.values())
+        self.frozen = [p.name for p in params if self._is_frozen(p.name)]
+        trainable = [p for p in params if p.name not in self.frozen]
+        if not trainable:
+            raise ValueError("every parameter is frozen")
+        self._clip_and_apply(g, trainable, gradients(g, loss, trainable))
+        g.output("loss", loss)
+        self.model_params = [p.name for p in params]
+        return compile_graph(g, self.cfg, self._opts()), param_count(ps)
+
+    def _is_frozen(self, name: str) -> bool:
+        return ".lora_" not in name if self.tc.lora_rank else _frozen(name, self.tc.freeze)
+
+    def _loss(self, g, logits):
         if self.ds.kind == "regression":
             y = g.input("y", logits.shape)
             loss = g.mean(g.square(g.sub(logits, y)), 2)          # mean squared error, on TITAN
@@ -284,15 +329,9 @@ class Trainer:
                 total = term if total is None else g.add(total, term)
             g.output("aux_loss", total)
             loss = g.add(loss, total)
-        params = list(ps.params.values())
-        if self.tc.lora_rank:
-            self.frozen = [p.name for p in params if ".lora_" not in p.name]
-        else:
-            self.frozen = [p.name for p in params if _frozen(p.name, self.tc.freeze)]
-        trainable = [p for p in params if p.name not in self.frozen]
-        if not trainable:
-            raise ValueError("every parameter is frozen")
-        grads = gradients(g, loss, trainable)
+        return loss
+
+    def _clip_and_apply(self, g, trainable, grads) -> None:
         if self.tc.clip_grad:
             sq = None
             for gr in grads:
@@ -304,9 +343,6 @@ class Trainer:
             grads = [g.mul(gr, factor) for gr in grads]
             g.output("grad_norm", norm)
         self.opt.apply(g, trainable, grads)
-        g.output("loss", loss)
-        self.model_params = [p.name for p in params]
-        return compile_graph(g, self.cfg, self._opts()), param_count(ps)
 
     def _language_model(self):
         """TransformerLM from profile <- --model-config <- overrides, or your own model plugin."""
@@ -405,6 +441,20 @@ class Trainer:
     # ------------------------------------------------------------ run
     def train_step(self) -> dict:
         feeds = self.sampler.next()
+        if self.dp is not None:
+            host = self.opt.host_feeds(self.step)
+            r = self.dp.step(feeds, host)
+            rec = {"step": self.step, "loss": r["loss"], "titan_instructions": 0, "titan_ops": r["result"].ops,
+                   "devices": len(self.dp.devs)}
+            if "grad_norm" in r:
+                rec["grad_norm"] = r["grad_norm"]
+            if not np.isfinite(rec["loss"]):
+                raise FloatingPointError(f"non-finite loss at step {self.step}")
+            self.step += 1
+            self.history.append(rec)
+            self._metf.write(json.dumps(rec) + "\n")
+            self._metf.flush()
+            return rec
         feeds.update(self.opt.host_feeds(self.step))
         mode = {"rtl": FUNCTIONAL}.get(self.tc.backend, self.tc.backend)
         fetch = ["loss"] + (["grad_norm"] if "grad_norm" in self.train_exe.outputs else [])
@@ -483,6 +533,8 @@ class Trainer:
             self.dev.write(self.train_exe, n, data[n])
         self.sampler.restore(meta["sampler"])
         self.step = meta["step"]
+        if self.dp is not None:
+            self.dp.sync_params()
         self.log(f"resumed from {path} at step {self.step}")
 
     def init_from_checkpoint(self, path) -> dict:

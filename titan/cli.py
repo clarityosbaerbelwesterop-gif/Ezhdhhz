@@ -234,7 +234,7 @@ def cmd_quickstart(a) -> int:
                      clip_grad=a.clip_grad, early_stop=a.early_stop, warmup=a.warmup,
                      offload_dir=a.offload_dir, offload_mb=a.offload_mb, init_scheme=a.init,
                      lora_rank=a.lora_rank, lora_alpha=a.lora_alpha, model_config=a.model_config,
-                     torch_compile={"auto": None, "on": True, "off": False}[a.compile],
+                     torch_compile={"auto": None, "on": True, "off": False}[a.compile], accelerators=a.accelerators,
                      model_file=a.model_file)
     try:
         tr = Trainer(tc)
@@ -352,6 +352,33 @@ def cmd_rft(a) -> int:
                              verifier=load_verifier(a.verifier), backend=a.backend, batch=a.batch, lr=a.lr,
                              seed=a.seed)
     print(json.dumps(rep, indent=2))
+    return 0
+
+
+def cmd_hardware(a) -> int:
+    from .runtime.hardware import profile
+    p = profile()
+    c = p["cpu"]
+    print(f"CPU   {c['model']}: {c['logical_cores']} logical cores, {c.get('ram_gb', '?')} GB RAM, "
+          f"features {', '.join(c['flags']) or '-'}")
+    for d in p["devices"]:
+        m = p["measured"].get(d["device"], {})
+        extra = f", {d['memory_gb']} GB, sm {d['capability']}" if "memory_gb" in d else ""
+        print(f"{d['device']:7s} {d['name']}{extra}: FP32 GEMM {m.get('fp32_tflops', '?')} TFLOP/s"
+              + (f", BF16 (exact, FP32 accumulate) {m['bf16_exact_tflops']} TFLOP/s" if "bf16_exact_tflops" in m else "")
+              + f", copy {m.get('copy_gb_s', '?')} GB/s" + (f"  [{m['error']}]" if "error" in m else ""))
+    r = p["recommended"]
+    print(f"recommended: devices {r['devices']} ({'data parallel' if r['data_parallel'] else 'single device'}), "
+          f"precision {r['precision']}, compile {r['compile']}; {r['gemm_tflops_total_best']} TFLOP/s GEMM in total "
+          f"({r['vs_this_cpu_fp32']}x this CPU's FP32)")
+    print(p["method"])
+    if a.train_benchmark:
+        print("training benchmark (same model and steps on this machine):")
+        from .runtime.hardware import train_benchmark
+        p["train_benchmark"] = tb = train_benchmark(a.steps)
+        print("speed-up vs 1 device FP32:", tb["speedup_vs_1_device_fp32"])
+    if a.json:
+        Path(a.json).write_text(json.dumps(p, indent=2))
     return 0
 
 
@@ -702,7 +729,10 @@ def build_parser() -> argparse.ArgumentParser:
                    help="weight initialization (auto: GPT-2 scheme for transformers with d_model >= 256)")
     s.add_argument("--profile", default="small", choices=["tiny", "small", "medium"])
     s.add_argument("--batch", type=int, default=None)
-    s.add_argument("--precision", default="fp32", choices=["fp32", "bf16", "fp16"])
+    s.add_argument("--precision", default="auto", choices=["auto", "fp32", "bf16", "fp16"],
+                   help="auto: bf16 for d_model >= 256 where the exact BF16 GEMM path exists (AMX/CUDA), else fp32")
+    s.add_argument("--accelerators", default="auto",
+                   help="data parallel over connected devices: auto (all GPUs if >= 2) | N | cuda:0,cuda:1")
     s.add_argument("--backend", default="auto",
                    choices=["functional", "fast", "accel", "auto", "cycle", "rtl", "fpga", "hardware"],
                    help="auto (default): fastest executor for this host (accel on a GPU or for d_model >= 128, "
@@ -792,6 +822,14 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--seed", type=int, default=0)
     s.add_argument("--out", required=True, help="output checkpoint .npz (+ .json, .model.json)")
     s.set_defaults(fn=cmd_merge)
+
+    s = sub.add_parser("hardware", help="discover and measure connected compute (CPU/AMX, CUDA, XPU, MPS) "
+                                        "and print the fastest TITAN configuration")
+    s.add_argument("--json", default=None)
+    s.add_argument("--train-benchmark", action="store_true",
+                   help="also measure training: 1 device vs all connected accelerators, FP32 vs precision auto")
+    s.add_argument("--steps", type=int, default=30)
+    s.set_defaults(fn=cmd_hardware)
 
     s = sub.add_parser("transplant", help="Frankenstein transplant: donors with different tokenizers/widths, "
                                           "least-squares bridges, healing, bits-per-byte report")
