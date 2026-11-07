@@ -356,3 +356,17 @@ def test_hardware_profile_and_data_parallel_equals_large_batch(tmp_path, capsys)
     assert auto_precision("accel", 256) == "fp32" and auto_precision("fast", 4096) == "fp32"
     assert main(["hardware", "--json", str(tmp_path / "hw.json")]) == 0
     assert "recommended" in capsys.readouterr().out
+
+
+def test_process_per_core_data_parallel_equals_single(tmp_path):
+    if not _torch():
+        pytest.skip("PyTorch not installed")
+    res = {}
+    for acc in ("1", "cores:2"):
+        tr = Trainer(TrainConfig(model="transformer", profile="tiny", backend="accel", accelerators=acc, steps=4,
+                                 batch=8, eval_every=4, ckpt_every=0, out_dir=str(tmp_path / acc[:1])), log=None)
+        s = tr.run()
+        tr.close()
+        res[acc] = ([h["loss"] for h in tr.history], s["eval_loss"])
+    np.testing.assert_allclose(res["cores:2"][0], res["1"][0], rtol=1e-5, atol=1e-6)
+    np.testing.assert_allclose(res["cores:2"][1], res["1"][1], rtol=1e-5)

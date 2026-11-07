@@ -44,6 +44,13 @@ Measured on this 4-core host: FP32 GEMM 0.57 TFLOP/s, exact BF16 GEMM 1.33 TFLOP
 --compile on` 25.3 ms/step (3.0×), same loss (0.6179 vs 0.6176). Multi-GPU speed is not measured here (no GPU); data-parallel replicas on one CPU are
 correct but not faster (the CPU's cores already run every kernel in parallel).
 
+**Every CPU core as a device** (`--accelerators cores` or `cores:N`, `titan/runtime/multiproc.py`):
+one pinned single-thread process per core, each with a replica on its batch shard; gradients are
+averaged through shared memory and every replica applies the same update. Measured on this 4-core
+host (batch 32, accel backend): d_model 64: 46.5 k → 73.7 k tokens/s (1.58×); d_model 128:
+31.8 k → 43.9 k tokens/s (1.38×); identical losses (≤ 4.2·10⁻⁷). Large models gain nothing (their
+kernels already use all cores).
+
 ## 2. Execution backends (choose with `--backend`)
 
 | Backend | Executes | Use for |
