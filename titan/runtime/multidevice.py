@@ -12,7 +12,6 @@ from __future__ import annotations
 import numpy as np
 
 from ..compiler import CompileOptions, Graph, compile_graph, gradients
-from ..dtypes import DType
 
 
 def parse_accelerators(spec, backend: str) -> list[str]:
