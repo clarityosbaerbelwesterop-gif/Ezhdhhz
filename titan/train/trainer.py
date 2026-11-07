@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import time
 from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
@@ -276,6 +277,11 @@ class Trainer:
             for name, v in self.eval_exe.init.items():      # constants only the evaluation program has
                 if name not in self.train_exe.buffers:
                     self.dev.write(self.eval_exe, name, v)
+        self.mp = None
+        if str(tc.accelerators).startswith("cores"):          # process-per-core data parallel
+            from ..runtime.multiproc import ProcessDataParallel
+            spec = str(tc.accelerators).partition(":")[2]
+            self.mp = ProcessDataParallel(self, int(spec) if spec else (os.cpu_count() or 1))
         self._release_host_init()
         self.best = (float("inf"), -1)
         self.stopped_early = False
@@ -439,14 +445,21 @@ class Trainer:
             self.log_fn(msg)
 
     # ------------------------------------------------------------ run
+    def _pull(self) -> None:
+        if self.mp is not None:                       # replicas are identical: take worker 0's weights
+            for k, v in self.mp.params().items():
+                self.dev.write(self.train_exe, k, v)
+
     def train_step(self) -> dict:
         feeds = self.sampler.next()
-        if self.dp is not None:
+        if self.dp is not None or self.mp is not None:
             host = self.opt.host_feeds(self.step)
-            r = self.dp.step(feeds, host)
-            rec = {"step": self.step, "loss": r["loss"], "titan_instructions": 0, "titan_ops": r["result"].ops,
-                   "devices": len(self.dp.devs)}
-            if "grad_norm" in r:
+            r = (self.mp or self.dp).step(feeds, host)
+            r.setdefault("result", None)
+            rec = {"step": self.step, "loss": r["loss"], "titan_instructions": 0,
+                   "titan_ops": r["result"].ops if r["result"] else 0,
+                   "devices": self.mp.n if self.mp else len(self.dp.devs)}
+            if r.get("grad_norm") is not None:
                 rec["grad_norm"] = r["grad_norm"]
             if not np.isfinite(rec["loss"]):
                 raise FloatingPointError(f"non-finite loss at step {self.step}")
@@ -481,6 +494,7 @@ class Trainer:
     def evaluate(self) -> dict:
         if self.eval_exe is None:
             return {}
+        self._pull()
         preds, targets = [], []
         for xb, yb, nv in eval_batches(self.ds, self.eval_batch):
             ev_mode = self.tc.backend if self.tc.backend in ("fast", "accel") else FUNCTIONAL
@@ -508,6 +522,7 @@ class Trainer:
         return res
 
     def save_checkpoint(self, name: str | None = None) -> Path:
+        self._pull()
         get = getattr(self.dev, "view", self.dev.read)          # no RAM copies for storage-backed tensors
         arrays = {n: get(self.train_exe, n) for n in self.train_exe.params if n not in self.regenerated}
         path = self.out / "checkpoints" / f"{name or f'step_{self.step:06d}'}.npz"
@@ -637,6 +652,9 @@ class Trainer:
                      "compiling the training program with torch.compile (one-time cost, then faster steps)")
 
     def close(self) -> None:
+        if self.mp is not None:
+            self.mp.close()
+            self.mp = None
         self._logf.close()
         self._metf.close()
 

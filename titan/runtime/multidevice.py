@@ -22,6 +22,8 @@ def parse_accelerators(spec, backend: str) -> list[str]:
     if backend != "accel":
         return []
     accel = [d["device"] for d in devices() if d["kind"] in ("cuda", "xpu")]
+    if str(spec).startswith("cores"):
+        return []                                             # process-per-core: titan.runtime.multiproc
     if spec in (None, "", "auto"):
         return accel if len(accel) >= 2 else []
     if str(spec).isdigit():
