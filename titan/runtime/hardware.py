@@ -117,6 +117,40 @@ def recommend(devs: list[dict], perf: dict) -> dict:
             "vs_this_cpu_fp32": round(total / cpu, 1)}
 
 
+def train_benchmark(steps: int = 30, d_model: int = 256, batch: int = 0, log=print) -> dict:
+    """Measured training throughput on THIS machine: one device vs every connected accelerator
+    (data parallel), plus the precision/compile defaults. Same model, same steps, tokens per second."""
+    import tempfile
+    import time as _t
+    from ..train import TrainConfig, Trainer
+    from .multidevice import parse_accelerators
+    accs = parse_accelerators("auto", "accel")
+    n = max(1, len(accs))
+    batch = batch or 8 * n
+    ov = {"d_model": d_model, "heads": max(1, d_model // 64), "d_ff": 4 * d_model, "layers": 4, "seq": 64}
+    rows = {}
+    for label, acc, prec in (("1 device, fp32", "1", "fp32"), ("1 device, precision auto", "1", "auto"),
+                             (f"{n} devices, precision auto", "auto", "auto")):
+        if label.startswith(f"{n} devices") and n == 1:
+            continue
+        with tempfile.TemporaryDirectory() as d:
+            tr = Trainer(TrainConfig(model="transformer", profile="medium", backend="accel", precision=prec,
+                                     accelerators=acc, torch_compile=False, steps=steps + 3, batch=batch,
+                                     eval_every=0, ckpt_every=0, overrides=dict(ov), out_dir=d), log=None)
+            tr.run(3)
+            t0 = _t.perf_counter()
+            tr.run(steps + 3)
+            dt = (_t.perf_counter() - t0) / steps
+            tr.close()
+        rows[label] = {"ms_per_step": round(dt * 1e3, 1), "tokens_per_s": round(batch * 64 / dt),
+                       "precision": tr.tc.precision, "devices": len(tr.dp.devs) if tr.dp else 1}
+        log(f"  {label:28s} {rows[label]['ms_per_step']:8.1f} ms/step  {rows[label]['tokens_per_s']:>9,} tokens/s")
+    base = rows["1 device, fp32"]["tokens_per_s"]
+    return {"model": {**ov, "batch": batch}, "runs": rows,
+            "speedup_vs_1_device_fp32": {k: round(v["tokens_per_s"] / base, 2) for k, v in rows.items()},
+            "method": "measured training steps on this machine (eager; --compile auto adds more on long runs)"}
+
+
 def profile(seconds: float = 0.4) -> dict:
     devs = devices()
     perf = {}

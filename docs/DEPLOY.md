@@ -34,11 +34,14 @@ parallel by default (`titan/runtime/multidevice.py`): every device runs the comp
 program on 1/N of the batch (launched together, asynchronous on GPUs), gradients are averaged,
 and every device applies the same compiled update — identical replicas, and the same update as a
 single large-batch step (tested with 2 and 4 replicas: losses and weights within 4·10⁻⁷).
-Defaults now pick the fastest exact path on every machine: `--precision auto` (BF16 operands with
-FP32 accumulation for d_model ≥ 256 where AMX/TF32 exists, else FP32) and `--compile auto`.
+Defaults pick the fastest measured exact path: `--precision auto` uses BF16 operands with FP32
+accumulation where AMX/TF32 exists and it is measured faster (eager: d_model ≥ 1024; with
+`--compile on`: d_model ≥ 256; eager BF16 at d_model 256 is slower, 67.9 vs 55.1 ms/step), else FP32;
+`--compile auto` compiles runs longer than 10 min. `titan hardware --train-benchmark` measures the
+training speed-up of all connected accelerators and of the precision defaults on YOUR machine.
 Measured on this 4-core host: FP32 GEMM 0.57 TFLOP/s, exact BF16 GEMM 1.33 TFLOP/s (AMX),
-55 GB/s copy; 3.2 M transformer, steady state: old defaults (FP32, eager) 75.8 ms/step → new
-defaults (BF16 on AMX, compiled) 25.3 ms/step (3.0×), same loss (0.6179 vs 0.6176). Multi-GPU speed is not measured here (no GPU); data-parallel replicas on one CPU are
+55 GB/s copy; 3.2 M transformer, steady state: FP32 eager 75.8 ms/step → `--precision bf16
+--compile on` 25.3 ms/step (3.0×), same loss (0.6179 vs 0.6176). Multi-GPU speed is not measured here (no GPU); data-parallel replicas on one CPU are
 correct but not faster (the CPU's cores already run every kernel in parallel).
 
 ## 2. Execution backends (choose with `--backend`)

@@ -26,6 +26,8 @@ def parse_accelerators(spec, backend: str) -> list[str]:
         return accel if len(accel) >= 2 else []
     if str(spec).isdigit():
         n = int(spec)
+        if n == 1:
+            return []
         pool = accel or [default_device()] * n
         return (pool * n)[:n] if n > 1 else []
     return [s.strip() for s in str(spec).split(",") if s.strip()]

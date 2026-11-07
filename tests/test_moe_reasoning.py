@@ -352,5 +352,7 @@ def test_hardware_profile_and_data_parallel_equals_large_batch(tmp_path, capsys)
         np.testing.assert_allclose(res[k][0], res["one"][0], rtol=1e-5, atol=1e-6)
         for n, v in res[k][1].items():                                  # model weights (Adam state lives
             np.testing.assert_allclose(v, res["one"][1][n], rtol=1e-5, atol=1e-6)   # in the update program)
+    from titan.train.trainer import auto_precision
+    assert auto_precision("accel", 256) == "fp32" and auto_precision("fast", 4096) == "fp32"
     assert main(["hardware", "--json", str(tmp_path / "hw.json")]) == 0
     assert "recommended" in capsys.readouterr().out

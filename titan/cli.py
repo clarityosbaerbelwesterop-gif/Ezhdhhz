@@ -372,6 +372,11 @@ def cmd_hardware(a) -> int:
           f"precision {r['precision']}, compile {r['compile']}; {r['gemm_tflops_total_best']} TFLOP/s GEMM in total "
           f"({r['vs_this_cpu_fp32']}x this CPU's FP32)")
     print(p["method"])
+    if a.train_benchmark:
+        print("training benchmark (same model and steps on this machine):")
+        from .runtime.hardware import train_benchmark
+        p["train_benchmark"] = tb = train_benchmark(a.steps)
+        print("speed-up vs 1 device FP32:", tb["speedup_vs_1_device_fp32"])
     if a.json:
         Path(a.json).write_text(json.dumps(p, indent=2))
     return 0
@@ -821,6 +826,9 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("hardware", help="discover and measure connected compute (CPU/AMX, CUDA, XPU, MPS) "
                                         "and print the fastest TITAN configuration")
     s.add_argument("--json", default=None)
+    s.add_argument("--train-benchmark", action="store_true",
+                   help="also measure training: 1 device vs all connected accelerators, FP32 vs precision auto")
+    s.add_argument("--steps", type=int, default=30)
     s.set_defaults(fn=cmd_hardware)
 
     s = sub.add_parser("transplant", help="Frankenstein transplant: donors with different tokenizers/widths, "

@@ -114,7 +114,8 @@ class TrainConfig:
         if self.precision == "auto":                      # BF16 where the exact reduced-precision GEMM path exists
             arch = {**PROFILES[self.model][self.profile],
                     **(read_model_config(self.model_config) if self.model_config else {}), **self.overrides}
-            self.precision = auto_precision(self.backend, arch.get("d_model", 0) if self.model == "transformer" else 0)
+            self.precision = auto_precision(self.backend, arch.get("d_model", 0) if self.model == "transformer" else 0,
+                                            self.torch_compile is True)
         if self.precision not in PRECISION:
             raise ValueError(f"precision {self.precision!r} not supported for training; choose from "
                              f"{sorted(PRECISION)} (INT8/INT4 are inference-only)")
@@ -181,11 +182,12 @@ def auto_backend(lm: bool, d_model: int) -> str:
     return "fast"
 
 
-def auto_precision(backend: str, d_model: int) -> str:
-    """bf16 for transformers with d_model >= 256 when the host has an exact BF16 GEMM path (AMX / CUDA TF32);
-    measured faster there (docs/PERFORMANCE.md section 11), else fp32."""
+def auto_precision(backend: str, d_model: int, compiled: bool = False) -> str:
+    """bf16 where it is measured faster on a host with an exact BF16 GEMM path (AMX / CUDA TF32): eager for
+    d_model >= 1024 (100.9M: 1,063 vs 1,272 ms/step), compiled for d_model >= 256 (3.2M: 36 vs 41 ms); eager
+    BF16 at d_model 256 is slower (67.9 vs 55.1 ms), so fp32 there."""
     from ..runtime.accel import torch_available
-    if d_model < 256 or backend not in ("accel", "auto") or not torch_available():
+    if d_model < (256 if compiled else 1024) or backend not in ("accel", "auto") or not torch_available():
         return "fp32"
     from ..dtypes import DType
     from ..runtime.accel import AccelDevice
