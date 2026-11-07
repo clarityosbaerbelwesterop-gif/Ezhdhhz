@@ -329,3 +329,28 @@ def test_transplant_across_tokenizers_and_widths_heals(donors, tmp_path):
     assert b["after_bridges"] < b["stitched"] and b["after_full"] < b["after_bridges"]
     gen = generator_for_run(rep["final_run"], batch=2)
     assert gen.generate(["the "], max_new=4, temperature=0)[0]["tokens"] >= 1
+
+
+# ------------------------------------------------------------------ connected hardware
+def test_hardware_profile_and_data_parallel_equals_large_batch(tmp_path, capsys):
+    if not _torch():
+        pytest.skip("PyTorch not installed")
+    from titan.runtime.hardware import profile
+    p = profile(seconds=0.05)
+    assert p["devices"][0]["kind"] == "cpu" and p["measured"]["cpu"]["fp32_tflops"] > 0
+    assert p["recommended"]["devices"]
+    res = {}
+    for label, acc in (("one", "auto"), ("dp2", "cpu,cpu"), ("dp4", "4")):
+        tr = Trainer(TrainConfig(model="transformer", profile="tiny", backend="accel", accelerators=acc, steps=6,
+                                 batch=8, eval_every=6, ckpt_every=6, out_dir=str(tmp_path / label)), log=None)
+        s = tr.run()
+        tr.close()
+        if tr.dp:
+            assert tr.dp.consistent() and len(tr.dp.devs) == int(label[-1])
+        res[label] = ([h["loss"] for h in tr.history], tr.dev.params(tr.train_exe), s["eval_loss"])
+    for k in ("dp2", "dp4"):
+        np.testing.assert_allclose(res[k][0], res["one"][0], rtol=1e-5, atol=1e-6)
+        for n, v in res[k][1].items():                                  # model weights (Adam state lives
+            np.testing.assert_allclose(v, res["one"][1][n], rtol=1e-5, atol=1e-6)   # in the update program)
+    assert main(["hardware", "--json", str(tmp_path / "hw.json")]) == 0
+    assert "recommended" in capsys.readouterr().out

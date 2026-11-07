@@ -19,6 +19,28 @@ recommended backend and estimated limits (24 bytes per trained parameter + activ
 Custom architectures and tokenizers (`--model-config`, `--set`, `--model-file`, `--tokenizer`,
 `titan tokenizer train`, `prepare-data --tokenizer`): [CUSTOMIZE.md](CUSTOMIZE.md).
 
+## Connected hardware: discover, measure, use all of it
+
+```bash
+titan hardware                       # every CPU/GPU/XPU/MPS device, measured GEMM TFLOP/s and bandwidth
+titan quickstart ... --accelerators auto        # all GPUs (>= 2) train data parallel automatically
+titan quickstart ... --accelerators cuda:0,cuda:2
+```
+
+`titan hardware` finds what PyTorch can drive here (CUDA incl. ROCm builds, Intel XPU, Apple MPS,
+the CPU with AVX-512/AMX), measures dense FP32 and exact-BF16 GEMM throughput and copy bandwidth
+on each, and prints the fastest configuration. With two or more accelerators the trainer runs data
+parallel by default (`titan/runtime/multidevice.py`): every device runs the compiled gradient
+program on 1/N of the batch (launched together, asynchronous on GPUs), gradients are averaged,
+and every device applies the same compiled update — identical replicas, and the same update as a
+single large-batch step (tested with 2 and 4 replicas: losses and weights within 4·10⁻⁷).
+Defaults now pick the fastest exact path on every machine: `--precision auto` (BF16 operands with
+FP32 accumulation for d_model ≥ 256 where AMX/TF32 exists, else FP32) and `--compile auto`.
+Measured on this 4-core host: FP32 GEMM 0.57 TFLOP/s, exact BF16 GEMM 1.33 TFLOP/s (AMX),
+55 GB/s copy; 3.2 M transformer, steady state: old defaults (FP32, eager) 75.8 ms/step → new
+defaults (BF16 on AMX, compiled) 25.3 ms/step (3.0×), same loss (0.6179 vs 0.6176). Multi-GPU speed is not measured here (no GPU); data-parallel replicas on one CPU are
+correct but not faster (the CPU's cores already run every kernel in parallel).
+
 ## 2. Execution backends (choose with `--backend`)
 
 | Backend | Executes | Use for |
