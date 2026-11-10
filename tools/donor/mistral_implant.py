@@ -98,7 +98,7 @@ def main():
         names = [en[k] for k in ("w1", "w2", "w3")]
         extra = [f"layers.{L}.ffn_norm.weight", f"layers.{L}.gate.weight"]
         scales = [M.scale_name(n) for n in names + extra if refs[n].dtype == "F8_E4M3"]
-        blobs = repo.fetch_span(names + extra + scales, threads=4)
+        blobs = repo.fetch_span(names + extra + scales, threads=24, piece=8 << 20)
         rec = {"layer": L, "expert": e, "selected_for": why, "copy": {}, "donor_residual_rms": rms_d[L]}
         for n in names + [M.scale_name(n) for n in names]:
             rf = refs[n]
