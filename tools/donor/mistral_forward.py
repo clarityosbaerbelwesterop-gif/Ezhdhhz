@@ -80,6 +80,8 @@ def main():
     ap.add_argument("--xn-sample", type=int, default=3072, help="expert inputs kept per layer (plus all ICL tokens)")
     ap.add_argument("--workers", type=int, default=6)
     ap.add_argument("--lookahead", type=int, default=6)
+    ap.add_argument("--fetch-threads", type=int, default=10, help="parallel range requests per expert")
+    ap.add_argument("--piece-mb", type=int, default=8, help="size of one range request")
     ap.add_argument("--attn-batch", type=int, default=8)
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
@@ -187,7 +189,7 @@ def main():
 
     def fetch_expert(layer, e):
         names = list(M.expert_tensor_names(layer, e).values())
-        return repo.fetch_span(with_scales(names), threads=3)
+        return repo.fetch_span(with_scales(names), threads=a.fetch_threads, piece=a.piece_mb << 20)
 
     t_all = time.time()
     pool = ThreadPoolExecutor(a.workers)
@@ -195,7 +197,7 @@ def main():
         t0 = time.time()
         b0 = repo.bytes_fetched
         names = M.layer_tensor_names(l, cfg)
-        blobs = repo.fetch_span(with_scales(list(names.values())), threads=6)
+        blobs = repo.fetch_span(with_scales(list(names.values())), threads=4 * a.fetch_threads, piece=a.piece_mb << 20)
         W = {k: weight(blobs, n) for k, n in names.items()}
         del blobs
         with torch.no_grad():

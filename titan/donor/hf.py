@@ -3,6 +3,8 @@ and tensors by HTTP range. No token is used; public repositories only."""
 from __future__ import annotations
 
 import json
+import threading
+import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -30,6 +32,8 @@ class HFRepo:
             self.cache.mkdir(parents=True, exist_ok=True)
         self._refs: dict[str, st.TensorRef] | None = None
         self.bytes_fetched = 0
+        self._direct: dict[str, tuple[str, float]] = {}
+        self._direct_lock = threading.Lock()
 
     # ------------------------------------------------------------------ provenance
     def provenance(self) -> dict:
@@ -95,9 +99,21 @@ class HFRepo:
         self.bytes_fetched += len(b)
         return ref, b
 
-    def fetch_span(self, names: list[str], threads: int = 6, max_gap: int = 1 << 20) -> dict[str, bytes]:
+    def direct_url(self, path: str, ttl: float = 600.0, fresh: bool = False) -> str:
+        """The storage URL the hub redirects to for a file, cached for `ttl` seconds."""
+        hit = self._direct.get(path)
+        if fresh or hit is None or time.time() - hit[1] > ttl:
+            with self._direct_lock:
+                hit = self._direct.get(path)
+                if fresh or hit is None or time.time() - hit[1] > ttl:
+                    hit = (st.resolve_redirect(self.url(path)), time.time())
+                    self._direct[path] = hit
+        return hit[0]
+
+    def fetch_span(self, names: list[str], threads: int = 6, max_gap: int = 1 << 20, piece: int = 48 << 20) -> dict[str, bytes]:
         """Several tensors with few requests: tensors that lie (nearly) back to back in a shard are read as
-        one range; ranges are downloaded in parallel."""
+        one range; ranges are cut into pieces of `piece` bytes that are downloaded in parallel from the
+        storage host (throughput there is limited per connection, so it grows with `threads`)."""
         refs = self.refs()
         by_shard: dict[str, list] = {}
         for n in names:
@@ -114,7 +130,6 @@ class HFRepo:
                     cur = [r]
             spans.append((shard, cur))
 
-        piece = 48 << 20
         jobs = []                                              # (span index, offset in span, absolute start, length)
         for si, (shard, rs) in enumerate(spans):
             a0, b0 = rs[0].start, rs[-1].end
@@ -122,7 +137,11 @@ class HFRepo:
 
         def get(job):
             si, rel, start, length = job
-            return si, rel, st.HttpReader(self.url(spans[si][0])).read(start, length)
+            shard = spans[si][0]
+            try:
+                return si, rel, st.HttpReader(self.direct_url(shard), retries=3).read(start, length)
+            except IOError:                                    # signed URL expired or refused: ask the hub again
+                return si, rel, st.HttpReader(self.direct_url(shard, fresh=True)).read(start, length)
 
         bufs = [bytearray(rs[-1].end - rs[0].start) for _, rs in spans]
         with ThreadPoolExecutor(threads) as ex:

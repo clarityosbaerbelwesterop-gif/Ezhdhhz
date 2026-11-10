@@ -37,6 +37,31 @@ class LocalReader:
         return b
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *a, **k):
+        return None
+
+
+def resolve_redirect(url: str, timeout: float = 60.0, hops: int = 5) -> str:
+    """Follow redirects that stay on the URL's own host and return the first URL on another host (a signed
+    storage URL) without requesting it, or the last URL when no such redirect happens. Lets many range
+    requests go straight to the storage host instead of asking the hub for a redirect every time."""
+    import urllib.parse
+    host = urllib.parse.urlsplit(url).netloc
+    opener = urllib.request.build_opener(_NoRedirect)
+    for _ in range(hops):
+        try:
+            with opener.open(urllib.request.Request(url, method="HEAD"), timeout=timeout):
+                return url
+        except urllib.error.HTTPError as e:
+            if e.code not in (301, 302, 303, 307, 308) or not e.headers.get("Location"):
+                raise
+            url = urllib.parse.urljoin(url, e.headers["Location"])
+            if urllib.parse.urlsplit(url).netloc != host:
+                return url
+    return url
+
+
 class HttpReader:
     """HTTP range reader with retries (follows redirects; honours HTTPS_PROXY / SSL_CERT_FILE)."""
 
