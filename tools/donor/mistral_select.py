@@ -9,8 +9,9 @@ Three functions are looked for, each through a contrast that is defined before l
                          differs, so any difference at a later position is caused by the setting)
                      (b) solution steps inside a [THINK] block against the same kind of text without one
   learning           positions that must produce the output of a rule shown only through examples in the
-                     prompt (in-context learning), late examples against early ones, and against the
-                     positions that read the inputs
+                     prompt (in-context learning) against the positions that read the inputs, problem text,
+                     prose and code; "learning_gain" keeps those candidates whose mass is larger at late
+                     examples (6+) than at early ones (1-2) in both halves, ranked by that growth
 
 "mass" of expert e in a group = mean gate weight e receives from the group's tokens (each token spreads
 weight 1 over its top-k experts); uniform = 1 / n_experts. An expert is a candidate when its mass in the target
@@ -111,6 +112,7 @@ def main():
                          "target_tokens_routed": int((topi[G[tg]] == e).any(1).sum()), "target_tokens": int(len(G[tg]))}
                     if name == "learning":
                         c["mass_late"], c["mass_early"] = float(m["icl_out_late"][e]), float(m["icl_out_early"][e])
+                        c["late_above_early_in_both_halves"] = bool(all(mh[("icl_out_late", h)][e] > mh[("icl_out_early", h)][e] for h in (0, 1)))
                     cand[name].append(c)
         row["tv_icl_late_early"] = tv(m["icl_out_late"], m["icl_out_early"])
         row["tv_icl_late_noise"] = tv(mh[("icl_out_late", 0)], mh[("icl_out_late", 1)])
@@ -156,6 +158,8 @@ def main():
                                                                  "uniform_mass": 1.0 / E, "effort": "|t| >= 4 over item groups, same sign in both halves, |delta| >= 0.25/E"},
            "group_tokens": {g: int(len(i)) for g, i in G.items()}, "pair_tokens": {k[:-2]: int(len(PR[k])) for k in PR.files if k.endswith("_a")},
            "layer_profile": prof, "candidates": {}, "selected": {}}
+    # learning candidates whose use grows with the number of examples (late > early in both halves), by that growth
+    cand["learning_gain"] = [dict(c, excess=c["mass_late"] - c["mass_early"]) for c in cand["learning"] if c["late_above_early_in_both_halves"]]
     for name, cs in cand.items():
         cs.sort(key=lambda c: -c["excess"])
         out["candidates"][name] = {"n": len(cs), "per_layer": {str(l): sum(c["layer"] == l for c in cs) for l in layers}}
