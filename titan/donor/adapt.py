@@ -15,10 +15,13 @@ The three kinds of operations are kept apart and recorded per tensor:
               P_out [d_d, d_s] (donor residual update @ P_out ~ seed residual update):
                   w1' = gate @ P_in'     w3' = up @ P_in'     w2' = P_out' @ down
               so that slot(x) == P_out-mapped donor expert applied to x @ P_in  (exact identity, tested);
-              zero-padding of hidden units up to the slot width is exact; removing hidden units when the
-              donor expert is wider than the slot is lossy and reported (kept importance share).
-  HEAL        nothing here trains. Inserted slots are switched off through the selection bias, so the
-              grown model equals the seed at step 0 (tested); making them useful is training.
+              zero-padding of hidden units up to the slot width adds exact zeros (outputs equal up to the
+              rounding of the matrix products); removing hidden units when the donor expert is wider than
+              the slot is lossy and reported (kept importance share, measured output error).
+  HEAL        nothing here trains. Inserted slots are switched off through the selection bias: every token
+              keeps its experts and the old slot tensors are untouched, so the grown layer computes the same
+              function at step 0 (tested; outputs equal up to floating-point rounding). Making the new slots
+              useful is training.
 """
 from __future__ import annotations
 

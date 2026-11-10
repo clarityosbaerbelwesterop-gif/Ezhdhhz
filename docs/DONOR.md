@@ -40,7 +40,7 @@ layers, key sharing, LeRoPE, the dense first layer and the shared expert), and F
 
 `tests/test_donor.py`: safetensors round trip and hashes; FP8 table and block scales; vocabulary contract
 and boundary alignment; ridge and anchor bridges; folding equals composition (`slot(x) == P_out(expert(x @ P_in))`),
-zero-padding is bit-identical, unit selection is lossy; inserted slots leave the layer output unchanged.
+zero-padding adds exact zeros, unit selection is lossy; inserted slots leave routing and old slots untouched (outputs equal up to floating-point rounding).
 
 ## What it does not do
 

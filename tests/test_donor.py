@@ -102,8 +102,12 @@ def test_expert_folding_is_exact_composition_and_padding_is_exact(rng):
     np.testing.assert_allclose(adapt.swiglu(x, w1, w3, w2), want, rtol=2e-4, atol=2e-4)
     p1, p3, p2, info = adapt.fit_slot(w1, w3, w2, 9)
     assert info["mode"].startswith("zero-pad") and p1.shape == (9, d_s) and p2.shape == (d_s, 9)
-    np.testing.assert_array_equal(adapt.swiglu(x.astype(np.float32), p1, p3, p2),
-                                  adapt.swiglu(x.astype(np.float32), w1, w3, w2))             # bit-identical
+    # padded units contribute exact zeros; the BLAS may round the remaining sums differently for another shape
+    np.testing.assert_allclose(adapt.swiglu(x.astype(np.float32), p1, p3, p2),
+                               adapt.swiglu(x.astype(np.float32), w1, w3, w2), rtol=1e-5, atol=1e-5)
+    assert not p1[6:].any() and not p3[6:].any() and not p2[:, 6:].any()
+    np.testing.assert_array_equal(p1[:6], w1)
+    np.testing.assert_array_equal(p2[:, :6], w2)
     s1, s3, s2, sinfo = adapt.fit_slot(w1, w3, w2, 4)
     assert sinfo["mode"].startswith("unit selection") and 0 < sinfo["kept_importance_share"] < 1 and s1.shape[0] == 4
     w2z = w2.copy()
@@ -126,9 +130,13 @@ def test_inserted_slots_leave_the_layer_unchanged(rng):
     y0, idx0 = adapt.seed_moe(x, ex, k, float(k))
     grown = adapt.insert_slots(ex, new)
     y1, idx1 = adapt.seed_moe(x, grown, k, float(k))
-    np.testing.assert_array_equal(idx0, idx1)
-    np.testing.assert_array_equal(y0, y1)                                    # identity at insertion, bit for bit
+    np.testing.assert_array_equal(idx0, idx1)                                # the same experts for every token
     assert idx1.max() < E
+    # same experts, same operands: the output is the same function; a BLAS may round the router scores of a
+    # [E + 4, d] matrix differently from those of the [E, d] matrix (seen on CI: 2e-6 relative)
+    np.testing.assert_allclose(y0, y1, rtol=2e-5, atol=2e-5)
+    for key in ("w1", "w3", "w2", "router"):
+        np.testing.assert_array_equal(grown[key][:E], ex[key])               # old slots untouched, bit for bit
     with pytest.raises(ValueError):
         adapt.insert_slots(ex, new, off_bias=-0.5)
     r = adapt.project_router_row(rng.standard_normal(11), rng.standard_normal((d, 11)))
