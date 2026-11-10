@@ -21,7 +21,7 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
-from titan.donor import adapt, bridge, st                                 # noqa: E402
+from titan.donor import adapt, st                                 # noqa: E402
 from titan.donor.hf import HFRepo                                         # noqa: E402
 
 
@@ -39,6 +39,8 @@ def main():
     ap.add_argument("--exact-rows", required=True, help=".npy bool [V_seed]: rows with an exact donor token")
     ap.add_argument("--ridge", type=float, default=1e-2)
     ap.add_argument("--slot-gain", type=float, default=1.0)
+    ap.add_argument("--acts", default=None, help="directory of qwen_expert_acts.py: measured unit activations per expert")
+    ap.add_argument("--slot-widths", default="768", help="comma list; the donor width is exact, smaller widths select units (lossy)")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
@@ -51,17 +53,11 @@ def main():
     wd = np.load(a.donor_norm).astype(np.float64)
     rms_d = {int(k): float(v) for k, v in json.load(open(a.donor_rms)).items()}
     ok = np.load(a.exact_rows)
-    # anchors over the whole seed vocabulary (the objective is over all tokens); hold-out R^2 reported for reference
-    Q_T, _, qi = bridge.fit_ridge(HB, Es, a.ridge, bias=False)             # HB @ Q' ~ Es
-    Q = Q_T.T.astype(np.float64)                                           # [d_s, d_d]
-    W, _, pi = bridge.fit_ridge(Es, HB, a.ridge, bias=False)               # Es @ W ~ HB
-    P = W.T.astype(np.float64)                                             # [d_d, d_s]
-    _, _, qh = bridge.input_anchor(HB, Es, ok, a.ridge)
-    _, ph = bridge.output_anchor(Es, HB, ok, a.ridge)
-    meta = {"bridges": {"Q_seed_to_donor_prehead": {**qi, "r2_holdout_tokens": qh["r2_holdout"], "sha256": bridge.sha256_array(Q.astype(np.float32))},
-                        "P_donor_to_seed_prehead": {**pi, "r2_holdout_tokens": ph["r2_holdout"], "sha256": bridge.sha256_array(P.astype(np.float32))}},
-            "ridge": a.ridge, "slot_gain": a.slot_gain, "rms_seed": "MISSING (scalar on w2; 1.0 used)", "experts": []}
-    copy_t, proj_t = {}, {}
+    Q, P, bmeta = adapt.anchor_pair(Es, HB, ok, a.ridge)     # over the whole seed vocabulary; hold-out R^2 reported
+    widths = [int(x) for x in a.slot_widths.split(",")]
+    meta = {"bridges": bmeta, "ridge": a.ridge, "slot_gain": a.slot_gain, "rms_seed": "MISSING (scalar on w2; 1.0 used)",
+            "slot_widths": widths, "experts": []}
+    copy_t, proj_t = {}, {w: {} for w in widths}
     post = {}
     for s in sel:
         L, e = int(s["layer"]), int(s["expert"])
@@ -80,26 +76,45 @@ def main():
             copy_t[key] = ("BF16", r.shape, blobs[n])
             rec["copy"][key] = {"source": n, "shard": r.shard, "byte_range": [r.start, r.end], "dtype": r.dtype,
                                 "shape": list(r.shape), "sha256": st.sha256(blobs[n])}
-        P_in = (gs / a.slot_gain)[:, None] * Q * (w_post / wd)[None, :]
-        P_out = wd[:, None] * P / gs[None, :] / rms_d[L]
+        P_in, P_out = adapt.slot_bridges(Q, P, gs, wd, w_post, rms_d[L], a.slot_gain)
         w1, w3, w2 = adapt.fold_expert(g, u, d, P_in, P_out)
         router = adapt.project_router_row(gate_rows[e], P_in)
-        for nm, arr in (("w1", w1), ("w3", w3), ("w2", w2), ("router", router)):
-            key = f"slot.L{L}.e{e}.{nm}"
-            proj_t[key] = ("F32", arr.shape, np.ascontiguousarray(arr, "<f4").tobytes())
-            rec["projection"][key] = {"dtype": "F32", "shape": list(arr.shape), "sha256": st.sha256(proj_t[key][2]),
-                                      "rms": float(np.sqrt((arr.astype(np.float64) ** 2).mean()))}
+        ap_ = f"{a.acts}/act_L{L}_e{e}.npz" if a.acts else None
+        acts = np.load(ap_) if ap_ and os.path.exists(ap_) else None
+        imp = adapt.unit_importance(w1, w3, w2, acts["mean_abs"] if acts is not None else None)
+        for fe in widths:
+            f1, f3, f2, info = adapt.fit_slot(w1, w3, w2, fe, imp)
+            keep = info.pop("kept_units", None)
+            info["importance"] = ("measured mean |activation| on routed tokens x norm of the folded write vector" if acts is not None
+                                  else "weight norms (data-free)")
+            if acts is not None and keep is not None:
+                an = acts["act"].astype(np.float32)
+                info["rows_measured"] = int(an.shape[0])
+                info["rel_sq_error_donor_space"] = adapt.selection_error(an, d, np.asarray(keep))
+                info["rel_sq_error_seed_space"] = adapt.selection_error(an, w2, np.asarray(keep))
+            rec["projection"][f"fe{fe}"] = {"fit": info, "tensors": {}}
+            for nm, arr in (("w1", f1), ("w3", f3), ("w2", f2), ("router", router)):
+                key = f"slot.L{L}.e{e}.{nm}"
+                proj_t[fe][key] = ("F32", arr.shape, np.ascontiguousarray(arr, "<f4").tobytes())
+                rec["projection"][f"fe{fe}"]["tensors"][key] = {"dtype": "F32", "shape": list(arr.shape), "sha256": st.sha256(proj_t[fe][key][2]),
+                                                                "rms": float(np.sqrt((arr.astype(np.float64) ** 2).mean()))}
         rec["donor_residual_rms"] = rms_d[L]
         meta["experts"].append(rec)
     inv_c = st.write_safetensors(f"{a.out}/donor_experts_COPY.bf16.safetensors", copy_t,
                                  {"repo": a.repo, "revision": repo.revision, "kind": "direct copy of hub byte ranges"})
-    inv_p = st.write_safetensors(f"{a.out}/seed_slots_PROJECTION.f32.safetensors", proj_t,
-                                 {"kind": "anchor-bridge projection (initialisation, not calibrated on activations)"})
-    meta["files"] = {"copy": inv_c["__file__"], "projection": inv_p["__file__"]}
+    meta["files"] = {"copy": inv_c["__file__"], "projection": {}}
+    for fe in widths:
+        name = "seed_slots_PROJECTION.f32.safetensors" if fe == g.shape[0] else f"seed_slots_PROJECTION_fe{fe}.f32.safetensors"
+        inv_p = st.write_safetensors(f"{a.out}/{name}", proj_t[fe],
+                                     {"kind": "anchor-bridge projection (initialisation, not calibrated on activations)", "slot_width": str(fe)})
+        meta["files"]["projection"][f"fe{fe}"] = {"file": name, **inv_p["__file__"]}
     meta["provenance"] = {"repo": a.repo, "revision": repo.revision}
     json.dump(meta, open(f"{a.out}/implant_manifest.json", "w"), indent=1)
-    print(json.dumps({"experts": len(sel), "copy_file": inv_c["__file__"], "projection_file": inv_p["__file__"],
-                      "Q": meta["bridges"]["Q_seed_to_donor_prehead"], "P": meta["bridges"]["P_donor_to_seed_prehead"]}, indent=1))
+    print(json.dumps({"experts": len(sel), "files": meta["files"],
+                      "kept_importance_share": {f"fe{fe}": [round(r["projection"][f"fe{fe}"]["fit"].get("kept_importance_share", 1.0), 4)
+                                                             for r in meta["experts"]] for fe in widths},
+                      "rel_sq_error_donor_space": {f"fe{fe}": [round(r["projection"][f"fe{fe}"]["fit"].get("rel_sq_error_donor_space", 0.0), 4)
+                                                                for r in meta["experts"]] for fe in widths}}, indent=1))
 
 
 if __name__ == "__main__":

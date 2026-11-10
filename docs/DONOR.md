@@ -29,7 +29,7 @@ A projected tensor is never called a copy, and an initialisation is never called
 | `titan.donor.adapt`       | donor expert -> seed MoE slot: folding bridges into `w1/w3/w2`, zero-padding (exact), unit selection (lossy, reported), insertion with selection bias (layer output unchanged) |
 
 Scripts in `tools/donor/`: `qwen_forward.py`, `mistral_probes.py`, `mistral_forward.py`,
-`output_bridge.py`, `qwen_implant.py`, `mistral_select.py`.
+`output_bridge.py`, `qwen_expert_acts.py`, `qwen_implant.py`, `mistral_select.py`, `mistral_implant.py`.
 
 ## What the tests establish
 

@@ -58,6 +58,46 @@ def fit_slot(w1, w3, w2, fe: int, importance: np.ndarray | None = None):
     return w1[keep], w3[keep], w2[:, keep], info
 
 
+def anchor_pair(seed_emb, donor_head_rows, rows_ok, ridge: float = 1e-2):
+    """Data-free bridges between the two pre-head spaces, from the token tables on the seed vocabulary:
+        Q [d_s, d_d]  seed pre-head vector -> donor pre-head vector   (H @ Q' ~ E)
+        P [d_d, d_s]  donor pre-head update -> seed pre-head update   (P @ E' ~ H')
+    fitted over the whole seed vocabulary; R^2 on held-out tokens (fit on `rows_ok` tokens only) is
+    reported next to the fit R^2. Returns (Q, P, meta)."""
+    from . import bridge
+    Es, HB = np.asarray(seed_emb, np.float64), np.asarray(donor_head_rows, np.float64)
+    Q_T, _, qi = bridge.fit_ridge(HB, Es, ridge, bias=False)
+    W, _, pi = bridge.fit_ridge(Es, HB, ridge, bias=False)
+    Q, P = Q_T.T.astype(np.float64), W.T.astype(np.float64)
+    _, _, qh = bridge.input_anchor(HB, Es, rows_ok, ridge)
+    _, ph = bridge.output_anchor(Es, HB, rows_ok, ridge)
+    meta = {"Q_seed_to_donor_prehead": {**qi, "r2_holdout_tokens": qh["r2_holdout"], "sha256": bridge.sha256_array(Q.astype(np.float32))},
+            "P_donor_to_seed_prehead": {**pi, "r2_holdout_tokens": ph["r2_holdout"], "sha256": bridge.sha256_array(P.astype(np.float32))}}
+    return Q, P, meta
+
+
+def slot_bridges(Q, P, seed_final_gain, donor_final_gain, donor_post_gain, donor_residual_rms: float,
+                 slot_gain=1.0, seed_residual_rms: float = 1.0):
+    """Move the pre-head anchors to an expert at donor layer L and a seed slot:
+        P_in  = diag(g_seed / g_slot) @ Q @ diag(w_post(L) / w_final)
+        P_out = diag(w_final) @ P @ diag(1 / g_seed) * (rms_seed / rms_donor(L))
+    g_slot (gain of the seed layer's ffn_norm) and rms_seed are properties of the seed model at the slot's
+    layer; without them the defaults 1.0 are plain scalars the caller has to report as missing."""
+    gs, wd = np.asarray(seed_final_gain, np.float64), np.asarray(donor_final_gain, np.float64)
+    P_in = (gs / slot_gain)[:, None] * Q * (np.asarray(donor_post_gain, np.float64) / wd)[None, :]
+    P_out = wd[:, None] * P / gs[None, :] * seed_residual_rms / donor_residual_rms
+    return P_in, P_out
+
+
+def selection_error(act: np.ndarray, w2: np.ndarray, keep: np.ndarray) -> float:
+    """Relative squared error of an expert's output when only the hidden units `keep` remain, on measured
+    hidden activations act [n, f] (act = silu(w1 x) * (w3 x) on real routed inputs): ||Y - Y_keep||^2 / ||Y||^2."""
+    a, w = act.astype(np.float64), w2.astype(np.float64)
+    drop = np.setdiff1d(np.arange(a.shape[1]), keep)
+    full = a @ w.T
+    return float(((a[:, drop] @ w[:, drop].T) ** 2).sum() / max((full ** 2).sum(), 1e-30))
+
+
 def project_router_row(gate_row: np.ndarray, P_in: np.ndarray) -> np.ndarray:
     """Donor router row g [d_d] -> seed-space row r [d_s] with x @ r ~ u @ g. An initialisation only: the
     donor routes with a softmax over its own experts, the seed with sigmoid scores and a selection bias."""

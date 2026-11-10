@@ -133,3 +133,36 @@ def test_inserted_slots_leave_the_layer_unchanged(rng):
         adapt.insert_slots(ex, new, off_bias=-0.5)
     r = adapt.project_router_row(rng.standard_normal(11), rng.standard_normal((d, 11)))
     assert r.shape == (d,)
+
+
+def test_unit_selection_error_and_slot_bridges():
+    """selection_error is the relative squared output error of the dropped units on given activations;
+    slot_bridges reproduces the documented formulas; anchor bridges recover a planted linear relation."""
+    from titan.donor import adapt
+    rng = np.random.default_rng(3)
+    f, dd, ds, n = 24, 10, 7, 200
+    act = rng.standard_normal((n, f)) * np.linspace(2.0, 0.05, f)[None, :]
+    w2 = rng.standard_normal((dd, f)).astype(np.float32)
+    keep = np.arange(16)
+    full = act @ w2.T.astype(np.float64)
+    part = act[:, keep] @ w2[:, keep].T.astype(np.float64)
+    want = ((full - part) ** 2).sum() / (full ** 2).sum()
+    assert abs(adapt.selection_error(act, w2, keep) - want) < 1e-12
+    assert adapt.selection_error(act, w2, np.arange(f)) == 0.0
+    imp = adapt.unit_importance(w2[:, :1].T.repeat(f, 0), w2[:, :1].T.repeat(f, 0), w2, np.abs(act).mean(0))
+    best = np.sort(np.argsort(-imp)[:16])
+    worst = np.sort(np.argsort(imp)[:16])
+    assert adapt.selection_error(act, w2, best) < adapt.selection_error(act, w2, worst)
+    # formulas
+    Q, P = rng.standard_normal((ds, dd)), rng.standard_normal((dd, ds))
+    gs, wd, wp = rng.uniform(0.5, 2, ds), rng.uniform(0.5, 2, dd), rng.uniform(0.5, 2, dd)
+    P_in, P_out = adapt.slot_bridges(Q, P, gs, wd, wp, donor_residual_rms=3.0, slot_gain=2.0, seed_residual_rms=0.5)
+    assert np.allclose(P_in, np.diag(gs / 2.0) @ Q @ np.diag(wp / wd))
+    assert np.allclose(P_out, np.diag(wd) @ P @ np.diag(1 / gs) * (0.5 / 3.0))
+    # planted relation: donor head rows are a linear image of the seed rows -> P recovers it (small ridge)
+    V = 400
+    E = rng.standard_normal((V, ds))
+    A = rng.standard_normal((ds, dd))
+    H = E @ A
+    Q2, P2, meta = adapt.anchor_pair(E, H, np.ones(V, bool), ridge=1e-8)
+    assert np.allclose(P2.T, A, atol=1e-4) and meta["P_donor_to_seed_prehead"]["r2_holdout_tokens"] > 0.999
