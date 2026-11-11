@@ -30,7 +30,18 @@ A projected tensor is never called a copy, and an initialisation is never called
 
 Scripts in `tools/donor/`: `qwen_forward.py`, `mistral_probes.py`, `mistral_forward.py`,
 `output_bridge.py`, `qwen_expert_acts.py`, `qwen_implant.py`, `mistral_select.py`, `mistral_implant.py`,
-`mistral_out_pos.py`.
+`mistral_out_pos.py`, `build_implant.py`, `insert_implant.py`.
+
+## Implants
+
+`build_implant.py` stacks the projected experts of a donor into one file in the receiving MoE's tensor layout
+(`implant.experts.w1 / w3 [N, fe, d]`, `implant.experts.w2 [N, d, fe]`, `implant.router.weight [N, d]`) with an
+index of where every row comes from. `insert_implant.py` puts such files into a checkpoint (`model.safetensors`,
+`optim.safetensors`, `state.json`): rows are spread over the target layers in donor-depth order, every MoE layer
+grows by the same number of slots (filler slots with zero output where needed), rows are adapted to the layer's
+`ffn_norm` gain, new slots get a selection bias that keeps them out of the top-k, everything else is copied byte
+for byte, and the file is streamed so memory does not depend on the checkpoint size. After insertion the model
+computes the same function; whether a slot becomes useful is training.
 
 ## What the tests establish
 
@@ -38,6 +49,10 @@ Scripts in `tools/donor/`: `qwen_forward.py`, `mistral_probes.py`, `mistral_forw
 `transformers` reference implementations on random weights (Qwen3-MoE; Mistral Large 4 including NoPE
 layers, key sharing, LeRoPE, the dense first layer and the shared expert), and FP8 dequantisation equals
 `torch.float8_e4m3fn`.
+
+`tests/test_donor_implant.py`: implant files are byte copies in the receiving layout; insertion keeps every old
+tensor and row bit for bit, keeps routing and outputs, adapts rows to the layer gain, extends the optimizer with
+zeros and refuses settings that would change the model.
 
 `tests/test_donor.py`: safetensors round trip and hashes; FP8 table and block scales; vocabulary contract
 and boundary alignment; ridge and anchor bridges; folding equals composition (`slot(x) == P_out(expert(x @ P_in))`),

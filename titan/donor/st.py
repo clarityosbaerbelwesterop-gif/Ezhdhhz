@@ -192,3 +192,49 @@ def write_safetensors(path, tensors: dict, metadata: dict | None = None) -> dict
             h.update(part)
     inv["__file__"] = {"sha256": h.hexdigest(), "bytes": 8 + len(js) + off}
     return inv
+
+
+def write_safetensors_stream(path, entries, metadata: dict | None = None) -> dict:
+    """Like write_safetensors, with constant memory: entries is a list of (name, dtype, shape, chunks) where
+    ``chunks()`` returns an iterable of bytes objects that together are the tensor's payload. Tensors are
+    laid out in name order; the file is written to ``<path>.tmp`` and renamed. Returns the same inventory."""
+    import os
+    ents = sorted(entries, key=lambda e: e[0])
+    hdr, off, sizes = {}, 0, {}
+    for name, dtype, shape, _ in ents:
+        if name in hdr:
+            raise ValueError(f"duplicate tensor {name}")
+        n = DTYPE_BYTES[dtype] * int(np.prod(shape) if len(shape) else 1)
+        hdr[name] = {"dtype": dtype, "shape": list(shape), "data_offsets": [off, off + n]}
+        sizes[name] = n
+        off += n
+    if metadata:
+        hdr["__metadata__"] = {str(k): str(v) for k, v in metadata.items()}
+    js = json.dumps(hdr, separators=(",", ":")).encode()
+    js += b" " * (-len(js) % 8)
+    h, inv = hashlib.sha256(), {}
+    tmp = str(path) + ".tmp"
+    with open(tmp, "wb") as f:
+        for part in (struct.pack("<Q", len(js)), js):
+            f.write(part)
+            h.update(part)
+        for name, dtype, shape, chunks in ents:
+            th, n = hashlib.sha256(), 0
+            for b in chunks():
+                f.write(b)
+                h.update(b)
+                th.update(b)
+                n += len(b)
+            if n != sizes[name]:
+                raise ValueError(f"{name}: wrote {n} bytes, {dtype}{list(shape)} needs {sizes[name]}")
+            inv[name] = {"dtype": dtype, "shape": list(shape), "nbytes": n, "sha256": th.hexdigest()}
+    os.replace(tmp, path)
+    inv["__file__"] = {"sha256": h.hexdigest(), "bytes": 8 + len(js) + off}
+    return inv
+
+
+def read_chunks(reader, start: int, length: int, chunk: int = 1 << 24):
+    """Byte range of a reader as a generator of chunks."""
+    for o in range(start, start + length, chunk):
+        yield reader.read(o, min(chunk, start + length - o))
+

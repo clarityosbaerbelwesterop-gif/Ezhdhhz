@@ -51,7 +51,10 @@ def main():
     ap.add_argument("--repo", default="mistralai/Mistral-Large-4-1T-A52B")
     ap.add_argument("--rev", default=None, help="hub revision (default: the revision recorded by the run)")
     ap.add_argument("--cache", required=True)
-    ap.add_argument("--run", required=True, help="output directory of mistral_forward.py")
+    ap.add_argument("--run", default=None, help="output directory of mistral_forward.py (routing tables, expert inputs)")
+    ap.add_argument("--unit-act", default=None, help="without --run: safetensors with L{layer}.e{expert} = mean |activation| per unit "
+                                                     "(delivered as unit_activation.safetensors)")
+    ap.add_argument("--layers-json", default=None, help="without --run: layers.json of the forward (residual RMS per layer)")
     ap.add_argument("--selection", required=True, help="output of mistral_select.py")
     ap.add_argument("--per-function", type=int, default=8)
     ap.add_argument("--contract", required=True, help="vocab_contract.json (seed token -> donor ids)")
@@ -65,8 +68,10 @@ def main():
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
-    fin = f"{a.run}/final.json"
-    rev = a.rev or (json.load(open(fin))["revision"] if os.path.exists(fin) else None)
+    if not a.run and not (a.unit_act and a.layers_json):
+        raise SystemExit("give --run, or --unit-act together with --layers-json")
+    fin = f"{a.run}/final.json" if a.run else ""
+    rev = a.rev or (json.load(open(fin))["revision"] if fin and os.path.exists(fin) else None)
     repo = HFRepo(a.repo, rev, cache=a.cache)
     refs = repo.refs()
     S = json.load(open(a.selection))
@@ -78,7 +83,10 @@ def main():
     Es = np.load(a.seed_emb).astype(np.float64)
     gs = np.load(a.seed_norm).astype(np.float64)
     ok = np.array([k == "exact" for k in contract["kinds"]]) if isinstance(contract["kinds"], list) else None
-    head = np.memmap(os.path.join(a.cache, "output.weight.bf16"), dtype="<u2", mode="r").reshape(refs["output.weight"].shape)
+    hp = os.path.join(a.cache, "output.weight.bf16")
+    if not (os.path.exists(hp) and os.path.getsize(hp) == refs["output.weight"].nbytes):
+        open(hp, "wb").write(repo.fetch_span(["output.weight"], threads=24, piece=8 << 20)["output.weight"])
+    head = np.memmap(hp, dtype="<u2", mode="r").reshape(refs["output.weight"].shape)
     (HB, unk), n_used = compact_rows(head, contract["map"])
     r, b = repo.fetch("norm.weight")
     wd = st.bf16_to_f32(b).astype(np.float64)
@@ -89,8 +97,12 @@ def main():
             "head_transplant": {"rows": int(HB.shape[0]), "donor_rows_used": n_used, "unknown": len(unk), "sha256": st.sha256(proj["transplant.head_rows"][2]),
                                 "source": "output.weight", "rule": "exact: copy of the row; composed: mean of the piece rows"},
             "experts": []}
-    rms_d = {x["layer"]: x["rms"] for x in json.load(open(f"{a.run}/layers.json"))}
-    xs = np.load(f"{a.run}/samples.npz")["xn_idx"]
+    rms_d = {x["layer"]: x["rms"] for x in json.load(open(a.layers_json or f"{a.run}/layers.json"))}
+    xs = np.load(f"{a.run}/samples.npz")["xn_idx"] if a.run else None
+    ua_rd = ua_refs = None
+    if a.unit_act:
+        ua_rd = st.LocalReader(a.unit_act)
+        ua_refs, _ = st.tensor_refs(ua_rd, "unit_act")
     widths = sorted({int(x) for x in a.report_widths.split(",")} | {a.slot_width})
     copy_t = {}
     for (L, e), why in sorted(picks.items()):
@@ -110,23 +122,30 @@ def main():
         w_post = decode(refs, blobs, extra[0]).numpy().astype(np.float64)
         gate_row = decode(refs, blobs, extra[1]).numpy()[e]
         # ---- measurement on the expert's real inputs
-        R = np.load(f"{a.run}/route_L{L:02d}.npz")
-        topi, topw = R["topi"][xs].astype(np.int64), R["topw"][xs].astype(np.float32)
-        rows, slot = np.where(topi == e)
-        X = torch.from_numpy(np.load(f"{a.run}/xn_L{L:02d}.f16.npy", mmap_mode="r")[rows].astype(np.float32))
-        with torch.no_grad():
-            act = F.silu(F.linear(X, w1)) * F.linear(X, w3)
-            y = F.linear(act, w2)
-        saved = R["contrib"][xs][rows, slot].astype(np.float32)
-        mine = (y.norm(dim=-1).numpy() * topw[rows, slot])
-        rec["sample"] = {"tokens": int(len(rows)), "contribution_norm_rel_dev_median": float(np.median(np.abs(mine - saved) / np.maximum(saved, 1e-6))) if len(rows) else None}
+        rows, act, y = [], None, None
+        if a.run:
+            R = np.load(f"{a.run}/route_L{L:02d}.npz")
+            unit_act = R["unit_act"][e].astype(np.float64)
+            topi, topw = R["topi"][xs].astype(np.int64), R["topw"][xs].astype(np.float32)
+            rows, slot = np.where(topi == e)
+            X = torch.from_numpy(np.load(f"{a.run}/xn_L{L:02d}.f16.npy", mmap_mode="r")[rows].astype(np.float32))
+            with torch.no_grad():
+                act = F.silu(F.linear(X, w1)) * F.linear(X, w3)
+                y = F.linear(act, w2)
+            saved = R["contrib"][xs][rows, slot].astype(np.float32)
+            mine = (y.norm(dim=-1).numpy() * topw[rows, slot])
+            rec["sample"] = {"tokens": int(len(rows)), "contribution_norm_rel_dev_median": float(np.median(np.abs(mine - saved) / np.maximum(saved, 1e-6))) if len(rows) else None}
+        else:
+            r_ = ua_refs[f"L{L}.e{e}"]
+            unit_act = st.decode(st.fetch(ua_rd, r_), r_.dtype, r_.shape).astype(np.float64)
+            rec["sample"] = {"tokens": 0, "contribution_norm_rel_dev_median": None, "note": "no expert inputs given: width-reduction error not measured in this run"}
         # ---- projection
         P_in, P_out = adapt.slot_bridges(Q, P, gs, wd, w_post, rms_d[L], a.slot_gain)
         f1, f3, f2 = adapt.fold_expert(w1.numpy(), w3.numpy(), w2.numpy(), P_in, P_out)
-        imp = R["unit_act"][e].astype(np.float64) * np.linalg.norm(f2.astype(np.float64), axis=0)
+        imp = unit_act * np.linalg.norm(f2.astype(np.float64), axis=0)
         order = np.argsort(-imp, kind="stable")
         rec["unit_selection"] = {"importance": "measured mean |activation| on routed tokens x norm of the folded write vector", "by_width": {}}
-        an = act.numpy()
+        an = act.numpy() if act is not None else None
         for fe in widths:
             keep = np.sort(order[:fe])
             d = {"kept_importance_share": float(imp[keep].sum() / max(imp.sum(), 1e-30))}
