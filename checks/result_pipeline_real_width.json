@@ -1,0 +1,740 @@
+{
+ "tool": "tools/donor/transplant_seed.py",
+ "accel": "/tmp/claude-0/-home-user-Ezhdhhz/e9db0484-bfb2-5945-a148-e236e8e0d16e/scratchpad/work/teamcode",
+ "inputs": {
+  "accel/moe.py": "13437bc8d3955fd144f730617c5d00bbec9ffd8cca5883b8486d020d034e6d1c",
+  "accel/model.py": "6a309c972f3818caee7cf67d8b053736ac41a2679e2c9b14f339570efc3227e8",
+  "accel/config.py": "f6398efd8c36011806b646fb34481487bc2d08525ce2455e6d9b9267eeb40ddd",
+  "accel/forge_io.py": "e59cc389dd952a55cbf50c47167aaf009eb324485da3a31165b06888bbc027c2",
+  "accel/attn.py": "f05b1c6b1e4a3df4e08d925f4916368c0d3c88ea9bc75346fd4b7fd704b6fec2",
+  "dense": {
+   "dir": "/tmp/claude-0/-home-user-Ezhdhhz/e9db0484-bfb2-5945-a148-e236e8e0d16e/scratchpad/work/pipetest/dense",
+   "model_sha256": "1b4438e0401870c373b21ecdb3e8a89138241cae91a1f42c7ed863d8f5a7d8f9",
+   "step": 7500,
+   "state_model_sha256": "1b4438e0401870c373b21ecdb3e8a89138241cae91a1f42c7ed863d8f5a7d8f9",
+   "config": {
+    "vocab_size": 8192,
+    "dim": 1920,
+    "n_layers": 2,
+    "n_heads": 30,
+    "n_kv_heads": 10,
+    "ffn_hidden": 5120,
+    "max_seq_len": 512,
+    "rope_theta": 10000.0,
+    "norm_eps": 9.999999747378752e-06
+   },
+   "parameters": 94381440
+  },
+  "implants": {
+   "implant_qwen3coder_fe640_code.safetensors": "1623d5a1362e1bb4d1183c143a9a63bfe17861fb72f034744d34bfd73c78112b",
+   "implant_mistral_l4_fe640_reasoning.safetensors": "1ae4d7b34d17b6ad39ce3b66bc0022ebd8536f2a07e1e283c9175a3986e003e0",
+   "implant_mistral_l4_fe640_adaptive_thinking.safetensors": "984f867d367441e3d66c7ccbf2019fa8d3b3ec7ee38cf9cfad225970104b4854",
+   "implant_mistral_l4_fe640_learning.safetensors": "fc8911deb8c87159cffa4c743fa54229e18d129c4e43c6745c9f5aa5810107b8"
+  }
+ },
+ "steps": {
+  "upcycle": {
+   "ffn": 5120,
+   "expert_ffn": 640,
+   "segments": 8,
+   "n_shared": 2,
+   "n_routed": 6,
+   "top_k": 6,
+   "exact_by_construction": true,
+   "model_sha256": "0376b6858e2018138306b0829bff2df6cf962a105d35e788f06fd90154a562ae",
+   "parameters": 94404480,
+   "active_parameters": 94404480,
+   "moe": {
+    "n_routed": 6,
+    "n_shared": 2,
+    "top_k": 6,
+    "expert_ffn": 640,
+    "route_scale": 6.0,
+    "moe_layers": [],
+    "base": {
+     "vocab_size": 8192,
+     "dim": 1920,
+     "n_layers": 2,
+     "n_heads": 30,
+     "n_kv_heads": 10,
+     "ffn_hidden": 5120,
+     "max_seq_len": 512,
+     "rope_theta": 10000.0,
+     "norm_eps": 9.999999747378752e-06
+    }
+   }
+  },
+  "implant": {
+   "n_routed": {
+    "before": 6,
+    "after": 34
+   },
+   "parameters_added": {
+    "implant": 206545920,
+    "filler": 0
+   },
+   "filler_slots": {
+    "0": 0,
+    "1": 0
+   },
+   "placement": {
+    "0": [
+     {
+      "slot": 6,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 22,
+      "donor_expert": 71,
+      "functions": [
+       "learning_gain"
+      ],
+      "implant": "implant_mistral_l4_fe640_learning.safetensors",
+      "implant_row": 0
+     },
+     {
+      "slot": 7,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 24,
+      "donor_expert": 49,
+      "functions": [
+       "learning_gain"
+      ],
+      "implant": "implant_mistral_l4_fe640_learning.safetensors",
+      "implant_row": 1
+     },
+     {
+      "slot": 8,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 27,
+      "donor_expert": 116,
+      "functions": [
+       "reasoning"
+      ],
+      "implant": "implant_mistral_l4_fe640_reasoning.safetensors",
+      "implant_row": 0
+     },
+     {
+      "slot": 9,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 27,
+      "donor_expert": 35,
+      "functions": [
+       "learning_gain"
+      ],
+      "implant": "implant_mistral_l4_fe640_learning.safetensors",
+      "implant_row": 2
+     },
+     {
+      "slot": 10,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 33,
+      "donor_expert": 5,
+      "functions": [
+       "learning_gain"
+      ],
+      "implant": "implant_mistral_l4_fe640_learning.safetensors",
+      "implant_row": 3
+     },
+     {
+      "slot": 11,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 33,
+      "donor_expert": 93,
+      "functions": [
+       "learning_gain"
+      ],
+      "implant": "implant_mistral_l4_fe640_learning.safetensors",
+      "implant_row": 4
+     },
+     {
+      "slot": 12,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 35,
+      "donor_expert": 105,
+      "functions": [
+       "learning"
+      ],
+      "implant": "implant_mistral_l4_fe640_learning.safetensors",
+      "implant_row": 5
+     },
+     {
+      "slot": 13,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 37,
+      "donor_expert": 17,
+      "functions": [
+       "reasoning"
+      ],
+      "implant": "implant_mistral_l4_fe640_reasoning.safetensors",
+      "implant_row": 1
+     },
+     {
+      "slot": 14,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 40,
+      "donor_expert": 74,
+      "functions": [
+       "reasoning"
+      ],
+      "implant": "implant_mistral_l4_fe640_reasoning.safetensors",
+      "implant_row": 2
+     },
+     {
+      "slot": 15,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 41,
+      "donor_expert": 102,
+      "functions": [
+       "learning"
+      ],
+      "implant": "implant_mistral_l4_fe640_learning.safetensors",
+      "implant_row": 6
+     },
+     {
+      "slot": 16,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 46,
+      "donor_expert": 69,
+      "functions": [
+       "reasoning"
+      ],
+      "implant": "implant_mistral_l4_fe640_reasoning.safetensors",
+      "implant_row": 3
+     },
+     {
+      "slot": 17,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 46,
+      "donor_expert": 52,
+      "functions": [
+       "learning_gain"
+      ],
+      "implant": "implant_mistral_l4_fe640_learning.safetensors",
+      "implant_row": 7
+     },
+     {
+      "slot": 18,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 48,
+      "donor_expert": 14,
+      "functions": [
+       "think_mode"
+      ],
+      "implant": "implant_mistral_l4_fe640_adaptive_thinking.safetensors",
+      "implant_row": 0
+     },
+     {
+      "slot": 19,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 50,
+      "donor_expert": 72,
+      "functions": [
+       "reasoning"
+      ],
+      "implant": "implant_mistral_l4_fe640_reasoning.safetensors",
+      "implant_row": 4
+     },
+     {
+      "slot": 20,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 52,
+      "donor_expert": 91,
+      "functions": [
+       "reasoning"
+      ],
+      "implant": "implant_mistral_l4_fe640_reasoning.safetensors",
+      "implant_row": 5
+     },
+     {
+      "slot": 21,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 52,
+      "donor_expert": 21,
+      "functions": [
+       "think_mode"
+      ],
+      "implant": "implant_mistral_l4_fe640_adaptive_thinking.safetensors",
+      "implant_row": 1
+     },
+     {
+      "slot": 22,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 53,
+      "donor_expert": 19,
+      "functions": [
+       "learning_gain"
+      ],
+      "implant": "implant_mistral_l4_fe640_learning.safetensors",
+      "implant_row": 8
+     },
+     {
+      "slot": 23,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 54,
+      "donor_expert": 65,
+      "functions": [
+       "think_mode"
+      ],
+      "implant": "implant_mistral_l4_fe640_adaptive_thinking.safetensors",
+      "implant_row": 2
+     },
+     {
+      "slot": 24,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 56,
+      "donor_expert": 32,
+      "functions": [
+       "think_mode"
+      ],
+      "implant": "implant_mistral_l4_fe640_adaptive_thinking.safetensors",
+      "implant_row": 3
+     },
+     {
+      "slot": 25,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 56,
+      "donor_expert": 112,
+      "functions": [
+       "think_mode"
+      ],
+      "implant": "implant_mistral_l4_fe640_adaptive_thinking.safetensors",
+      "implant_row": 4
+     },
+     {
+      "slot": 26,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 58,
+      "donor_expert": 18,
+      "functions": [
+       "reasoning"
+      ],
+      "implant": "implant_mistral_l4_fe640_reasoning.safetensors",
+      "implant_row": 6
+     },
+     {
+      "slot": 27,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 58,
+      "donor_expert": 122,
+      "functions": [
+       "learning_gain"
+      ],
+      "implant": "implant_mistral_l4_fe640_learning.safetensors",
+      "implant_row": 9
+     },
+     {
+      "slot": 28,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 59,
+      "donor_expert": 66,
+      "functions": [
+       "learning"
+      ],
+      "implant": "implant_mistral_l4_fe640_learning.safetensors",
+      "implant_row": 10
+     },
+     {
+      "slot": 29,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 60,
+      "donor_expert": 8,
+      "functions": [
+       "reasoning"
+      ],
+      "implant": "implant_mistral_l4_fe640_reasoning.safetensors",
+      "implant_row": 7
+     },
+     {
+      "slot": 30,
+      "repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+      "donor_layer": 41,
+      "donor_expert": 25,
+      "functions": [
+       "code"
+      ],
+      "implant": "implant_qwen3coder_fe640_code.safetensors",
+      "implant_row": 0
+     },
+     {
+      "slot": 31,
+      "repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+      "donor_layer": 41,
+      "donor_expert": 41,
+      "functions": [
+       "code"
+      ],
+      "implant": "implant_qwen3coder_fe640_code.safetensors",
+      "implant_row": 1
+     },
+     {
+      "slot": 32,
+      "repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+      "donor_layer": 41,
+      "donor_expert": 43,
+      "functions": [
+       "code"
+      ],
+      "implant": "implant_qwen3coder_fe640_code.safetensors",
+      "implant_row": 2
+     },
+     {
+      "slot": 33,
+      "repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+      "donor_layer": 41,
+      "donor_expert": 91,
+      "functions": [
+       "code"
+      ],
+      "implant": "implant_qwen3coder_fe640_code.safetensors",
+      "implant_row": 3
+     }
+    ],
+    "1": [
+     {
+      "slot": 6,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 63,
+      "donor_expert": 11,
+      "functions": [
+       "effort"
+      ],
+      "implant": "implant_mistral_l4_fe640_adaptive_thinking.safetensors",
+      "implant_row": 5
+     },
+     {
+      "slot": 7,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 63,
+      "donor_expert": 85,
+      "functions": [
+       "effort"
+      ],
+      "implant": "implant_mistral_l4_fe640_adaptive_thinking.safetensors",
+      "implant_row": 6
+     },
+     {
+      "slot": 8,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 63,
+      "donor_expert": 118,
+      "functions": [
+       "think_mode"
+      ],
+      "implant": "implant_mistral_l4_fe640_adaptive_thinking.safetensors",
+      "implant_row": 7
+     },
+     {
+      "slot": 9,
+      "repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+      "donor_layer": 42,
+      "donor_expert": 29,
+      "functions": [
+       "code"
+      ],
+      "implant": "implant_qwen3coder_fe640_code.safetensors",
+      "implant_row": 4
+     },
+     {
+      "slot": 10,
+      "repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+      "donor_layer": 42,
+      "donor_expert": 85,
+      "functions": [
+       "code"
+      ],
+      "implant": "implant_qwen3coder_fe640_code.safetensors",
+      "implant_row": 5
+     },
+     {
+      "slot": 11,
+      "repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+      "donor_layer": 43,
+      "donor_expert": 84,
+      "functions": [
+       "code"
+      ],
+      "implant": "implant_qwen3coder_fe640_code.safetensors",
+      "implant_row": 6
+     },
+     {
+      "slot": 12,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 65,
+      "donor_expert": 65,
+      "functions": [
+       "effort"
+      ],
+      "implant": "implant_mistral_l4_fe640_adaptive_thinking.safetensors",
+      "implant_row": 8
+     },
+     {
+      "slot": 13,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 65,
+      "donor_expert": 63,
+      "functions": [
+       "learning"
+      ],
+      "implant": "implant_mistral_l4_fe640_learning.safetensors",
+      "implant_row": 11
+     },
+     {
+      "slot": 14,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 66,
+      "donor_expert": 79,
+      "functions": [
+       "effort"
+      ],
+      "implant": "implant_mistral_l4_fe640_adaptive_thinking.safetensors",
+      "implant_row": 9
+     },
+     {
+      "slot": 15,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 66,
+      "donor_expert": 94,
+      "functions": [
+       "learning"
+      ],
+      "implant": "implant_mistral_l4_fe640_learning.safetensors",
+      "implant_row": 12
+     },
+     {
+      "slot": 16,
+      "repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+      "donor_layer": 44,
+      "donor_expert": 32,
+      "functions": [
+       "code"
+      ],
+      "implant": "implant_qwen3coder_fe640_code.safetensors",
+      "implant_row": 7
+     },
+     {
+      "slot": 17,
+      "repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+      "donor_layer": 44,
+      "donor_expert": 41,
+      "functions": [
+       "code"
+      ],
+      "implant": "implant_qwen3coder_fe640_code.safetensors",
+      "implant_row": 8
+     },
+     {
+      "slot": 18,
+      "repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+      "donor_layer": 45,
+      "donor_expert": 44,
+      "functions": [
+       "code"
+      ],
+      "implant": "implant_qwen3coder_fe640_code.safetensors",
+      "implant_row": 9
+     },
+     {
+      "slot": 19,
+      "repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+      "donor_layer": 45,
+      "donor_expert": 100,
+      "functions": [
+       "code"
+      ],
+      "implant": "implant_qwen3coder_fe640_code.safetensors",
+      "implant_row": 10
+     },
+     {
+      "slot": 20,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 68,
+      "donor_expert": 83,
+      "functions": [
+       "think_mode"
+      ],
+      "implant": "implant_mistral_l4_fe640_adaptive_thinking.safetensors",
+      "implant_row": 10
+     },
+     {
+      "slot": 21,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 69,
+      "donor_expert": 14,
+      "functions": [
+       "effort"
+      ],
+      "implant": "implant_mistral_l4_fe640_adaptive_thinking.safetensors",
+      "implant_row": 11
+     },
+     {
+      "slot": 22,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 69,
+      "donor_expert": 70,
+      "functions": [
+       "effort"
+      ],
+      "implant": "implant_mistral_l4_fe640_adaptive_thinking.safetensors",
+      "implant_row": 12
+     },
+     {
+      "slot": 23,
+      "repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+      "donor_layer": 46,
+      "donor_expert": 40,
+      "functions": [
+       "code"
+      ],
+      "implant": "implant_qwen3coder_fe640_code.safetensors",
+      "implant_row": 11
+     },
+     {
+      "slot": 24,
+      "repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+      "donor_layer": 46,
+      "donor_expert": 85,
+      "functions": [
+       "code"
+      ],
+      "implant": "implant_qwen3coder_fe640_code.safetensors",
+      "implant_row": 12
+     },
+     {
+      "slot": 25,
+      "repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+      "donor_layer": 46,
+      "donor_expert": 86,
+      "functions": [
+       "code"
+      ],
+      "implant": "implant_qwen3coder_fe640_code.safetensors",
+      "implant_row": 13
+     },
+     {
+      "slot": 26,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 70,
+      "donor_expert": 8,
+      "functions": [
+       "think_mode"
+      ],
+      "implant": "implant_mistral_l4_fe640_adaptive_thinking.safetensors",
+      "implant_row": 13
+     },
+     {
+      "slot": 27,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 70,
+      "donor_expert": 80,
+      "functions": [
+       "effort"
+      ],
+      "implant": "implant_mistral_l4_fe640_adaptive_thinking.safetensors",
+      "implant_row": 14
+     },
+     {
+      "slot": 28,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 70,
+      "donor_expert": 11,
+      "functions": [
+       "learning"
+      ],
+      "implant": "implant_mistral_l4_fe640_learning.safetensors",
+      "implant_row": 13
+     },
+     {
+      "slot": 29,
+      "repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+      "donor_layer": 47,
+      "donor_expert": 25,
+      "functions": [
+       "code"
+      ],
+      "implant": "implant_qwen3coder_fe640_code.safetensors",
+      "implant_row": 14
+     },
+     {
+      "slot": 30,
+      "repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+      "donor_layer": 47,
+      "donor_expert": 60,
+      "functions": [
+       "code"
+      ],
+      "implant": "implant_qwen3coder_fe640_code.safetensors",
+      "implant_row": 15
+     },
+     {
+      "slot": 31,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 71,
+      "donor_expert": 65,
+      "functions": [
+       "effort"
+      ],
+      "implant": "implant_mistral_l4_fe640_adaptive_thinking.safetensors",
+      "implant_row": 15
+     },
+     {
+      "slot": 32,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 71,
+      "donor_expert": 57,
+      "functions": [
+       "learning"
+      ],
+      "implant": "implant_mistral_l4_fe640_learning.safetensors",
+      "implant_row": 14
+     },
+     {
+      "slot": 33,
+      "repo": "mistralai/Mistral-Large-4-1T-A52B",
+      "donor_layer": 71,
+      "donor_expert": 64,
+      "functions": [
+       "learning"
+      ],
+      "implant": "implant_mistral_l4_fe640_learning.safetensors",
+      "implant_row": 15
+     }
+    ]
+   },
+   "off_bias": -4.0,
+   "result": {
+    "model_sha256": "dd1fc3f4642545033c772d014e5614b0b955556f4bcdae11fdd0013e05f8eb3d",
+    "bytes": 1203804848
+   },
+   "parameters": 300950400,
+   "active_parameters": 94512000
+  },
+  "forward_check": {
+   "ids": [
+    2,
+    96
+   ],
+   "ids_source": "/tmp/claude-0/-home-user-Ezhdhhz/e9db0484-bfb2-5945-a148-e236e8e0d16e/scratchpad/work/pipetest/check_ids.npy",
+   "max_abs_logit_diff_upcycled_vs_dense": 9.5367431640625e-06,
+   "max_abs_logit_diff_implanted_vs_upcycled": 0.0,
+   "max_abs_logit": 11.07802677154541,
+   "old_slot_loads_equal": true,
+   "new_slot_load": 0,
+   "next_token_loss": {
+    "dense": 10.012995917661755,
+    "upcycled": 10.012995781866122,
+    "implanted": 10.012995781866122
+   },
+   "passed": true,
+   "tolerance": 0.01107802677154541
+  }
+ },
+ "outputs": {
+  "upcycled": {
+   "dir": "/tmp/claude-0/-home-user-Ezhdhhz/e9db0484-bfb2-5945-a148-e236e8e0d16e/scratchpad/work/pipetest/run/upcycled",
+   "model_sha256": "0376b6858e2018138306b0829bff2df6cf962a105d35e788f06fd90154a562ae"
+  },
+  "implanted": {
+   "dir": "/tmp/claude-0/-home-user-Ezhdhhz/e9db0484-bfb2-5945-a148-e236e8e0d16e/scratchpad/work/pipetest/run/implanted",
+   "model_sha256": "dd1fc3f4642545033c772d014e5614b0b955556f4bcdae11fdd0013e05f8eb3d"
+  }
+ }
+}

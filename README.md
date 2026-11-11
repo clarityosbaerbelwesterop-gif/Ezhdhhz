@@ -30,16 +30,41 @@ Ohne Python: `cat implants/implant_qwen3coder_fe640_code.safetensors.part0* > im
 und `sha256sum -c MANIFEST.sha256` (Zeilen der noch nicht zusammengesetzten Dateien melden dann „FAILED open").
 Einzelne Teile lassen sich auch im Browser über „Download raw file" laden.
 
-## Einsetzen
+## Transplantation durchführen
+
+Ein Befehl vom dichten Champion bis zum fertigen Checkpoint mit Implantaten. Die Werkzeuge liegen auf Branch
+`titan-x1/platform` dieses Repos; euer eigener Code (`accel/` mit `scripts/rebase.py`) wird nur aufgerufen, nicht verändert.
 
 ```bash
-python tools/donor/insert_implant.py --checkpoint <euer_moe_checkpoint> \
+git clone --depth 1 -b titan-x1/platform https://github.com/clarityosbaerbelwesterop-gif/Ezhdhhz.git titan
+python join_parts.py implants
+python titan/tools/donor/transplant_seed.py --accel /workspace/run2-prep/moe \
+    --dense <checkpoint step-007500> \
     --implant implants/implant_qwen3coder_fe640_code.safetensors implants/implant_mistral_l4_fe640_*.safetensors \
-    --layers 16,17,18,19,20,21,22,23 --out <neuer_checkpoint>
+    --layers 16,17,18,19,20,21,22,23 --check-ids <echte Token-IDs als .npy> --out <arbeitsordner>/transplant-01
 ```
 
-`tools/donor/insert_implant.py` liegt auf Branch `titan-x1/platform` und in `code/Ezhdhhz-74cd23f.tar.gz`. Eingesetzt rechnet
-das Modell exakt wie vorher; ob die neuen Slots etwas beitragen, entscheidet euer Training (Abschnitt 11.3).
+Was der Befehl tut:
+
+1. lädt den Champion mit eurem `forge_io.load_checkpoint` und prüft dessen `model_sha256`;
+2. macht ihn mit eurem `moe.upcycle` zum MoE (fe 640, 2 Shared, Top-6 — damit exakt dieselbe Funktion) und schreibt `upcycled/`;
+3. setzt alle Implantate ein (`insert_implant.py`) und schreibt `implanted/` — `state.json` mit eurem `forge_io.dumps`;
+4. vergleicht euren `forward()` von Champion, MoE und Modell mit Implantaten auf den Token-IDs und bricht ab, wenn sie
+   sich unterscheiden; alles steht in `transplant_report.json`.
+
+Beim echten Champion ergibt das: 24 MoE-Layer mit je 13 statt 6 Routed-Experten (+7 Slots je Layer, auf den 8 Ziel-Layern
+mit Implantaten, sonst Füll-Slots), ≈ 1,58 Mrd. Parameter (6,3 GB float32), aktive Parameter je Token praktisch
+unverändert. Speicher: etwa 8 GB für Schritt 1–3, die Vorwärtsprüfung hält jeweils ein Modell (bis ≈ 13 GB); bei
+knappem Speicher `--no-forward-check` und die Prüfung auf einer größeren Maschine nachholen.
+
+**Generalprobe** mit eurem Code bei echter Breite (dim 1920, FFN 5120, GQA 30/10, Vokabular 8192, 2 Layer, echte
+Seed-Tensoren aus dem Subset, alle vier fe-640-Implantate, echter Text als Token-IDs):
+Champion → MoE größte Logit-Abweichung 9,5e-6, MoE → mit Implantaten **0,0**, Verlust bei allen drei gleich,
+neue Slots ohne Last, euer `moe.load()` lädt das Ergebnis — siehe [`checks/result_pipeline_real_width.json`](checks/result_pipeline_real_width.json).
+Am echten Champion ist der Befehl noch nicht gelaufen: dessen 218 Tensoren liegen nur bei euch.
+
+Danach: euer Training. Eingesetzt rechnet das Modell exakt wie vorher; die neuen Slots sind abgeschaltet (Bias −4) und
+werden über euren Router-Bias-Abgleich und das Training eingebunden (Abschnitt 11.3 unten, Gates in Abschnitt 8).
 
 `PAKET.md` beschreibt die ZIP-Variante desselben Pakets; hier liegen die Dateien bereits entpackt.
 
