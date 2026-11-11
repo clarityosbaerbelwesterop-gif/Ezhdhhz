@@ -30,7 +30,7 @@ A projected tensor is never called a copy, and an initialisation is never called
 
 Scripts in `tools/donor/`: `qwen_forward.py`, `mistral_probes.py`, `mistral_forward.py`,
 `output_bridge.py`, `qwen_expert_acts.py`, `qwen_implant.py`, `mistral_select.py`, `mistral_implant.py`,
-`mistral_out_pos.py`, `build_implant.py`, `insert_implant.py`.
+`mistral_out_pos.py`, `build_implant.py`, `insert_implant.py`, `verify_package.py` (checks a delivery package split into byte parts: each part, the whole ZIP, every file against the package manifest).
 
 ## Implants
 
