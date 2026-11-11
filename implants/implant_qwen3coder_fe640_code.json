@@ -1,0 +1,484 @@
+{
+ "file": "implant_qwen3coder_fe640_code.safetensors",
+ "sha256": "1623d5a1362e1bb4d1183c143a9a63bfe17861fb72f034744d34bfd73c78112b",
+ "bytes": 236053112,
+ "class": "PROJECTION",
+ "donor": {
+  "repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+  "revision": "b2cff646eb4bb1d68355c01b18ae02e7cf42d120"
+ },
+ "donor_layers": 48,
+ "slot_width": 640,
+ "dim": 1920,
+ "rows": [
+  {
+   "donor_layer": 41,
+   "donor_expert": 25,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.8723404255319149,
+   "width_reduction": {
+    "mode": "unit selection (lossy)",
+    "donor_units": 768,
+    "slot_units": 640,
+    "kept_importance_share": 0.8896107085804235,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+    "rows_measured": 2048,
+    "rel_sq_error_donor_space": 0.05053519912851043,
+    "rel_sq_error_seed_space": 0.049576936684335375
+   },
+   "row": 0,
+   "source_sha256": {
+    "w1": "81a429aba4c2fcc2661cd24edc910fc5fac8617ebaa7243f1ecf20c9e0f9cfac",
+    "w3": "fe4cdc5980fed7744bc3c63170fb6d08da01550e7a3bf5d4c4932f43b4573ebc",
+    "w2": "d5db9cbdd792ae1f68e8fee5b4b2d4556692d7dea75df248a7d51081af803f90",
+    "router": "ac1ee2fedff84410d6a2cf4bb274736517b3c2f5c799e0ff626bbccd7347bdb7"
+   }
+  },
+  {
+   "donor_layer": 41,
+   "donor_expert": 41,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.8723404255319149,
+   "width_reduction": {
+    "mode": "unit selection (lossy)",
+    "donor_units": 768,
+    "slot_units": 640,
+    "kept_importance_share": 0.924450865626549,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+    "rows_measured": 2048,
+    "rel_sq_error_donor_space": 0.019062946338856027,
+    "rel_sq_error_seed_space": 0.01952711373837588
+   },
+   "row": 1,
+   "source_sha256": {
+    "w1": "dec1b4c1d12258cdc864294a75fad603c88bd06b0f4c53dc884acb1892ab3923",
+    "w3": "9c51b4874190d0321682c03dfd15b4edd4e6236e2df4ad8b87b2c4e992714c21",
+    "w2": "212dfeadf1e0da4a63f9df5b21d452f7a75fac591a90293ea0c0584b15b82a55",
+    "router": "374dcec1e0e91719075d2b6227723af460fd86d90c1d1984806a2322feeddbf7"
+   }
+  },
+  {
+   "donor_layer": 41,
+   "donor_expert": 43,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.8723404255319149,
+   "width_reduction": {
+    "mode": "unit selection (lossy)",
+    "donor_units": 768,
+    "slot_units": 640,
+    "kept_importance_share": 0.916003505816615,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+    "rows_measured": 2048,
+    "rel_sq_error_donor_space": 0.031970261189162526,
+    "rel_sq_error_seed_space": 0.03206192335723415
+   },
+   "row": 2,
+   "source_sha256": {
+    "w1": "a1cbb3e243679d0f66bba856abb1e9f9fea9415a4ff7d2bbb0d14931c1de34b6",
+    "w3": "691e73a4a8bb0a18d179e8b581779a471640b7b1f932a2b4b3501ec2a0c79a2d",
+    "w2": "90f8cd32a16b06e49f122dc586180694ae22a85d2b838eba6760d1126188654a",
+    "router": "055f9c1b0f75bcb4421d4da04dcb40cebc76050965102fc9e7090787eec71671"
+   }
+  },
+  {
+   "donor_layer": 41,
+   "donor_expert": 91,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.8723404255319149,
+   "width_reduction": {
+    "mode": "unit selection (lossy)",
+    "donor_units": 768,
+    "slot_units": 640,
+    "kept_importance_share": 0.9060504605028069,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+    "rows_measured": 2048,
+    "rel_sq_error_donor_space": 0.027985736934640217,
+    "rel_sq_error_seed_space": 0.027474706703846923
+   },
+   "row": 3,
+   "source_sha256": {
+    "w1": "5799e7c6cfca824cba7076f6ad51951b0484990f3221b36d122585fe1d08ffdb",
+    "w3": "6204995e02d336585f1a198fafc234a71b5459aaed47a6ace095328a2fc099a0",
+    "w2": "963a54af3cd2c477e7bcd29cf4465625a5f8bfa8e3b65ea42d8d48b22c9deec8",
+    "router": "831b13198efc1cca4417d81e6ae4743af866241aa393f548809afeb4bc2ce20e"
+   }
+  },
+  {
+   "donor_layer": 42,
+   "donor_expert": 29,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.8936170212765957,
+   "width_reduction": {
+    "mode": "unit selection (lossy)",
+    "donor_units": 768,
+    "slot_units": 640,
+    "kept_importance_share": 0.9162158044608184,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+    "rows_measured": 2048,
+    "rel_sq_error_donor_space": 0.02520745044870334,
+    "rel_sq_error_seed_space": 0.024142189628450827
+   },
+   "row": 4,
+   "source_sha256": {
+    "w1": "6ae8f383aca06c6100b9a1ee2e2434cba9d3607a60a324af7b526717917a7e53",
+    "w3": "c8352cf90e5f4795753793c215a4d232b651da1e8e9d26a7e58db88a5232d459",
+    "w2": "64a93400c23bec52edccc3e33765b910f00a9d0056d7beaeb11146f3e98d553c",
+    "router": "68d2a2c59022332e85b4b3759812c79bba815d4ba268ec0e25d762635d247e92"
+   }
+  },
+  {
+   "donor_layer": 42,
+   "donor_expert": 85,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.8936170212765957,
+   "width_reduction": {
+    "mode": "unit selection (lossy)",
+    "donor_units": 768,
+    "slot_units": 640,
+    "kept_importance_share": 0.9032212727563345,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+    "rows_measured": 2048,
+    "rel_sq_error_donor_space": 0.04370312433805648,
+    "rel_sq_error_seed_space": 0.0428946773172981
+   },
+   "row": 5,
+   "source_sha256": {
+    "w1": "8891b450d5ff6b62743e5558c9f05d28332935917a8720df21e37868569e202b",
+    "w3": "d7ab2d18b409e48348610778b2cc6bf0ab64b8c105bd069c58a612f0d21f24ea",
+    "w2": "147dd3fb308d37ee6a15e432040066d8a932461035cbb56fd3fb2f9f756d91fd",
+    "router": "7e6c54d76779287ed705aae80cb0c6906d4c29b01f3f28bd27f4a64c6d89cd7b"
+   }
+  },
+  {
+   "donor_layer": 43,
+   "donor_expert": 84,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.9148936170212766,
+   "width_reduction": {
+    "mode": "unit selection (lossy)",
+    "donor_units": 768,
+    "slot_units": 640,
+    "kept_importance_share": 0.9214289727250217,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+    "rows_measured": 2048,
+    "rel_sq_error_donor_space": 0.02616495954130997,
+    "rel_sq_error_seed_space": 0.02829863543030229
+   },
+   "row": 6,
+   "source_sha256": {
+    "w1": "dc8ed768a14e110ae94e46f2b742e83b89461c2978c4106ad0ab4ff08e514dd9",
+    "w3": "f776826a7be139861db8c3d0a57aaf22e615b77d982a4551de540d6bdf781dce",
+    "w2": "2fdb03bfd3a37531490c1045b87db155676698a4ebb506d95ecc8494cfed874a",
+    "router": "18634ceb8beb42b080e0454aaedd63d622d10e9b476d52d744e72af61d5f1809"
+   }
+  },
+  {
+   "donor_layer": 44,
+   "donor_expert": 32,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.9361702127659575,
+   "width_reduction": {
+    "mode": "unit selection (lossy)",
+    "donor_units": 768,
+    "slot_units": 640,
+    "kept_importance_share": 0.908905037858316,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+    "rows_measured": 2048,
+    "rel_sq_error_donor_space": 0.037090102989033334,
+    "rel_sq_error_seed_space": 0.035231485613371506
+   },
+   "row": 7,
+   "source_sha256": {
+    "w1": "53f407d6f80288adbf3e1ee1a3cedc6ba299afa42ba9edcec9653601b5d0cb51",
+    "w3": "ea2e69eaa4d14873f533dbcf38587c3a6cb782742df266883cc51ce7f04621a2",
+    "w2": "6663a1bcb4071e23818e8099c59547a8e63926f065c9eddc0a75de00c990e444",
+    "router": "875bfc6457176dddd2a5a26f63e06f7c4579cd7af27c6bd6bc963a75ae99e5c1"
+   }
+  },
+  {
+   "donor_layer": 44,
+   "donor_expert": 41,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.9361702127659575,
+   "width_reduction": {
+    "mode": "unit selection (lossy)",
+    "donor_units": 768,
+    "slot_units": 640,
+    "kept_importance_share": 0.8997218643193625,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+    "rows_measured": 2048,
+    "rel_sq_error_donor_space": 0.04961141665793936,
+    "rel_sq_error_seed_space": 0.050284004937094604
+   },
+   "row": 8,
+   "source_sha256": {
+    "w1": "91e8c4a3814b3984e044f1de9a5ff70244ecc681f17bca57c2ff659161cddbe6",
+    "w3": "f6f841c1a06b2beff9f1b0a00924a1ef4b5638c67bcafd19342989efd2445702",
+    "w2": "8ae0fb1dc5f1a969022f5f53264baeeeaaa8de4b1a2af06916884a0eaf40318f",
+    "router": "bcabdade62c08274c5ca8847141c76d137a726cae4477b4b29f12a3551b3da42"
+   }
+  },
+  {
+   "donor_layer": 45,
+   "donor_expert": 44,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.9574468085106383,
+   "width_reduction": {
+    "mode": "unit selection (lossy)",
+    "donor_units": 768,
+    "slot_units": 640,
+    "kept_importance_share": 0.9117570578221236,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+    "rows_measured": 2048,
+    "rel_sq_error_donor_space": 0.03797115115286842,
+    "rel_sq_error_seed_space": 0.03817583547036396
+   },
+   "row": 9,
+   "source_sha256": {
+    "w1": "68e69856011c2b83290683ffa20f207a19bc368bd931976b67f144347b19321a",
+    "w3": "427940ac161a9b985be2eb00baa7add5b1669aaad61aa50656a28905ef3b0198",
+    "w2": "cc585eb103991bdd039a82a1f19adddfe29785cbe12d34169fdb79d2f48a4fa1",
+    "router": "0d3561f85e38ac1e6fcf33ba94db1e32a44ee22a915332d4406ed7a5ab11089d"
+   }
+  },
+  {
+   "donor_layer": 45,
+   "donor_expert": 100,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.9574468085106383,
+   "width_reduction": {
+    "mode": "unit selection (lossy)",
+    "donor_units": 768,
+    "slot_units": 640,
+    "kept_importance_share": 0.9089814735090961,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+    "rows_measured": 2048,
+    "rel_sq_error_donor_space": 0.04446496448032255,
+    "rel_sq_error_seed_space": 0.043641914746060335
+   },
+   "row": 10,
+   "source_sha256": {
+    "w1": "3b35eb98fc44d16d9284111fc51fbf93b293a287145b410b40191e84fa567765",
+    "w3": "f217d731f05f60b2912e24b45d11d9f42aa04af4b853c200dae18adbeb7bd345",
+    "w2": "0e07fa87c2e9fa86fcfd60f6dca8d111b28565982af50cdd48a89cf86308c560",
+    "router": "ffabae384ae043e5b0b37b898ca4c7dfa616ed0cb2a5c2dc66fc109cb732555c"
+   }
+  },
+  {
+   "donor_layer": 46,
+   "donor_expert": 40,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.9787234042553191,
+   "width_reduction": {
+    "mode": "unit selection (lossy)",
+    "donor_units": 768,
+    "slot_units": 640,
+    "kept_importance_share": 0.89483078256507,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+    "rows_measured": 2048,
+    "rel_sq_error_donor_space": 0.06427328540208466,
+    "rel_sq_error_seed_space": 0.06321783933946344
+   },
+   "row": 11,
+   "source_sha256": {
+    "w1": "3394c444d0a34918eaa57ef9dbcd47dabc9298fd763c2196dcd700acb37fcb5c",
+    "w3": "7c3bca25f445e408c7fbe09fd97152e570d8279e033a7ccf0b9886c581139864",
+    "w2": "15fb24a79116c7c265cd590d63fdceeb67fc408fd294d986ba2656fc1d060993",
+    "router": "b5ead9a0eb354280694ab9c06a294a8925861c294e00b77ba60617b8a4a5fb9c"
+   }
+  },
+  {
+   "donor_layer": 46,
+   "donor_expert": 85,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.9787234042553191,
+   "width_reduction": {
+    "mode": "unit selection (lossy)",
+    "donor_units": 768,
+    "slot_units": 640,
+    "kept_importance_share": 0.9258935773888318,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+    "rows_measured": 2048,
+    "rel_sq_error_donor_space": 0.022169842549914772,
+    "rel_sq_error_seed_space": 0.020760889322714877
+   },
+   "row": 12,
+   "source_sha256": {
+    "w1": "17d5396b7acce949ba5d7813f1725fb595ef371c4aa10d06d5015cbc821966d6",
+    "w3": "a3db0df42014de4fbba1b968c20fae397bc2e7f50c7be3edbc4ada22615ef6d6",
+    "w2": "d3a7f94e7027627fa0dd31151e7d738f8322eb0c43d5054b951bd2744fcc929c",
+    "router": "40a6e1f6b4b897f6302619cf8e66dd813affa4f6232e448c6675790ca7d9393c"
+   }
+  },
+  {
+   "donor_layer": 46,
+   "donor_expert": 86,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.9787234042553191,
+   "width_reduction": {
+    "mode": "unit selection (lossy)",
+    "donor_units": 768,
+    "slot_units": 640,
+    "kept_importance_share": 0.9076868151381843,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+    "rows_measured": 2048,
+    "rel_sq_error_donor_space": 0.046506572676822885,
+    "rel_sq_error_seed_space": 0.04448117884683214
+   },
+   "row": 13,
+   "source_sha256": {
+    "w1": "e1549b1fcdac9a29f650455f6e655ef1075b75ea027c1cb311de40f46b8fd79d",
+    "w3": "2d01796dd467a0a320ec9bfa33fe01ac2874384d5709ad1cc56dae9fd1c6f11d",
+    "w2": "8d165bcd1fc6db120a9a4570fa6e161cdd1f561cc15ff386613a17084e226e72",
+    "router": "938c80d0e809ff5ad705717ebd4976f4b8c5172a930a4fa995d0a9ce3ba30308"
+   }
+  },
+  {
+   "donor_layer": 47,
+   "donor_expert": 25,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 1.0,
+   "width_reduction": {
+    "mode": "unit selection (lossy)",
+    "donor_units": 768,
+    "slot_units": 640,
+    "kept_importance_share": 0.93463167028352,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+    "rows_measured": 2048,
+    "rel_sq_error_donor_space": 0.01950277839852562,
+    "rel_sq_error_seed_space": 0.022264239616191128
+   },
+   "row": 14,
+   "source_sha256": {
+    "w1": "14426c5ce2c9bdc5aec152f43b0b885fb0e0a1256a4832adca0bd0956c372e44",
+    "w3": "a23574253b6a7d634d2b9f92b4b2c2714f96b9171341ce6042855ebe3e5801d2",
+    "w2": "1a17207ef1b4bd8db9bbdb8f74cdb8aa0e91bc9ee29e6196b1278166aed6f4f5",
+    "router": "0176c03889a2358c85b74fb623488a95c8c088634851dcaae2525311bbf990c6"
+   }
+  },
+  {
+   "donor_layer": 47,
+   "donor_expert": 60,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 1.0,
+   "width_reduction": {
+    "mode": "unit selection (lossy)",
+    "donor_units": 768,
+    "slot_units": 640,
+    "kept_importance_share": 0.9194486953168465,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+    "rows_measured": 2048,
+    "rel_sq_error_donor_space": 0.027251782680681284,
+    "rel_sq_error_seed_space": 0.029458543920482815
+   },
+   "row": 15,
+   "source_sha256": {
+    "w1": "7616130de9e91cc3dddfec104a46c5331ad2d90a70f450f3e6de6f0f701df300",
+    "w3": "be39849af39422fe0adcc4868b3305acf890697239c073ab4bbe970fea97d931",
+    "w2": "1652470c91d210e655bba27114f7eacd68a5fd8a9ebeeedb7ccab1ba1cbe8103",
+    "router": "cf2bd53633b96bd3f8757222339363411739fb9f1f17a9c35148c47745dfb444"
+   }
+  }
+ ],
+ "tensors": {
+  "implant.experts.w1": {
+   "dtype": "F32",
+   "shape": [
+    16,
+    640,
+    1920
+   ],
+   "nbytes": 78643200,
+   "sha256": "c8106bb5f46c6e57b390b1006a9db04542683dc456b5e3e38453d98482cc2832"
+  },
+  "implant.experts.w3": {
+   "dtype": "F32",
+   "shape": [
+    16,
+    640,
+    1920
+   ],
+   "nbytes": 78643200,
+   "sha256": "e149c6a0d0bc05a1c62bc6e405f4ff5d9630af3212d19e3417ab8d81f339de77"
+  },
+  "implant.experts.w2": {
+   "dtype": "F32",
+   "shape": [
+    16,
+    1920,
+    640
+   ],
+   "nbytes": 78643200,
+   "sha256": "38485bbba01365591423cf35203aa48a1a0b306915e0ece9176445a5de7884f7"
+  },
+  "implant.router.weight": {
+   "dtype": "F32",
+   "shape": [
+    16,
+    1920
+   ],
+   "nbytes": 122880,
+   "sha256": "d9a9639290cf7db6a255b43251dc1390e551ff8b88229be458126a241827c5ce"
+  }
+ },
+ "assumptions": {
+  "slot_gain": "1.0 - insert_implant.py divides w1, w3 and the router rows by the receiving layer's ffn_norm gain",
+  "seed_residual_rms": "1.0 - a scalar on w2, set at insertion when measured",
+  "bridges": {
+   "Q_seed_to_donor_prehead": {
+    "r2_fit": 0.533495861214204,
+    "ridge": 0.01,
+    "lambda": 0.04540793308727408,
+    "n": 8192,
+    "d_in": 2048,
+    "d_out": 1920,
+    "bias": false,
+    "r2_holdout_tokens": 0.09573197485739326,
+    "sha256": "6cd62d644e43dc270141d40a638f2dd779ce2710e3f5b212152261ae7f39f841"
+   },
+   "P_donor_to_seed_prehead": {
+    "r2_fit": 0.39461413344857077,
+    "ridge": 0.01,
+    "lambda": 0.12926152081816153,
+    "n": 8192,
+    "d_in": 1920,
+    "d_out": 2048,
+    "bias": false,
+    "r2_holdout_tokens": -0.07423101552271305,
+    "sha256": "1eb66fdc1f9c6efa7fee2ece8947d9ded47ee8609cda417f78d5de76d1f6f18f"
+   }
+  }
+ }
+}

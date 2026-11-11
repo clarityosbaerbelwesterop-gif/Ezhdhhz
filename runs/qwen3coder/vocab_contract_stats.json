@@ -1,0 +1,47 @@
+{
+ "stats": {
+  "seed_vocab": 8192,
+  "exact": 6757,
+  "composed": 1432,
+  "unknown": 0,
+  "special": 3,
+  "pieces_hist": {
+   "1": 6757,
+   "2": 1173,
+   "3": 174,
+   "4": 44,
+   "5": 18,
+   "6": 6,
+   "7": 1,
+   "8": 5,
+   "9": 2,
+   "10": 2,
+   "11": 2,
+   "12": 2,
+   "13": 1,
+   "14": 1,
+   "16": 1
+  },
+  "unique_donor_ids": 7038,
+  "donor_vocab": 151669
+ },
+ "seed": {
+  "kind": "seed-bpe-v2",
+  "sha256": "fe1ee90ae9275c55bb8583c1c5dc231d1197e8c2ca8eea32ac57912518018012",
+  "vocab_size": 8192,
+  "regular": 8189,
+  "specials": {
+   "<bos>": 8189,
+   "<eos>": 8190,
+   "<pad>": 8191
+  },
+  "pattern": "'(?:[sdmt]|ll|ve|re)| ?[^\\W\\d]+| ?\\d+| ?[^\\s\\w]+|\\s+(?!\\S)|\\s+"
+ },
+ "donor": {
+  "kind": "hf-bytelevel-bpe",
+  "sha256": "19564a48c4f71a2a1b937cce34c737a1e662b171c5f5d7edf641a15cd896f07d",
+  "vocab_size": 151669,
+  "model_tokens": 151643,
+  "added_tokens": 26
+ }
+}

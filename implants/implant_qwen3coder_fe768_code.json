@@ -1,0 +1,420 @@
+{
+ "file": "implant_qwen3coder_fe768_code.safetensors",
+ "sha256": "7ffc640762d160777368036ecea4ca80a5707aac29eb60303b81f22a206b08fa",
+ "bytes": 283239032,
+ "class": "PROJECTION",
+ "donor": {
+  "repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+  "revision": "b2cff646eb4bb1d68355c01b18ae02e7cf42d120"
+ },
+ "donor_layers": 48,
+ "slot_width": 768,
+ "dim": 1920,
+ "rows": [
+  {
+   "donor_layer": 41,
+   "donor_expert": 25,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.8723404255319149,
+   "width_reduction": {
+    "mode": "same width (exact)",
+    "donor_units": 768,
+    "slot_units": 768,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+   },
+   "row": 0,
+   "source_sha256": {
+    "w1": "d58a63dbf986fe3f1e84ae1667abc9336d36ab9b0101dc80a82017f3effd6976",
+    "w3": "ce1f273d557fd060717855213959b27f1e219b39a6ae557b86d339f1922de4fc",
+    "w2": "b13966e8d0f74156eb41b07f5ccfa96d1d01aed3c321604ce70610dcff78e1f8",
+    "router": "ac1ee2fedff84410d6a2cf4bb274736517b3c2f5c799e0ff626bbccd7347bdb7"
+   }
+  },
+  {
+   "donor_layer": 41,
+   "donor_expert": 41,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.8723404255319149,
+   "width_reduction": {
+    "mode": "same width (exact)",
+    "donor_units": 768,
+    "slot_units": 768,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+   },
+   "row": 1,
+   "source_sha256": {
+    "w1": "8dd5ae082a0e1e595ee5b1b87c25017c9c8aba8ef191673461366ec8419e5352",
+    "w3": "3c1f114cc2b5720e133dfeefba6dc3f7aa7deb48b5a688e05b2003679932ece1",
+    "w2": "78cb95e38cdfe24ae83b160144a55cc4245580e6e96e5b41418c0c99417d4181",
+    "router": "374dcec1e0e91719075d2b6227723af460fd86d90c1d1984806a2322feeddbf7"
+   }
+  },
+  {
+   "donor_layer": 41,
+   "donor_expert": 43,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.8723404255319149,
+   "width_reduction": {
+    "mode": "same width (exact)",
+    "donor_units": 768,
+    "slot_units": 768,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+   },
+   "row": 2,
+   "source_sha256": {
+    "w1": "cd85e8892e16ba1cbe31e249bc97fbf5920b160cb08767ba13ae25abb575a292",
+    "w3": "32d76dec8c1598095a268ecdf8b777083373bd8d4162da13ddf4a5375031987c",
+    "w2": "6b2506e8a65dd88422072141b105f815f2d8e575cb19f27348d3e7d1000edd61",
+    "router": "055f9c1b0f75bcb4421d4da04dcb40cebc76050965102fc9e7090787eec71671"
+   }
+  },
+  {
+   "donor_layer": 41,
+   "donor_expert": 91,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.8723404255319149,
+   "width_reduction": {
+    "mode": "same width (exact)",
+    "donor_units": 768,
+    "slot_units": 768,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+   },
+   "row": 3,
+   "source_sha256": {
+    "w1": "0917f7534e171a5f9538fdedebfd6857b8b0fd5b380298c45c8647f30afe4245",
+    "w3": "d5c3864ddc029c1ef1de30fea4b284405223ecfcafaf7bdd8ddfb43d1d9a538e",
+    "w2": "0926f858fede283b788089e22b08a22040f2e906b4aa34afa2087b76056559af",
+    "router": "831b13198efc1cca4417d81e6ae4743af866241aa393f548809afeb4bc2ce20e"
+   }
+  },
+  {
+   "donor_layer": 42,
+   "donor_expert": 29,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.8936170212765957,
+   "width_reduction": {
+    "mode": "same width (exact)",
+    "donor_units": 768,
+    "slot_units": 768,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+   },
+   "row": 4,
+   "source_sha256": {
+    "w1": "9b8fa8d4cb7df897ee8ea2483d995b275332127d5e236530e3e2d82b281bf971",
+    "w3": "ac45f89aa56a2334a29177265530ab707fed3a18575aab8af3928674da656cb8",
+    "w2": "c2f4558a43dc857181878288f46d27b7afcefe4df8166efcd25fd57eef9a6f4a",
+    "router": "68d2a2c59022332e85b4b3759812c79bba815d4ba268ec0e25d762635d247e92"
+   }
+  },
+  {
+   "donor_layer": 42,
+   "donor_expert": 85,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.8936170212765957,
+   "width_reduction": {
+    "mode": "same width (exact)",
+    "donor_units": 768,
+    "slot_units": 768,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+   },
+   "row": 5,
+   "source_sha256": {
+    "w1": "cdd0d9b1e487d730f943de57caaf23e125bec2c1b7e52f82b44f38c963577d43",
+    "w3": "26b46af4e0d3698df2cc5c8e935692692d12480f4d45e528cf79af4248158769",
+    "w2": "3d88f4283344db23a746bca6aadb9f3661d10e3a67b43a0a1581cc556c9997e8",
+    "router": "7e6c54d76779287ed705aae80cb0c6906d4c29b01f3f28bd27f4a64c6d89cd7b"
+   }
+  },
+  {
+   "donor_layer": 43,
+   "donor_expert": 84,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.9148936170212766,
+   "width_reduction": {
+    "mode": "same width (exact)",
+    "donor_units": 768,
+    "slot_units": 768,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+   },
+   "row": 6,
+   "source_sha256": {
+    "w1": "4c861e9a410d8462424ef5597359714588f6ab6015815cb30e57605a88356c3e",
+    "w3": "941e6e7c068b44d556c2143ae7f663d16e034d65863687ea3c70311130b6e732",
+    "w2": "111aed09e8b9bc1306b15a38ac1b5e6946fbd296c78594e57395a769323de022",
+    "router": "18634ceb8beb42b080e0454aaedd63d622d10e9b476d52d744e72af61d5f1809"
+   }
+  },
+  {
+   "donor_layer": 44,
+   "donor_expert": 32,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.9361702127659575,
+   "width_reduction": {
+    "mode": "same width (exact)",
+    "donor_units": 768,
+    "slot_units": 768,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+   },
+   "row": 7,
+   "source_sha256": {
+    "w1": "6b23e514aa75f8182d98ea92ed5c50cde9be1a854dfb38eefcc41e1a61d0129d",
+    "w3": "015d709add8d16fb77875f8a7e82162a0f86b986682f3e53ec94391e0c17aebe",
+    "w2": "a456a5212ebc2ee8c7f51fcb539191a88ba94dfc74e2d09c0bac85cdd2ac7301",
+    "router": "875bfc6457176dddd2a5a26f63e06f7c4579cd7af27c6bd6bc963a75ae99e5c1"
+   }
+  },
+  {
+   "donor_layer": 44,
+   "donor_expert": 41,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.9361702127659575,
+   "width_reduction": {
+    "mode": "same width (exact)",
+    "donor_units": 768,
+    "slot_units": 768,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+   },
+   "row": 8,
+   "source_sha256": {
+    "w1": "9648bc70cb1ff3946c4e653e87337707dd6033cecea0df5e3b299c0a4e72a36a",
+    "w3": "038b08046a44db041d77d320b345f5ecd83a4b1e12d72c1783ff525a34a59a49",
+    "w2": "56a2fee9abf2774af4e43e19702c0ecb51325d21b7f8193cfbced3260dfc9b60",
+    "router": "bcabdade62c08274c5ca8847141c76d137a726cae4477b4b29f12a3551b3da42"
+   }
+  },
+  {
+   "donor_layer": 45,
+   "donor_expert": 44,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.9574468085106383,
+   "width_reduction": {
+    "mode": "same width (exact)",
+    "donor_units": 768,
+    "slot_units": 768,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+   },
+   "row": 9,
+   "source_sha256": {
+    "w1": "84e6be25c8875400872c9d4b3c10499adb643438892aae4cd2da361b73782b99",
+    "w3": "6605c137e2339353598e1ace9e80341b09e8531ebc4bc2374d47ac3ed6a2ceba",
+    "w2": "c464f09bf01f3d7b505da9e7e1f10e25cc1ae8bbf027abe43dae85115f1a36ee",
+    "router": "0d3561f85e38ac1e6fcf33ba94db1e32a44ee22a915332d4406ed7a5ab11089d"
+   }
+  },
+  {
+   "donor_layer": 45,
+   "donor_expert": 100,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.9574468085106383,
+   "width_reduction": {
+    "mode": "same width (exact)",
+    "donor_units": 768,
+    "slot_units": 768,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+   },
+   "row": 10,
+   "source_sha256": {
+    "w1": "2e36c48578cfc2c018403a1a3ed711aab22efe067800770a1f92548253374408",
+    "w3": "6a4b53cae9559078e53382dabebad32c93fd48956c8487754d7a1b5291c56cff",
+    "w2": "22033eb8d6f790b591b25013239f6ec2c92ad1def2f07f9155563e2371ea110d",
+    "router": "ffabae384ae043e5b0b37b898ca4c7dfa616ed0cb2a5c2dc66fc109cb732555c"
+   }
+  },
+  {
+   "donor_layer": 46,
+   "donor_expert": 40,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.9787234042553191,
+   "width_reduction": {
+    "mode": "same width (exact)",
+    "donor_units": 768,
+    "slot_units": 768,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+   },
+   "row": 11,
+   "source_sha256": {
+    "w1": "e22ee9ee8be10ad2cff69405ec2e014cad08bbab2c6acf63ced50edb9daf19d0",
+    "w3": "d28a9f88a02bd8dc392a46e0e673737ec77d0b712439088400ccca4861ba5333",
+    "w2": "aafc193689bf4347c054ba9108ca4b823af64181941906a7b3061746461c416e",
+    "router": "b5ead9a0eb354280694ab9c06a294a8925861c294e00b77ba60617b8a4a5fb9c"
+   }
+  },
+  {
+   "donor_layer": 46,
+   "donor_expert": 85,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.9787234042553191,
+   "width_reduction": {
+    "mode": "same width (exact)",
+    "donor_units": 768,
+    "slot_units": 768,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+   },
+   "row": 12,
+   "source_sha256": {
+    "w1": "81bd2114ad7acc8a239568cb694c3dc3b049d2b13f8f11e27efdc5d08f45fa59",
+    "w3": "b0526b1b656b03a94f05cc2e07b6f12df1b2d7ed40c38d5629bc1a5adef5ef46",
+    "w2": "a2da5aa65e1c7ffd5beacb57341d4f8c5d66b4910c1c34bcdab2deb7dcda7798",
+    "router": "40a6e1f6b4b897f6302619cf8e66dd813affa4f6232e448c6675790ca7d9393c"
+   }
+  },
+  {
+   "donor_layer": 46,
+   "donor_expert": 86,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 0.9787234042553191,
+   "width_reduction": {
+    "mode": "same width (exact)",
+    "donor_units": 768,
+    "slot_units": 768,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+   },
+   "row": 13,
+   "source_sha256": {
+    "w1": "6f85428474adf553e819e2ac59c0586b08a073269233d24747dc043d9e2772a3",
+    "w3": "df650a256bf5e4aa5297c4e65b82a9945e21ed3e8ee8d0b091f1a5df03e0600f",
+    "w2": "6be5cc90e8ec97239d1d880b096ec88e1b9cd6e43ccba61f0627ab75e186ca09",
+    "router": "938c80d0e809ff5ad705717ebd4976f4b8c5172a930a4fa995d0a9ce3ba30308"
+   }
+  },
+  {
+   "donor_layer": 47,
+   "donor_expert": 25,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 1.0,
+   "width_reduction": {
+    "mode": "same width (exact)",
+    "donor_units": 768,
+    "slot_units": 768,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+   },
+   "row": 14,
+   "source_sha256": {
+    "w1": "f0ff9f5fb8b2ed10a31328a4200b0311d6864814d04fda4bbd3d23450dedae6c",
+    "w3": "ad0d23b3140dc1c83081984f173cd6143d118ed66448ff944745b634f6ca7282",
+    "w2": "14f34ce008d44394f5439ec5e2f83432aba300e51777105f3866ec79c7fc203a",
+    "router": "0176c03889a2358c85b74fb623488a95c8c088634851dcaae2525311bbf990c6"
+   }
+  },
+  {
+   "donor_layer": 47,
+   "donor_expert": 60,
+   "functions": [
+    "code"
+   ],
+   "relative_depth": 1.0,
+   "width_reduction": {
+    "mode": "same width (exact)",
+    "donor_units": 768,
+    "slot_units": 768,
+    "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+   },
+   "row": 15,
+   "source_sha256": {
+    "w1": "9d2e448df0d36b0c8c5338d0aa65da806ce5eba6beaf4732aa804bc54893b853",
+    "w3": "320b474a911068e0d9f4356d3d6a91f4122151e16a444ed7bc76600534756df5",
+    "w2": "238f0c4786925c932543e0924056e7f07b826fc5f4a9f33c4b9be5591248a3ad",
+    "router": "cf2bd53633b96bd3f8757222339363411739fb9f1f17a9c35148c47745dfb444"
+   }
+  }
+ ],
+ "tensors": {
+  "implant.experts.w1": {
+   "dtype": "F32",
+   "shape": [
+    16,
+    768,
+    1920
+   ],
+   "nbytes": 94371840,
+   "sha256": "7c5834312b3abe1c26bf356f8149a017310e65e78ac2a84ef79b25ad68054f76"
+  },
+  "implant.experts.w3": {
+   "dtype": "F32",
+   "shape": [
+    16,
+    768,
+    1920
+   ],
+   "nbytes": 94371840,
+   "sha256": "944e6b6c46e89934159a10e3a963cd98b76073793040422742a87a94693db634"
+  },
+  "implant.experts.w2": {
+   "dtype": "F32",
+   "shape": [
+    16,
+    1920,
+    768
+   ],
+   "nbytes": 94371840,
+   "sha256": "a8fdd0bc1f3dda0cd48e1a8d586e12198797a102cf99f1e125247d7b70434235"
+  },
+  "implant.router.weight": {
+   "dtype": "F32",
+   "shape": [
+    16,
+    1920
+   ],
+   "nbytes": 122880,
+   "sha256": "d9a9639290cf7db6a255b43251dc1390e551ff8b88229be458126a241827c5ce"
+  }
+ },
+ "assumptions": {
+  "slot_gain": "1.0 - insert_implant.py divides w1, w3 and the router rows by the receiving layer's ffn_norm gain",
+  "seed_residual_rms": "1.0 - a scalar on w2, set at insertion when measured",
+  "bridges": {
+   "Q_seed_to_donor_prehead": {
+    "r2_fit": 0.533495861214204,
+    "ridge": 0.01,
+    "lambda": 0.04540793308727408,
+    "n": 8192,
+    "d_in": 2048,
+    "d_out": 1920,
+    "bias": false,
+    "r2_holdout_tokens": 0.09573197485739326,
+    "sha256": "6cd62d644e43dc270141d40a638f2dd779ce2710e3f5b212152261ae7f39f841"
+   },
+   "P_donor_to_seed_prehead": {
+    "r2_fit": 0.39461413344857077,
+    "ridge": 0.01,
+    "lambda": 0.12926152081816153,
+    "n": 8192,
+    "d_in": 1920,
+    "d_out": 2048,
+    "bias": false,
+    "r2_holdout_tokens": -0.07423101552271305,
+    "sha256": "1eb66fdc1f9c6efa7fee2ece8947d9ded47ee8609cda417f78d5de76d1f6f18f"
+   }
+  }
+ }
+}

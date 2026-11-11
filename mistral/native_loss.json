@@ -1,0 +1,26 @@
+{
+ "wiki": {
+  "nats_per_token": 1.7425145993954996,
+  "bits_per_byte": 0.5641815115962721,
+  "target_tokens": 2685,
+  "bytes": 11964
+ },
+ "code": {
+  "nats_per_token": 0.7029747576731515,
+  "bits_per_byte": 0.251571636697587,
+  "target_tokens": 4973,
+  "bytes": 20048
+ },
+ "gsm_raw": {
+  "nats_per_token": 1.2325653622881827,
+  "bits_per_byte": 0.5046542930952046,
+  "target_tokens": 4020,
+  "bytes": 14165
+ },
+ "icl": {
+  "nats_per_token": 3.140126469058745,
+  "bits_per_byte": 1.9337329578393407,
+  "target_tokens": 2054,
+  "bytes": 4812
+ }
+}

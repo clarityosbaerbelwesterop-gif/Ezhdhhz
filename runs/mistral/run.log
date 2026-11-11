@@ -1,0 +1,87 @@
+11:30:06 sequences 154, tokens 23210, layers 0..71, 31.4 TFLOP per sparse layer
+11:31:20 L00 dense 69s 0.57 GB (8 MB/s) experts - | lens CE 12.772 | rms 0.020 | hi/lo 0.0003 | eta 1.39 h
+11:34:24 L01 sparse 183s 14.73 GB (81 MB/s) experts 128 | lens CE 12.708 | rms 0.022 | hi/lo 0.0009 | eta 2.47 h
+11:37:31 L02 sparse 186s 14.73 GB (79 MB/s) experts 128 | lens CE 12.856 | rms 0.023 | hi/lo 0.0018 | eta 2.82 h
+11:42:49 attempt 1 exit=137
+11:43:22 sequences 154, tokens 23210, layers 0..71, 31.4 TFLOP per sparse layer
+11:43:24 RESUME after layer 2
+11:50:03 L03 sparse 398s 14.74 GB (37 MB/s) experts 128 | lens CE 12.545 | rms 0.029 | hi/lo 0.0096 | eta 7.54 h
+11:53:32 L04 sparse 208s 14.73 GB (71 MB/s) experts 128 | lens CE 12.495 | rms 0.030 | hi/lo 0.0090 | eta 5.66 h
+11:56:49 L05 sparse 195s 14.73 GB (75 MB/s) experts 128 | lens CE 12.538 | rms 0.031 | hi/lo 0.0089 | eta 4.92 h
+12:01:26 L06 sparse 276s 14.73 GB (53 MB/s) experts 128 | lens CE 12.663 | rms 0.032 | hi/lo 0.0101 | eta 4.88 h
+12:08:26 L07 sparse 418s 14.74 GB (35 MB/s) experts 128 | lens CE 12.641 | rms 0.033 | hi/lo 0.0097 | eta 5.34 h
+12:14:01 L08 sparse 334s 14.73 GB (44 MB/s) experts 128 | lens CE 12.609 | rms 0.034 | hi/lo 0.0100 | eta 5.36 h
+12:19:24 L09 sparse 321s 14.73 GB (46 MB/s) experts 128 | lens CE 12.604 | rms 0.037 | hi/lo 0.0105 | eta 5.31 h
+12:25:31 L10 sparse 366s 14.73 GB (40 MB/s) experts 128 | lens CE 12.603 | rms 0.042 | hi/lo 0.0106 | eta 5.35 h
+12:30:49 L11 sparse 317s 14.74 GB (47 MB/s) experts 128 | lens CE 12.653 | rms 0.042 | hi/lo 0.0113 | eta 5.27 h
+12:35:34 L12 sparse 284s 14.73 GB (52 MB/s) experts 128 | lens CE 12.597 | rms 0.044 | hi/lo 0.0114 | eta 5.13 h
+12:39:32 L13 sparse 236s 14.73 GB (62 MB/s) experts 128 | lens CE 12.611 | rms 0.150 | hi/lo 0.0120 | eta 4.93 h
+12:43:04 L14 sparse 211s 14.73 GB (70 MB/s) experts 128 | lens CE 12.943 | rms 0.151 | hi/lo 0.0146 | eta 4.72 h
+12:47:20 L15 sparse 255s 14.74 GB (58 MB/s) experts 128 | lens CE 13.060 | rms 0.152 | hi/lo 0.0160 | eta 4.59 h
+12:51:17 L16 sparse 235s 14.73 GB (63 MB/s) experts 128 | lens CE 13.102 | rms 0.153 | hi/lo 0.0183 | eta 4.44 h
+12:55:33 L17 sparse 255s 14.73 GB (58 MB/s) experts 128 | lens CE 13.146 | rms 0.155 | hi/lo 0.0206 | eta 4.33 h
+13:00:01 L18 sparse 267s 14.73 GB (55 MB/s) experts 128 | lens CE 13.191 | rms 0.164 | hi/lo 0.0228 | eta 4.23 h
+13:06:38 L19 sparse 395s 14.74 GB (37 MB/s) experts 128 | lens CE 13.088 | rms 0.170 | hi/lo 0.0236 | eta 4.24 h
+13:14:59 L20 sparse 500s 14.73 GB (29 MB/s) experts 128 | lens CE 12.975 | rms 0.176 | hi/lo 0.0252 | eta 4.32 h
+13:21:33 L21 sparse 393s 14.73 GB (38 MB/s) experts 128 | lens CE 12.909 | rms 0.181 | hi/lo 0.0272 | eta 4.30 h
+13:25:06 L22 sparse 212s 14.73 GB (70 MB/s) experts 128 | lens CE 13.073 | rms 0.188 | hi/lo 0.0309 | eta 4.15 h
+13:28:53 L23 sparse 225s 14.74 GB (65 MB/s) experts 128 | lens CE 12.950 | rms 0.194 | hi/lo 0.0336 | eta 4.02 h
+13:32:36 L24 sparse 222s 14.73 GB (66 MB/s) experts 128 | lens CE 12.854 | rms 0.201 | hi/lo 0.0365 | eta 3.89 h
+13:36:13 L25 sparse 216s 14.73 GB (68 MB/s) experts 128 | lens CE 12.988 | rms 0.233 | hi/lo 0.0389 | eta 3.76 h
+13:40:09 L26 sparse 234s 14.73 GB (63 MB/s) experts 128 | lens CE 12.734 | rms 0.622 | hi/lo 0.0437 | eta 3.65 h
+13:44:04 L27 sparse 234s 14.74 GB (63 MB/s) experts 128 | lens CE 12.400 | rms 0.630 | hi/lo 0.0428 | eta 3.54 h
+13:48:53 L28 sparse 287s 14.73 GB (51 MB/s) experts 128 | lens CE 11.934 | rms 0.648 | hi/lo 0.0409 | eta 3.46 h
+13:52:25 L29 sparse 211s 14.73 GB (70 MB/s) experts 128 | lens CE 11.929 | rms 0.667 | hi/lo 0.0430 | eta 3.34 h
+13:55:48 L30 sparse 202s 14.73 GB (73 MB/s) experts 128 | lens CE 11.860 | rms 0.683 | hi/lo 0.0450 | eta 3.23 h
+16:18:10 sequences 154, tokens 23210, layers 0..71, 31.4 TFLOP per sparse layer
+16:18:34 RESUME after layer 30
+16:26:58 L31 sparse 501s 14.74 GB (29 MB/s) experts 128 | lens CE 11.870 | rms 0.704 | hi/lo 0.0447 | eta 5.58 h
+16:35:14 L32 sparse 494s 14.73 GB (30 MB/s) experts 128 | lens CE 12.045 | rms 0.746 | hi/lo 0.0435 | eta 5.41 h
+16:48:06 L33 sparse 770s 14.73 GB (19 MB/s) experts 128 | lens CE 11.766 | rms 0.805 | hi/lo 0.0433 | eta 6.23 h
+16:58:51 L34 sparse 645s 14.73 GB (23 MB/s) experts 128 | lens CE 11.757 | rms 0.872 | hi/lo 0.0443 | eta 6.21 h
+17:08:42 L35 sparse 589s 14.74 GB (25 MB/s) experts 128 | lens CE 11.735 | rms 0.892 | hi/lo 0.0465 | eta 6.01 h
+17:19:26 L36 sparse 643s 14.73 GB (23 MB/s) experts 128 | lens CE 11.654 | rms 0.940 | hi/lo 0.0499 | eta 5.92 h
+17:31:54 L37 sparse 747s 14.73 GB (20 MB/s) experts 128 | lens CE 11.648 | rms 1.015 | hi/lo 0.0628 | eta 5.93 h
+17:43:22 L38 sparse 686s 14.73 GB (21 MB/s) experts 128 | lens CE 11.537 | rms 1.081 | hi/lo 0.0996 | eta 5.83 h
+17:53:43 L39 sparse 620s 14.73 GB (24 MB/s) experts 128 | lens CE 11.379 | rms 1.125 | hi/lo 0.1024 | eta 5.64 h
+18:05:02 L40 sparse 678s 14.73 GB (22 MB/s) experts 128 | lens CE 11.193 | rms 1.187 | hi/lo 0.1095 | eta 5.50 h
+18:17:28 L41 sparse 744s 14.73 GB (20 MB/s) experts 128 | lens CE 11.113 | rms 1.260 | hi/lo 0.1154 | eta 5.40 h
+18:21:23 attempt 1 exit=143
+18:21:55 sequences 154, tokens 23210, layers 0..71, 31.4 TFLOP per sparse layer
+18:22:01 RESUME after layer 41
+18:26:45 L42 sparse 281s 14.73 GB (52 MB/s) experts 128 | lens CE 10.910 | rms 1.338 | hi/lo 0.1297 | eta 2.28 h
+18:32:27 L43 sparse 340s 14.73 GB (43 MB/s) experts 128 | lens CE 10.983 | rms 1.425 | hi/lo 0.1304 | eta 2.43 h
+18:37:30 L44 sparse 301s 14.73 GB (49 MB/s) experts 128 | lens CE 11.054 | rms 1.504 | hi/lo 0.1484 | eta 2.32 h
+18:43:30 L45 sparse 358s 14.73 GB (41 MB/s) experts 128 | lens CE 10.891 | rms 1.646 | hi/lo 0.1661 | eta 2.33 h
+18:49:55 L46 sparse 383s 14.73 GB (38 MB/s) experts 128 | lens CE 10.707 | rms 1.677 | hi/lo 0.1838 | eta 2.32 h
+18:56:35 L47 sparse 399s 14.73 GB (37 MB/s) experts 128 | lens CE 10.571 | rms 1.819 | hi/lo 0.1815 | eta 2.30 h
+18:56:40 attempt 2 exit=143
+18:57:12 sequences 154, tokens 23210, layers 0..71, 31.4 TFLOP per sparse layer
+18:57:14 RESUME after layer 47
+19:02:21 L48 sparse 304s 14.73 GB (48 MB/s) experts 128 | lens CE 10.459 | rms 1.825 | hi/lo 0.1978 | eta 1.95 h
+19:06:24 L49 sparse 242s 14.73 GB (61 MB/s) experts 128 | lens CE 10.494 | rms 1.890 | hi/lo 0.1976 | eta 1.68 h
+19:10:47 L50 sparse 262s 14.73 GB (56 MB/s) experts 128 | lens CE 10.618 | rms 1.944 | hi/lo 0.2233 | eta 1.58 h
+19:14:55 L51 sparse 247s 14.73 GB (60 MB/s) experts 128 | lens CE 10.353 | rms 2.035 | hi/lo 0.2290 | eta 1.47 h
+19:19:43 L52 sparse 286s 14.73 GB (51 MB/s) experts 128 | lens CE 10.115 | rms 2.104 | hi/lo 0.2328 | eta 1.42 h
+19:24:24 L53 sparse 279s 14.73 GB (53 MB/s) experts 128 | lens CE 9.985 | rms 2.267 | hi/lo 0.2326 | eta 1.36 h
+19:29:46 L54 sparse 316s 14.73 GB (47 MB/s) experts 128 | lens CE 9.927 | rms 2.413 | hi/lo 0.2581 | eta 1.32 h
+19:33:49 L55 sparse 241s 14.73 GB (61 MB/s) experts 128 | lens CE 9.911 | rms 2.609 | hi/lo 0.2564 | eta 1.22 h
+19:38:17 L56 sparse 266s 14.73 GB (55 MB/s) experts 128 | lens CE 9.813 | rms 2.764 | hi/lo 0.2697 | eta 1.14 h
+19:43:08 L57 sparse 289s 14.73 GB (51 MB/s) experts 128 | lens CE 9.617 | rms 2.903 | hi/lo 0.2706 | eta 1.07 h
+19:47:55 L58 sparse 286s 14.73 GB (51 MB/s) experts 128 | lens CE 9.440 | rms 2.948 | hi/lo 0.2929 | eta 1.00 h
+19:52:35 L59 sparse 278s 14.73 GB (53 MB/s) experts 128 | lens CE 9.140 | rms 3.060 | hi/lo 0.2891 | eta 0.92 h
+19:58:01 L60 sparse 324s 14.73 GB (45 MB/s) experts 128 | lens CE 9.122 | rms 3.251 | hi/lo 0.2832 | eta 0.86 h
+20:04:28 L61 sparse 385s 14.73 GB (38 MB/s) experts 128 | lens CE 8.993 | rms 3.341 | hi/lo 0.2873 | eta 0.80 h
+20:10:11 L62 sparse 342s 14.73 GB (43 MB/s) experts 128 | lens CE 9.223 | rms 3.373 | hi/lo 0.3152 | eta 0.73 h
+20:15:56 L63 sparse 344s 14.73 GB (43 MB/s) experts 128 | lens CE 8.570 | rms 3.702 | hi/lo 0.3059 | eta 0.66 h
+20:21:32 L64 sparse 334s 14.73 GB (44 MB/s) experts 128 | lens CE 8.104 | rms 3.965 | hi/lo 0.3088 | eta 0.58 h
+20:27:01 L65 sparse 328s 14.73 GB (45 MB/s) experts 128 | lens CE 7.679 | rms 4.233 | hi/lo 0.3263 | eta 0.50 h
+20:32:09 L66 sparse 307s 14.73 GB (48 MB/s) experts 128 | lens CE 6.748 | rms 4.483 | hi/lo 0.3392 | eta 0.42 h
+20:37:19 L67 sparse 308s 14.73 GB (48 MB/s) experts 128 | lens CE 6.282 | rms 4.962 | hi/lo 0.3344 | eta 0.33 h
+20:43:08 L68 sparse 348s 14.73 GB (42 MB/s) experts 128 | lens CE 5.818 | rms 5.080 | hi/lo 0.3559 | eta 0.25 h
+20:49:18 L69 sparse 368s 14.73 GB (40 MB/s) experts 128 | lens CE 5.078 | rms 5.396 | hi/lo 0.3757 | eta 0.17 h
+20:55:09 L70 sparse 344s 14.73 GB (43 MB/s) experts 128 | lens CE 3.396 | rms 5.346 | hi/lo 0.4408 | eta 0.09 h
+21:01:19 L71 sparse 369s 14.73 GB (40 MB/s) experts 128 | lens CE 2.772 | rms 8.485 | hi/lo 0.4770 | eta 0.00 h
+21:04:32 FINAL {"tokens": 23056, "mean_ce_nats": 2.588094711303711, "by_kind": {"wiki": 1.7425144910812378, "code": 0.702974796295166, "gsm_raw": 1.2325654029846191, "chat": 4.299853801727295, "icl": 3.1401264667510986}, "repo": "mistralai/Mistral-Large-4-1T-A52B", "revision": "af26e7869af601441d5cdf75a1272469ddc3d059", "last_layer": 71, "bytes_fetched": 353605300288, "wall_s": 7636.9}
+21:04:35 attempt 3 exit=0
+DONE

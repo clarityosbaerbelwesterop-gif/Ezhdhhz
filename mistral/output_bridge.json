@@ -1,0 +1,77 @@
+{
+ "positions": 12546,
+ "fit_positions": 6174,
+ "eval_positions": 6372,
+ "uniform_ce_nats": 9.010913347279288,
+ "reference_transplanted_head": {
+  "ce_nats": 3.093965332065166,
+  "bits_per_byte": 1.4928025963188358,
+  "n": 6372
+ },
+ "anchor_r2_over_vocabulary": 0.33118423174059597,
+ "anchor_through_seed_output_path": {
+  "ce_nats": 4.400871027062024,
+  "bits_per_byte": 2.1233695242724067,
+  "n": 6372
+ },
+ "anchor_without_seed_norm": {
+  "ce_nats": 3.7294696484916274,
+  "bits_per_byte": 1.7994261010172612,
+  "n": 6372
+ },
+ "healed_through_seed_output_path": {
+  "ce_nats": 3.421401487034829,
+  "bits_per_byte": 1.6507867654372097,
+  "n": 6372
+ },
+ "healed_fit_half": {
+  "ce_nats": 0.02061974623883921,
+  "bits_per_byte": 0.009872295573042537,
+  "n": 6174
+ },
+ "heal": {
+  "steps": 400,
+  "batch": 4096,
+  "lr": 0.001,
+  "trainable_parameters": 11796480,
+  "loss_history": [
+   [
+    0,
+    4.477454662322998
+   ],
+   [
+    50,
+    0.12757223844528198
+   ],
+   [
+    100,
+    0.03204627335071564
+   ],
+   [
+    150,
+    0.02684384398162365
+   ],
+   [
+    200,
+    0.02070825733244419
+   ],
+   [
+    250,
+    0.030849479138851166
+   ],
+   [
+    300,
+    0.02352050505578518
+   ],
+   [
+    350,
+    0.025311989709734917
+   ],
+   [
+    399,
+    0.02061501331627369
+   ]
+  ],
+  "note": "bridge only; seed embedding and final norm frozen and read-only"
+ }
+}

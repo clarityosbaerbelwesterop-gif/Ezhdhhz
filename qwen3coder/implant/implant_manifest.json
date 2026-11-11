@@ -1,0 +1,3957 @@
+{
+ "bridges": {
+  "Q_seed_to_donor_prehead": {
+   "r2_fit": 0.533495861214204,
+   "ridge": 0.01,
+   "lambda": 0.04540793308727408,
+   "n": 8192,
+   "d_in": 2048,
+   "d_out": 1920,
+   "bias": false,
+   "r2_holdout_tokens": 0.09573197485739326,
+   "sha256": "6cd62d644e43dc270141d40a638f2dd779ce2710e3f5b212152261ae7f39f841"
+  },
+  "P_donor_to_seed_prehead": {
+   "r2_fit": 0.39461413344857077,
+   "ridge": 0.01,
+   "lambda": 0.12926152081816153,
+   "n": 8192,
+   "d_in": 1920,
+   "d_out": 2048,
+   "bias": false,
+   "r2_holdout_tokens": -0.07423101552271305,
+   "sha256": "1eb66fdc1f9c6efa7fee2ece8947d9ded47ee8609cda417f78d5de76d1f6f18f"
+  }
+ },
+ "ridge": 0.01,
+ "slot_gain": 1.0,
+ "rms_seed": "MISSING (scalar on w2; 1.0 used)",
+ "slot_widths": [
+  768,
+  640,
+  512,
+  384
+ ],
+ "experts": [
+  {
+   "layer": 41,
+   "expert": 25,
+   "copy": {
+    "donor.L41.e25.gate_proj": {
+     "source": "model.layers.41.mlp.experts.25.gate_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      280130024,
+      283275752
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "ed51da5ba0d41fdcae54bb4b59ac648d2cae0fe89c7b5d596bb50abc5acb6b18"
+    },
+    "donor.L41.e25.up_proj": {
+     "source": "model.layers.41.mlp.experts.25.up_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      283275752,
+      286421480
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "4bcffcff3d497043daf78dc78dafd0324305f19cea569436b2f95d67698228e7"
+    },
+    "donor.L41.e25.down_proj": {
+     "source": "model.layers.41.mlp.experts.25.down_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      276984296,
+      280130024
+     ],
+     "dtype": "BF16",
+     "shape": [
+      2048,
+      768
+     ],
+     "sha256": "1c476b5ea280e942b20034a77ab46e5d43f5ac10eb553216eb164db712938e58"
+    }
+   },
+   "projection": {
+    "fe768": {
+     "fit": {
+      "mode": "same width (exact)",
+      "donor_units": 768,
+      "slot_units": 768,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+     },
+     "tensors": {
+      "slot.L41.e25.w1": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "d58a63dbf986fe3f1e84ae1667abc9336d36ab9b0101dc80a82017f3effd6976",
+       "rms": 0.5387430131621616
+      },
+      "slot.L41.e25.w3": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "ce1f273d557fd060717855213959b27f1e219b39a6ae557b86d339f1922de4fc",
+       "rms": 0.5240566189858143
+      },
+      "slot.L41.e25.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        768
+       ],
+       "sha256": "b13966e8d0f74156eb41b07f5ccfa96d1d01aed3c321604ce70610dcff78e1f8",
+       "rms": 0.03549093596836162
+      },
+      "slot.L41.e25.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "ac1ee2fedff84410d6a2cf4bb274736517b3c2f5c799e0ff626bbccd7347bdb7",
+       "rms": 1.4684380622414839
+      }
+     }
+    },
+    "fe640": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 640,
+      "kept_importance_share": 0.8896107085804235,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.05053519912851043,
+      "rel_sq_error_seed_space": 0.049576936684335375
+     },
+     "tensors": {
+      "slot.L41.e25.w1": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "81a429aba4c2fcc2661cd24edc910fc5fac8617ebaa7243f1ecf20c9e0f9cfac",
+       "rms": 0.5376313223327668
+      },
+      "slot.L41.e25.w3": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "fe4cdc5980fed7744bc3c63170fb6d08da01550e7a3bf5d4c4932f43b4573ebc",
+       "rms": 0.5240585050557374
+      },
+      "slot.L41.e25.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        640
+       ],
+       "sha256": "d5db9cbdd792ae1f68e8fee5b4b2d4556692d7dea75df248a7d51081af803f90",
+       "rms": 0.03552204662822288
+      },
+      "slot.L41.e25.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "ac1ee2fedff84410d6a2cf4bb274736517b3c2f5c799e0ff626bbccd7347bdb7",
+       "rms": 1.4684380622414839
+      }
+     }
+    },
+    "fe512": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 512,
+      "kept_importance_share": 0.7601457771938666,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.1317550142098535,
+      "rel_sq_error_seed_space": 0.13059717367389428
+     },
+     "tensors": {
+      "slot.L41.e25.w1": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "918f319cfe5536f9f34dd8c5c1277e6f206317564bf1005bde11b15fe25e6a8c",
+       "rms": 0.5411227392835812
+      },
+      "slot.L41.e25.w3": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "e04844347667af6b47d78ad9d98c4d0fa67a410eae457967372f5fae00a87bd1",
+       "rms": 0.5334626933270781
+      },
+      "slot.L41.e25.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        512
+       ],
+       "sha256": "e664c53dbe5bf6ababbe61a62cf6967608760fc850912636822b3e7b4765be1d",
+       "rms": 0.03555108219804035
+      },
+      "slot.L41.e25.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "ac1ee2fedff84410d6a2cf4bb274736517b3c2f5c799e0ff626bbccd7347bdb7",
+       "rms": 1.4684380622414839
+      }
+     }
+    },
+    "fe384": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 384,
+      "kept_importance_share": 0.6144179680663141,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.24134083979195445,
+      "rel_sq_error_seed_space": 0.2401031588093368
+     },
+     "tensors": {
+      "slot.L41.e25.w1": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "8f4152715632b2189ed48d69b9008872fb83d5c0f28467c45045c6fd8b19b740",
+       "rms": 0.5435808875278537
+      },
+      "slot.L41.e25.w3": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "021d3228ca83bbe9e19e138083dfedae1c820853db9a4382a2dbdc6f83f20613",
+       "rms": 0.5281499388659697
+      },
+      "slot.L41.e25.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        384
+       ],
+       "sha256": "800aae942d79ea330ab64bc51583b300c912f1eaa75f98093e81c3dd7b0334e8",
+       "rms": 0.03547110877231078
+      },
+      "slot.L41.e25.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "ac1ee2fedff84410d6a2cf4bb274736517b3c2f5c799e0ff626bbccd7347bdb7",
+       "rms": 1.4684380622414839
+      }
+     }
+    }
+   },
+   "donor_residual_rms": 1.692176103591919
+  },
+  {
+   "layer": 46,
+   "expert": 86,
+   "copy": {
+    "donor.L46.e86.gate_proj": {
+     "source": "model.layers.46.mlp.experts.86.gate_proj.weight",
+     "shard": "model-00015-of-00016.safetensors",
+     "byte_range": [
+      3039998952,
+      3043144680
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "ca30f293edfebb1d44531499446ecb11bc4b0a62e4da60cec6234d0b12f6900a"
+    },
+    "donor.L46.e86.up_proj": {
+     "source": "model.layers.46.mlp.experts.86.up_proj.weight",
+     "shard": "model-00015-of-00016.safetensors",
+     "byte_range": [
+      3043144680,
+      3046290408
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "45ade2a609843cb4ac4772ed6f81037d9f27d02de499ccdd39bb2de5fb95b8b2"
+    },
+    "donor.L46.e86.down_proj": {
+     "source": "model.layers.46.mlp.experts.86.down_proj.weight",
+     "shard": "model-00015-of-00016.safetensors",
+     "byte_range": [
+      3036853224,
+      3039998952
+     ],
+     "dtype": "BF16",
+     "shape": [
+      2048,
+      768
+     ],
+     "sha256": "e1170eafce404ff0ae6afc8c362264fb3cc2b76906aa0d04c798954c4e4392d7"
+    }
+   },
+   "projection": {
+    "fe768": {
+     "fit": {
+      "mode": "same width (exact)",
+      "donor_units": 768,
+      "slot_units": 768,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+     },
+     "tensors": {
+      "slot.L46.e86.w1": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "6f85428474adf553e819e2ac59c0586b08a073269233d24747dc043d9e2772a3",
+       "rms": 0.7965871468294812
+      },
+      "slot.L46.e86.w3": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "df650a256bf5e4aa5297c4e65b82a9945e21ed3e8ee8d0b091f1a5df03e0600f",
+       "rms": 0.8943212108308503
+      },
+      "slot.L46.e86.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        768
+       ],
+       "sha256": "6be5cc90e8ec97239d1d880b096ec88e1b9cd6e43ccba61f0627ab75e186ca09",
+       "rms": 0.028338887573842876
+      },
+      "slot.L46.e86.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "938c80d0e809ff5ad705717ebd4976f4b8c5172a930a4fa995d0a9ce3ba30308",
+       "rms": 1.906419060491911
+      }
+     }
+    },
+    "fe640": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 640,
+      "kept_importance_share": 0.9076868151381843,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.046506572676822885,
+      "rel_sq_error_seed_space": 0.04448117884683214
+     },
+     "tensors": {
+      "slot.L46.e86.w1": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "e1549b1fcdac9a29f650455f6e655ef1075b75ea027c1cb311de40f46b8fd79d",
+       "rms": 0.7964766365778222
+      },
+      "slot.L46.e86.w3": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "2d01796dd467a0a320ec9bfa33fe01ac2874384d5709ad1cc56dae9fd1c6f11d",
+       "rms": 0.894166849658334
+      },
+      "slot.L46.e86.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        640
+       ],
+       "sha256": "8d165bcd1fc6db120a9a4570fa6e161cdd1f561cc15ff386613a17084e226e72",
+       "rms": 0.028350508001762965
+      },
+      "slot.L46.e86.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "938c80d0e809ff5ad705717ebd4976f4b8c5172a930a4fa995d0a9ce3ba30308",
+       "rms": 1.906419060491911
+      }
+     }
+    },
+    "fe512": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 512,
+      "kept_importance_share": 0.7844004135198118,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.12772108153991338,
+      "rel_sq_error_seed_space": 0.12453694393664849
+     },
+     "tensors": {
+      "slot.L46.e86.w1": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "b738ef3d89fc81fc17c21a53ee3862a16cc872db38df2f45387b7232fd1b7a05",
+       "rms": 0.8148372436686301
+      },
+      "slot.L46.e86.w3": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "034d6501d53e8ba0ce9e8500d0220a51a1722be2ff1d88d1928629ecfd0c50b8",
+       "rms": 0.897607195573389
+      },
+      "slot.L46.e86.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        512
+       ],
+       "sha256": "e352fa5dc387310c9596e1e2e9f98a7ee725d4fe0cfc54ae1efecdfe5724d15b",
+       "rms": 0.028256899777812237
+      },
+      "slot.L46.e86.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "938c80d0e809ff5ad705717ebd4976f4b8c5172a930a4fa995d0a9ce3ba30308",
+       "rms": 1.906419060491911
+      }
+     }
+    },
+    "fe384": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 384,
+      "kept_importance_share": 0.6409169330697743,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.2407358924287446,
+      "rel_sq_error_seed_space": 0.23667334179939228
+     },
+     "tensors": {
+      "slot.L46.e86.w1": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "645e593bdf3abf4e44312a233a639c12562a3be2d569bab9bf9f0721c786d224",
+       "rms": 0.7944394785629527
+      },
+      "slot.L46.e86.w3": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "122ffa8a0118f7d9681c9ca506e106579bde198a3150d5b63b7d8448304201c1",
+       "rms": 0.8854533379924675
+      },
+      "slot.L46.e86.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        384
+       ],
+       "sha256": "1d73b1f9a85f3ef7c0eb5b7e61e788312c0ea6891f94204bbe83c9ade9ea9ef9",
+       "rms": 0.028108682038451665
+      },
+      "slot.L46.e86.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "938c80d0e809ff5ad705717ebd4976f4b8c5172a930a4fa995d0a9ce3ba30308",
+       "rms": 1.906419060491911
+      }
+     }
+    }
+   },
+   "donor_residual_rms": 2.2857720851898193
+  },
+  {
+   "layer": 45,
+   "expert": 44,
+   "copy": {
+    "donor.L45.e44.gate_proj": {
+     "source": "model.layers.45.mlp.experts.44.gate_proj.weight",
+     "shard": "model-00015-of-00016.safetensors",
+     "byte_range": [
+      1359647208,
+      1362792936
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "fd7be2b4a414e13c0efd9968349540edd22c614cd904f0b15adb98d892952328"
+    },
+    "donor.L45.e44.up_proj": {
+     "source": "model.layers.45.mlp.experts.44.up_proj.weight",
+     "shard": "model-00015-of-00016.safetensors",
+     "byte_range": [
+      1362792936,
+      1365938664
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "d753aee74c39a6d24af7471b7dae47c82275170e9d1d28d21ce9e9d6a025bfb9"
+    },
+    "donor.L45.e44.down_proj": {
+     "source": "model.layers.45.mlp.experts.44.down_proj.weight",
+     "shard": "model-00015-of-00016.safetensors",
+     "byte_range": [
+      1356501480,
+      1359647208
+     ],
+     "dtype": "BF16",
+     "shape": [
+      2048,
+      768
+     ],
+     "sha256": "96d960467764a4b00274fcc54bbb651aee05affb4d17a7e399937977b7633d75"
+    }
+   },
+   "projection": {
+    "fe768": {
+     "fit": {
+      "mode": "same width (exact)",
+      "donor_units": 768,
+      "slot_units": 768,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+     },
+     "tensors": {
+      "slot.L45.e44.w1": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "84e6be25c8875400872c9d4b3c10499adb643438892aae4cd2da361b73782b99",
+       "rms": 0.6110416024082513
+      },
+      "slot.L45.e44.w3": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "6605c137e2339353598e1ace9e80341b09e8531ebc4bc2374d47ac3ed6a2ceba",
+       "rms": 0.6581147292363723
+      },
+      "slot.L45.e44.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        768
+       ],
+       "sha256": "c464f09bf01f3d7b505da9e7e1f10e25cc1ae8bbf027abe43dae85115f1a36ee",
+       "rms": 0.027350228116496685
+      },
+      "slot.L45.e44.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "0d3561f85e38ac1e6fcf33ba94db1e32a44ee22a915332d4406ed7a5ab11089d",
+       "rms": 1.737983209523472
+      }
+     }
+    },
+    "fe640": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 640,
+      "kept_importance_share": 0.9117570578221236,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.03797115115286842,
+      "rel_sq_error_seed_space": 0.03817583547036396
+     },
+     "tensors": {
+      "slot.L45.e44.w1": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "68e69856011c2b83290683ffa20f207a19bc368bd931976b67f144347b19321a",
+       "rms": 0.6173274778768677
+      },
+      "slot.L45.e44.w3": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "427940ac161a9b985be2eb00baa7add5b1669aaad61aa50656a28905ef3b0198",
+       "rms": 0.6369033532057253
+      },
+      "slot.L45.e44.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        640
+       ],
+       "sha256": "cc585eb103991bdd039a82a1f19adddfe29785cbe12d34169fdb79d2f48a4fa1",
+       "rms": 0.027355201114417558
+      },
+      "slot.L45.e44.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "0d3561f85e38ac1e6fcf33ba94db1e32a44ee22a915332d4406ed7a5ab11089d",
+       "rms": 1.737983209523472
+      }
+     }
+    },
+    "fe512": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 512,
+      "kept_importance_share": 0.7993940461043837,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.10168176757894314,
+      "rel_sq_error_seed_space": 0.10340938103256607
+     },
+     "tensors": {
+      "slot.L45.e44.w1": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "01f8caa9c78faa7b7798c2e3b3a961419428945324b19bc90c912c6e4135785c",
+       "rms": 0.6350756372587106
+      },
+      "slot.L45.e44.w3": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "142993ea524953e4aa220cb87a6767dc3e5930cf8bbb3e361910a937b4dd97d3",
+       "rms": 0.6377219514893359
+      },
+      "slot.L45.e44.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        512
+       ],
+       "sha256": "759ba375f83b99d1c5855f38de7b7bd9f3cf9a8e55b20e2324bcb777b51ff137",
+       "rms": 0.027286246191340725
+      },
+      "slot.L45.e44.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "0d3561f85e38ac1e6fcf33ba94db1e32a44ee22a915332d4406ed7a5ab11089d",
+       "rms": 1.737983209523472
+      }
+     }
+    },
+    "fe384": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 384,
+      "kept_importance_share": 0.6642883208511156,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.19552014787563496,
+      "rel_sq_error_seed_space": 0.1996037597891341
+     },
+     "tensors": {
+      "slot.L45.e44.w1": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "dd38241c5551302ecfc132dcdfacc129011f6c6ca989392a5c70f86b95e170c3",
+       "rms": 0.6320878895277222
+      },
+      "slot.L45.e44.w3": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "b2e57d57df5324bd731b43837e5aa08dcce0a21343662d5a3808d0920e8cafeb",
+       "rms": 0.6604317915783114
+      },
+      "slot.L45.e44.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        384
+       ],
+       "sha256": "185064988d2a5e7c22c04f4988358d05c000a198a52ed7603af69ed3d0e78b39",
+       "rms": 0.0271471569501485
+      },
+      "slot.L45.e44.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "0d3561f85e38ac1e6fcf33ba94db1e32a44ee22a915332d4406ed7a5ab11089d",
+       "rms": 1.737983209523472
+      }
+     }
+    }
+   },
+   "donor_residual_rms": 2.218890428543091
+  },
+  {
+   "layer": 41,
+   "expert": 91,
+   "copy": {
+    "donor.L41.e91.gate_proj": {
+     "source": "model.layers.41.mlp.experts.91.gate_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      902984168,
+      906129896
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "d4abccf8a719cab42f40ba4f44bc199b392c2a4de13993b2473383b93f03104a"
+    },
+    "donor.L41.e91.up_proj": {
+     "source": "model.layers.41.mlp.experts.91.up_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      906129896,
+      909275624
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "375a8147eed9ab9a02e7614d1a3fb02974d39653f2cf1f519ad4d18e571217b6"
+    },
+    "donor.L41.e91.down_proj": {
+     "source": "model.layers.41.mlp.experts.91.down_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      899838440,
+      902984168
+     ],
+     "dtype": "BF16",
+     "shape": [
+      2048,
+      768
+     ],
+     "sha256": "5e85051fddb45d1c2452ba58eb00dda5c0a10daf92fd702cc478233b7c3ea81f"
+    }
+   },
+   "projection": {
+    "fe768": {
+     "fit": {
+      "mode": "same width (exact)",
+      "donor_units": 768,
+      "slot_units": 768,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+     },
+     "tensors": {
+      "slot.L41.e91.w1": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "0917f7534e171a5f9538fdedebfd6857b8b0fd5b380298c45c8647f30afe4245",
+       "rms": 0.49423278940205234
+      },
+      "slot.L41.e91.w3": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "d5c3864ddc029c1ef1de30fea4b284405223ecfcafaf7bdd8ddfb43d1d9a538e",
+       "rms": 0.5129833967345397
+      },
+      "slot.L41.e91.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        768
+       ],
+       "sha256": "0926f858fede283b788089e22b08a22040f2e906b4aa34afa2087b76056559af",
+       "rms": 0.03661866410131982
+      },
+      "slot.L41.e91.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "831b13198efc1cca4417d81e6ae4743af866241aa393f548809afeb4bc2ce20e",
+       "rms": 1.72973599433708
+      }
+     }
+    },
+    "fe640": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 640,
+      "kept_importance_share": 0.9060504605028069,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.027985736934640217,
+      "rel_sq_error_seed_space": 0.027474706703846923
+     },
+     "tensors": {
+      "slot.L41.e91.w1": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "5799e7c6cfca824cba7076f6ad51951b0484990f3221b36d122585fe1d08ffdb",
+       "rms": 0.4956978162583604
+      },
+      "slot.L41.e91.w3": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "6204995e02d336585f1a198fafc234a71b5459aaed47a6ace095328a2fc099a0",
+       "rms": 0.5129945667668597
+      },
+      "slot.L41.e91.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        640
+       ],
+       "sha256": "963a54af3cd2c477e7bcd29cf4465625a5f8bfa8e3b65ea42d8d48b22c9deec8",
+       "rms": 0.03657588842927013
+      },
+      "slot.L41.e91.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "831b13198efc1cca4417d81e6ae4743af866241aa393f548809afeb4bc2ce20e",
+       "rms": 1.72973599433708
+      }
+     }
+    },
+    "fe512": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 512,
+      "kept_importance_share": 0.7900362394852658,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.08251696710409291,
+      "rel_sq_error_seed_space": 0.08086036678922831
+     },
+     "tensors": {
+      "slot.L41.e91.w1": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "485328b69fe8743b021319b9024324b7e1d8fac41d40f02b89021d499fbf1332",
+       "rms": 0.4994749393888308
+      },
+      "slot.L41.e91.w3": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "575f7adf320a6b084e0413bf251119b60bcf85e994099e00e68a9fa409b0b676",
+       "rms": 0.5114310700893566
+      },
+      "slot.L41.e91.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        512
+       ],
+       "sha256": "da3c61c4bab81eaa6515da547399beea16561ce19493f2a10b0fd47200d711ca",
+       "rms": 0.03653259682269149
+      },
+      "slot.L41.e91.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "831b13198efc1cca4417d81e6ae4743af866241aa393f548809afeb4bc2ce20e",
+       "rms": 1.72973599433708
+      }
+     }
+    },
+    "fe384": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 384,
+      "kept_importance_share": 0.6528386064860336,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.1635575255325234,
+      "rel_sq_error_seed_space": 0.16168686179286434
+     },
+     "tensors": {
+      "slot.L41.e91.w1": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "82b27db66ccbeeeec10bcda64c721dd17f17f0b3c95c522e04e69c44de8160d3",
+       "rms": 0.519959952032111
+      },
+      "slot.L41.e91.w3": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "fb2f8ed8549709ec109d354b05ff6235e308afb273cf95be9b6f94df492afb0e",
+       "rms": 0.5084220095544926
+      },
+      "slot.L41.e91.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        384
+       ],
+       "sha256": "4d66d9f97e0f5195e542b9d2e8dae82950b5ab31428d1b0efd227b70dce3048e",
+       "rms": 0.03633105635868045
+      },
+      "slot.L41.e91.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "831b13198efc1cca4417d81e6ae4743af866241aa393f548809afeb4bc2ce20e",
+       "rms": 1.72973599433708
+      }
+     }
+    }
+   },
+   "donor_residual_rms": 1.692176103591919
+  },
+  {
+   "layer": 45,
+   "expert": 100,
+   "copy": {
+    "donor.L45.e100.gate_proj": {
+     "source": "model.layers.45.mlp.experts.100.gate_proj.weight",
+     "shard": "model-00015-of-00016.safetensors",
+     "byte_range": [
+      755667432,
+      758813160
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "b31bb9ca716e9069865d38d1ca35d7dcd55d72cc7db66c7de5d4b89955a9f3bc"
+    },
+    "donor.L45.e100.up_proj": {
+     "source": "model.layers.45.mlp.experts.100.up_proj.weight",
+     "shard": "model-00015-of-00016.safetensors",
+     "byte_range": [
+      758813160,
+      761958888
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "de4702fc3f5984f4db06a8e0b639040066e876d790994d63773d9b476aeab835"
+    },
+    "donor.L45.e100.down_proj": {
+     "source": "model.layers.45.mlp.experts.100.down_proj.weight",
+     "shard": "model-00015-of-00016.safetensors",
+     "byte_range": [
+      752521704,
+      755667432
+     ],
+     "dtype": "BF16",
+     "shape": [
+      2048,
+      768
+     ],
+     "sha256": "3ef7482f4e43c4da3f669947c80393a7d3d9cd908a19f131e6106879c9cc1dde"
+    }
+   },
+   "projection": {
+    "fe768": {
+     "fit": {
+      "mode": "same width (exact)",
+      "donor_units": 768,
+      "slot_units": 768,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+     },
+     "tensors": {
+      "slot.L45.e100.w1": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "2e36c48578cfc2c018403a1a3ed711aab22efe067800770a1f92548253374408",
+       "rms": 0.5816490590357677
+      },
+      "slot.L45.e100.w3": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "6a4b53cae9559078e53382dabebad32c93fd48956c8487754d7a1b5291c56cff",
+       "rms": 0.6110137631632597
+      },
+      "slot.L45.e100.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        768
+       ],
+       "sha256": "22033eb8d6f790b591b25013239f6ec2c92ad1def2f07f9155563e2371ea110d",
+       "rms": 0.02673394671057017
+      },
+      "slot.L45.e100.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "ffabae384ae043e5b0b37b898ca4c7dfa616ed0cb2a5c2dc66fc109cb732555c",
+       "rms": 1.6580567867274378
+      }
+     }
+    },
+    "fe640": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 640,
+      "kept_importance_share": 0.9089814735090961,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.04446496448032255,
+      "rel_sq_error_seed_space": 0.043641914746060335
+     },
+     "tensors": {
+      "slot.L45.e100.w1": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "3b35eb98fc44d16d9284111fc51fbf93b293a287145b410b40191e84fa567765",
+       "rms": 0.5808550273506927
+      },
+      "slot.L45.e100.w3": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "f217d731f05f60b2912e24b45d11d9f42aa04af4b853c200dae18adbeb7bd345",
+       "rms": 0.6262843402436881
+      },
+      "slot.L45.e100.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        640
+       ],
+       "sha256": "0e07fa87c2e9fa86fcfd60f6dca8d111b28565982af50cdd48a89cf86308c560",
+       "rms": 0.026745475389783547
+      },
+      "slot.L45.e100.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "ffabae384ae043e5b0b37b898ca4c7dfa616ed0cb2a5c2dc66fc109cb732555c",
+       "rms": 1.6580567867274378
+      }
+     }
+    },
+    "fe512": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 512,
+      "kept_importance_share": 0.7925707501723677,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.12289998927187096,
+      "rel_sq_error_seed_space": 0.12050126081124636
+     },
+     "tensors": {
+      "slot.L45.e100.w1": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "ddba5eb9c9234934bb7a9927c124c43fc4357aa5f4a4a910726a620ffe9f6ee4",
+       "rms": 0.5660750306180998
+      },
+      "slot.L45.e100.w3": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "a843f3e051b639696dafe526a9ecd04114b304a4a061c944874ec365c7a0f292",
+       "rms": 0.6163633818919626
+      },
+      "slot.L45.e100.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        512
+       ],
+       "sha256": "d2c82bcd72b8239df0765082dfff4187bc5d4976c4496b1c98119bbcc319f6c8",
+       "rms": 0.0267902427620044
+      },
+      "slot.L45.e100.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "ffabae384ae043e5b0b37b898ca4c7dfa616ed0cb2a5c2dc66fc109cb732555c",
+       "rms": 1.6580567867274378
+      }
+     }
+    },
+    "fe384": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 384,
+      "kept_importance_share": 0.6505491523237029,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.23439978372940298,
+      "rel_sq_error_seed_space": 0.23185385590043914
+     },
+     "tensors": {
+      "slot.L45.e100.w1": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "46485d03ea68769472b584212ff470b91b50491e77d746c8e1df72d927a26a95",
+       "rms": 0.5600287349272994
+      },
+      "slot.L45.e100.w3": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "c38a93e94cf33c59043036f906953ecd0038509279a17104eb95cbbd6551eaa4",
+       "rms": 0.6068842535882341
+      },
+      "slot.L45.e100.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        384
+       ],
+       "sha256": "2d7b8c20a07d243d681a1e32f806712356375c762476f5a3fefca33fbd0bd648",
+       "rms": 0.02679517048252862
+      },
+      "slot.L45.e100.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "ffabae384ae043e5b0b37b898ca4c7dfa616ed0cb2a5c2dc66fc109cb732555c",
+       "rms": 1.6580567867274378
+      }
+     }
+    }
+   },
+   "donor_residual_rms": 2.218890428543091
+  },
+  {
+   "layer": 42,
+   "expert": 85,
+   "copy": {
+    "donor.L42.e85.gate_proj": {
+     "source": "model.layers.42.mlp.experts.85.gate_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      2045415912,
+      2048561640
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "fbb430315a3f6de6fe8f4f265bef605afb181b856b60fe88b7b6abd6587d22e5"
+    },
+    "donor.L42.e85.up_proj": {
+     "source": "model.layers.42.mlp.experts.85.up_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      2048561640,
+      2051707368
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "aab72b368fbf29ef18a5df86c6a2bfd336a67f5dcf95be0b54956731f9bf3ef7"
+    },
+    "donor.L42.e85.down_proj": {
+     "source": "model.layers.42.mlp.experts.85.down_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      2042270184,
+      2045415912
+     ],
+     "dtype": "BF16",
+     "shape": [
+      2048,
+      768
+     ],
+     "sha256": "2aa3efabf5fd6182191d835ff9639ac519fed159d0d485ab73d429059ec99b1d"
+    }
+   },
+   "projection": {
+    "fe768": {
+     "fit": {
+      "mode": "same width (exact)",
+      "donor_units": 768,
+      "slot_units": 768,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+     },
+     "tensors": {
+      "slot.L42.e85.w1": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "cdd0d9b1e487d730f943de57caaf23e125bec2c1b7e52f82b44f38c963577d43",
+       "rms": 0.5790656000888663
+      },
+      "slot.L42.e85.w3": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "26b46af4e0d3698df2cc5c8e935692692d12480f4d45e528cf79af4248158769",
+       "rms": 0.5721536498058746
+      },
+      "slot.L42.e85.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        768
+       ],
+       "sha256": "3d88f4283344db23a746bca6aadb9f3661d10e3a67b43a0a1581cc556c9997e8",
+       "rms": 0.03350706240566218
+      },
+      "slot.L42.e85.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "7e6c54d76779287ed705aae80cb0c6906d4c29b01f3f28bd27f4a64c6d89cd7b",
+       "rms": 1.6596202552534556
+      }
+     }
+    },
+    "fe640": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 640,
+      "kept_importance_share": 0.9032212727563345,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.04370312433805648,
+      "rel_sq_error_seed_space": 0.0428946773172981
+     },
+     "tensors": {
+      "slot.L42.e85.w1": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "8891b450d5ff6b62743e5558c9f05d28332935917a8720df21e37868569e202b",
+       "rms": 0.5784039124563355
+      },
+      "slot.L42.e85.w3": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "d7ab2d18b409e48348610778b2cc6bf0ab64b8c105bd069c58a612f0d21f24ea",
+       "rms": 0.5704755496972868
+      },
+      "slot.L42.e85.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        640
+       ],
+       "sha256": "147dd3fb308d37ee6a15e432040066d8a932461035cbb56fd3fb2f9f756d91fd",
+       "rms": 0.03359969863458624
+      },
+      "slot.L42.e85.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "7e6c54d76779287ed705aae80cb0c6906d4c29b01f3f28bd27f4a64c6d89cd7b",
+       "rms": 1.6596202552534556
+      }
+     }
+    },
+    "fe512": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 512,
+      "kept_importance_share": 0.7804268103460327,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.11862769187696105,
+      "rel_sq_error_seed_space": 0.11845884563100358
+     },
+     "tensors": {
+      "slot.L42.e85.w1": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "988895b3a23c5b7d3b78dddb413e833280f07cdb570a3b744c59c1603a569ee7",
+       "rms": 0.5840254299147031
+      },
+      "slot.L42.e85.w3": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "438797841da6da756b7d984b35963c7865e2ef7694db1dd33c44eba9d8b6bd99",
+       "rms": 0.57120626172929
+      },
+      "slot.L42.e85.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        512
+       ],
+       "sha256": "34daac98dde1f9f5441e22b0c0f074ba98b0d9d41d15ff8b32d053ada713098b",
+       "rms": 0.03350158534438404
+      },
+      "slot.L42.e85.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "7e6c54d76779287ed705aae80cb0c6906d4c29b01f3f28bd27f4a64c6d89cd7b",
+       "rms": 1.6596202552534556
+      }
+     }
+    },
+    "fe384": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 384,
+      "kept_importance_share": 0.6392101696602648,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.23139828815827138,
+      "rel_sq_error_seed_space": 0.23239096965722592
+     },
+     "tensors": {
+      "slot.L42.e85.w1": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "bf144cd48361ac58efccdb0be1c20b5737f23bad2877d6fefce6960937b1d4dc",
+       "rms": 0.5797214931162155
+      },
+      "slot.L42.e85.w3": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "f26999311226e9062f965e3e6bc49f70186971d6028132b6706d604a7d8e350c",
+       "rms": 0.5534710829222206
+      },
+      "slot.L42.e85.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        384
+       ],
+       "sha256": "fd25d0c74d8a73d896d1462bbecbece8d974923ae9058e56d92d0b3e33c41832",
+       "rms": 0.03337440732620541
+      },
+      "slot.L42.e85.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "7e6c54d76779287ed705aae80cb0c6906d4c29b01f3f28bd27f4a64c6d89cd7b",
+       "rms": 1.6596202552534556
+      }
+     }
+    }
+   },
+   "donor_residual_rms": 1.8165935277938843
+  },
+  {
+   "layer": 42,
+   "expert": 29,
+   "copy": {
+    "donor.L42.e29.gate_proj": {
+     "source": "model.layers.42.mlp.experts.29.gate_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      1460310504,
+      1463456232
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "542376665b45eb72f74a2aed1d2fc6a6447025ad25d9c7c156e2c4f78cfa1233"
+    },
+    "donor.L42.e29.up_proj": {
+     "source": "model.layers.42.mlp.experts.29.up_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      1463456232,
+      1466601960
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "52576c11ba4b7d4dbea5baf3a94409622675b37e18e6014eddb5df9fca6d9e85"
+    },
+    "donor.L42.e29.down_proj": {
+     "source": "model.layers.42.mlp.experts.29.down_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      1457164776,
+      1460310504
+     ],
+     "dtype": "BF16",
+     "shape": [
+      2048,
+      768
+     ],
+     "sha256": "79f1cc499ef14ee80780776c514eaf21e65d0174ee10913c8493f7f1ac6fed09"
+    }
+   },
+   "projection": {
+    "fe768": {
+     "fit": {
+      "mode": "same width (exact)",
+      "donor_units": 768,
+      "slot_units": 768,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+     },
+     "tensors": {
+      "slot.L42.e29.w1": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "9b8fa8d4cb7df897ee8ea2483d995b275332127d5e236530e3e2d82b281bf971",
+       "rms": 0.5610030271795444
+      },
+      "slot.L42.e29.w3": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "ac45f89aa56a2334a29177265530ab707fed3a18575aab8af3928674da656cb8",
+       "rms": 0.6138568822389823
+      },
+      "slot.L42.e29.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        768
+       ],
+       "sha256": "c2f4558a43dc857181878288f46d27b7afcefe4df8166efcd25fd57eef9a6f4a",
+       "rms": 0.034632702341373896
+      },
+      "slot.L42.e29.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "68d2a2c59022332e85b4b3759812c79bba815d4ba268ec0e25d762635d247e92",
+       "rms": 1.7755747584231576
+      }
+     }
+    },
+    "fe640": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 640,
+      "kept_importance_share": 0.9162158044608184,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.02520745044870334,
+      "rel_sq_error_seed_space": 0.024142189628450827
+     },
+     "tensors": {
+      "slot.L42.e29.w1": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "6ae8f383aca06c6100b9a1ee2e2434cba9d3607a60a324af7b526717917a7e53",
+       "rms": 0.5606643464398559
+      },
+      "slot.L42.e29.w3": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "c8352cf90e5f4795753793c215a4d232b651da1e8e9d26a7e58db88a5232d459",
+       "rms": 0.6272020251798243
+      },
+      "slot.L42.e29.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        640
+       ],
+       "sha256": "64a93400c23bec52edccc3e33765b910f00a9d0056d7beaeb11146f3e98d553c",
+       "rms": 0.034504417992636364
+      },
+      "slot.L42.e29.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "68d2a2c59022332e85b4b3759812c79bba815d4ba268ec0e25d762635d247e92",
+       "rms": 1.7755747584231576
+      }
+     }
+    },
+    "fe512": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 512,
+      "kept_importance_share": 0.806705531396448,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.07750128172242762,
+      "rel_sq_error_seed_space": 0.07588932620096665
+     },
+     "tensors": {
+      "slot.L42.e29.w1": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "2545f296cf2fbed9606525c3b2a9d4e3be2530b08d3324c9adfbf087c40e5424",
+       "rms": 0.5522435324420024
+      },
+      "slot.L42.e29.w3": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "2fb01f0db03798e952501d36ed93248236da060d7b1ce8a6b36fc638275fbf90",
+       "rms": 0.6350134609734736
+      },
+      "slot.L42.e29.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        512
+       ],
+       "sha256": "2694c18c55ed9e13f906eb494f7a81e1417ec5061f406f149d8d0f6e2d47d5f0",
+       "rms": 0.034354135905369364
+      },
+      "slot.L42.e29.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "68d2a2c59022332e85b4b3759812c79bba815d4ba268ec0e25d762635d247e92",
+       "rms": 1.7755747584231576
+      }
+     }
+    },
+    "fe384": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 384,
+      "kept_importance_share": 0.6723155324646257,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.17007069075546996,
+      "rel_sq_error_seed_space": 0.1649451931305866
+     },
+     "tensors": {
+      "slot.L42.e29.w1": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "d866197d2eeeebbe856b1504ac6748a773e6d6e5613db364019bd93696027f91",
+       "rms": 0.5512092840984518
+      },
+      "slot.L42.e29.w3": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "796a314dd214362a5231c800edb185fe64ac68b032bd56a9179a348257163434",
+       "rms": 0.6412749016234801
+      },
+      "slot.L42.e29.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        384
+       ],
+       "sha256": "022bee41bb645ce646a5ef3ecb96207b42e02b5c9099b09dd3c5597535fcc11f",
+       "rms": 0.03421880259141559
+      },
+      "slot.L42.e29.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "68d2a2c59022332e85b4b3759812c79bba815d4ba268ec0e25d762635d247e92",
+       "rms": 1.7755747584231576
+      }
+     }
+    }
+   },
+   "donor_residual_rms": 1.8165935277938843
+  },
+  {
+   "layer": 47,
+   "expert": 60,
+   "copy": {
+    "donor.L47.e60.gate_proj": {
+     "source": "model.layers.47.mlp.experts.60.gate_proj.weight",
+     "shard": "model-00015-of-00016.safetensors",
+     "byte_range": [
+      3757753832,
+      3760899560
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "21c5678ba11dce7cdb5d543c08d0abe7da943a9cb62580ff7b9652d4d6f4ab8c"
+    },
+    "donor.L47.e60.up_proj": {
+     "source": "model.layers.47.mlp.experts.60.up_proj.weight",
+     "shard": "model-00015-of-00016.safetensors",
+     "byte_range": [
+      3760899560,
+      3764045288
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "7f32223419279979a0d1f0c15b02ddf74c1c1d8423cb1c5f7e28ba213584a39b"
+    },
+    "donor.L47.e60.down_proj": {
+     "source": "model.layers.47.mlp.experts.60.down_proj.weight",
+     "shard": "model-00015-of-00016.safetensors",
+     "byte_range": [
+      3754608104,
+      3757753832
+     ],
+     "dtype": "BF16",
+     "shape": [
+      2048,
+      768
+     ],
+     "sha256": "71a3aaf52de5f71fb48600f1ff002e396f5bd6d642b82a28318ef34811a15c2f"
+    }
+   },
+   "projection": {
+    "fe768": {
+     "fit": {
+      "mode": "same width (exact)",
+      "donor_units": 768,
+      "slot_units": 768,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+     },
+     "tensors": {
+      "slot.L47.e60.w1": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "9d2e448df0d36b0c8c5338d0aa65da806ce5eba6beaf4732aa804bc54893b853",
+       "rms": 0.02053732788218877
+      },
+      "slot.L47.e60.w3": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "320b474a911068e0d9f4356d3d6a91f4122151e16a444ed7bc76600534756df5",
+       "rms": 0.024057119374879622
+      },
+      "slot.L47.e60.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        768
+       ],
+       "sha256": "238f0c4786925c932543e0924056e7f07b826fc5f4a9f33c4b9be5591248a3ad",
+       "rms": 0.021485372071451514
+      },
+      "slot.L47.e60.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "cf2bd53633b96bd3f8757222339363411739fb9f1f17a9c35148c47745dfb444",
+       "rms": 0.08141225995826605
+      }
+     }
+    },
+    "fe640": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 640,
+      "kept_importance_share": 0.9194486953168465,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.027251782680681284,
+      "rel_sq_error_seed_space": 0.029458543920482815
+     },
+     "tensors": {
+      "slot.L47.e60.w1": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "7616130de9e91cc3dddfec104a46c5331ad2d90a70f450f3e6de6f0f701df300",
+       "rms": 0.020144967466044147
+      },
+      "slot.L47.e60.w3": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "be39849af39422fe0adcc4868b3305acf890697239c073ab4bbe970fea97d931",
+       "rms": 0.02384520624254572
+      },
+      "slot.L47.e60.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        640
+       ],
+       "sha256": "1652470c91d210e655bba27114f7eacd68a5fd8a9ebeeedb7ccab1ba1cbe8103",
+       "rms": 0.02123611165897737
+      },
+      "slot.L47.e60.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "cf2bd53633b96bd3f8757222339363411739fb9f1f17a9c35148c47745dfb444",
+       "rms": 0.08141225995826605
+      }
+     }
+    },
+    "fe512": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 512,
+      "kept_importance_share": 0.8095274725991839,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.07366196253581793,
+      "rel_sq_error_seed_space": 0.0797327572025612
+     },
+     "tensors": {
+      "slot.L47.e60.w1": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "a5d3ffb7eadfa8621e951e27e54d5ff4071604bc1f6ce8104a13d9a3c02c1164",
+       "rms": 0.019866330819815568
+      },
+      "slot.L47.e60.w3": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "8f4455dfc1f0273b732ebbec442f1514a7dd44f3ae3f57815264c5afa5c7a300",
+       "rms": 0.023983022215167422
+      },
+      "slot.L47.e60.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        512
+       ],
+       "sha256": "2fa14770a3fdb339d4e6bf4d07452c688a45a5c8b9553333c0a9a769d330bcca",
+       "rms": 0.02094062496413272
+      },
+      "slot.L47.e60.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "cf2bd53633b96bd3f8757222339363411739fb9f1f17a9c35148c47745dfb444",
+       "rms": 0.08141225995826605
+      }
+     }
+    },
+    "fe384": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 384,
+      "kept_importance_share": 0.6790713946135152,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.1217351493305426,
+      "rel_sq_error_seed_space": 0.13418892787561842
+     },
+     "tensors": {
+      "slot.L47.e60.w1": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "77c0b86dd27eb9ec23aa46c83d7cb7c4e3427b55627fdb1a15fe6900682556d2",
+       "rms": 0.02031606757525002
+      },
+      "slot.L47.e60.w3": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "7c2aa88da2e24a66d39f627591454377cd09ff31df6b5f3a37a8d3a49a4435c4",
+       "rms": 0.024583522286622615
+      },
+      "slot.L47.e60.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        384
+       ],
+       "sha256": "d8ad1df10d24a735b239360f921b826ddc4b079db34003126d04fb825b85ab86",
+       "rms": 0.020568669345394114
+      },
+      "slot.L47.e60.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "cf2bd53633b96bd3f8757222339363411739fb9f1f17a9c35148c47745dfb444",
+       "rms": 0.08141225995826605
+      }
+     }
+    }
+   },
+   "donor_residual_rms": 2.784440755844116
+  },
+  {
+   "layer": 41,
+   "expert": 43,
+   "copy": {
+    "donor.L41.e43.gate_proj": {
+     "source": "model.layers.41.mlp.experts.43.gate_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      449999336,
+      453145064
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "f8bdee55e3add26668523e87c031fcba37590d96a57230f74867d789721f1ad4"
+    },
+    "donor.L41.e43.up_proj": {
+     "source": "model.layers.41.mlp.experts.43.up_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      453145064,
+      456290792
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "52b1e0bb00594c1c1395230315233577525f334c228395d4c180a80836e65ce8"
+    },
+    "donor.L41.e43.down_proj": {
+     "source": "model.layers.41.mlp.experts.43.down_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      446853608,
+      449999336
+     ],
+     "dtype": "BF16",
+     "shape": [
+      2048,
+      768
+     ],
+     "sha256": "79424195bbbc25e34e6d62dfe307f5727a351f93872035b860ec92c0203fdba7"
+    }
+   },
+   "projection": {
+    "fe768": {
+     "fit": {
+      "mode": "same width (exact)",
+      "donor_units": 768,
+      "slot_units": 768,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+     },
+     "tensors": {
+      "slot.L41.e43.w1": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "cd85e8892e16ba1cbe31e249bc97fbf5920b160cb08767ba13ae25abb575a292",
+       "rms": 0.5542234168686495
+      },
+      "slot.L41.e43.w3": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "32d76dec8c1598095a268ecdf8b777083373bd8d4162da13ddf4a5375031987c",
+       "rms": 0.5915023293601381
+      },
+      "slot.L41.e43.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        768
+       ],
+       "sha256": "6b2506e8a65dd88422072141b105f815f2d8e575cb19f27348d3e7d1000edd61",
+       "rms": 0.035631192221054674
+      },
+      "slot.L41.e43.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "055f9c1b0f75bcb4421d4da04dcb40cebc76050965102fc9e7090787eec71671",
+       "rms": 1.9407867871565883
+      }
+     }
+    },
+    "fe640": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 640,
+      "kept_importance_share": 0.916003505816615,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.031970261189162526,
+      "rel_sq_error_seed_space": 0.03206192335723415
+     },
+     "tensors": {
+      "slot.L41.e43.w1": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "a1cbb3e243679d0f66bba856abb1e9f9fea9415a4ff7d2bbb0d14931c1de34b6",
+       "rms": 0.5539703647420531
+      },
+      "slot.L41.e43.w3": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "691e73a4a8bb0a18d179e8b581779a471640b7b1f932a2b4b3501ec2a0c79a2d",
+       "rms": 0.5812050206677738
+      },
+      "slot.L41.e43.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        640
+       ],
+       "sha256": "90f8cd32a16b06e49f122dc586180694ae22a85d2b838eba6760d1126188654a",
+       "rms": 0.0353459125191129
+      },
+      "slot.L41.e43.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "055f9c1b0f75bcb4421d4da04dcb40cebc76050965102fc9e7090787eec71671",
+       "rms": 1.9407867871565883
+      }
+     }
+    },
+    "fe512": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 512,
+      "kept_importance_share": 0.8056699602989912,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.09259836808411946,
+      "rel_sq_error_seed_space": 0.09422717983673076
+     },
+     "tensors": {
+      "slot.L41.e43.w1": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "85dd79babbfc651ae20b42544d1f1e7f6b07cd469382c857d7694c620d10e24a",
+       "rms": 0.5393979648758747
+      },
+      "slot.L41.e43.w3": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "a912a23d7868a030f102d736c16cb88941cf8154e3df31f7435df05f1f23a611",
+       "rms": 0.594455157617829
+      },
+      "slot.L41.e43.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        512
+       ],
+       "sha256": "557c10fd4488c45dac184ba1bcf545c476fb42eb768971d8d979fee42ad7cf16",
+       "rms": 0.034899505471763494
+      },
+      "slot.L41.e43.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "055f9c1b0f75bcb4421d4da04dcb40cebc76050965102fc9e7090787eec71671",
+       "rms": 1.9407867871565883
+      }
+     }
+    },
+    "fe384": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 384,
+      "kept_importance_share": 0.6743715092971887,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.18753438573108544,
+      "rel_sq_error_seed_space": 0.18943418363967357
+     },
+     "tensors": {
+      "slot.L41.e43.w1": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "a3d8c98ec9ae82d1f6a04ec381b5f97ba13635c16471dabe4fb90915d06c04fe",
+       "rms": 0.5277570405570237
+      },
+      "slot.L41.e43.w3": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "469ce7f93718e82823e39c1632b5d24585b653b4db32ed44161cdf746b6188a1",
+       "rms": 0.5718585785504975
+      },
+      "slot.L41.e43.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        384
+       ],
+       "sha256": "61fe8c4ee59bfada3ee31c0f462c0b00ed101a56989882d5395fc16313cf04d2",
+       "rms": 0.03450212096438334
+      },
+      "slot.L41.e43.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "055f9c1b0f75bcb4421d4da04dcb40cebc76050965102fc9e7090787eec71671",
+       "rms": 1.9407867871565883
+      }
+     }
+    }
+   },
+   "donor_residual_rms": 1.692176103591919
+  },
+  {
+   "layer": 46,
+   "expert": 40,
+   "copy": {
+    "donor.L46.e40.gate_proj": {
+     "source": "model.layers.46.mlp.experts.40.gate_proj.weight",
+     "shard": "model-00015-of-00016.safetensors",
+     "byte_range": [
+      2568139752,
+      2571285480
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "091a7a9eca86efbb07deb0b9b5b6522de8cb5e4c16085bdf5b6f5cfc04f64885"
+    },
+    "donor.L46.e40.up_proj": {
+     "source": "model.layers.46.mlp.experts.40.up_proj.weight",
+     "shard": "model-00015-of-00016.safetensors",
+     "byte_range": [
+      2571285480,
+      2574431208
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "48b1ccf8dbf1c7a224c28654b8319ace2bda8b33253f6099d3a8211779198889"
+    },
+    "donor.L46.e40.down_proj": {
+     "source": "model.layers.46.mlp.experts.40.down_proj.weight",
+     "shard": "model-00015-of-00016.safetensors",
+     "byte_range": [
+      2564994024,
+      2568139752
+     ],
+     "dtype": "BF16",
+     "shape": [
+      2048,
+      768
+     ],
+     "sha256": "7c357296a665bc11d6c9c62657bcd6ae0047d6ec22cf4e6bd176cdd35532c6ff"
+    }
+   },
+   "projection": {
+    "fe768": {
+     "fit": {
+      "mode": "same width (exact)",
+      "donor_units": 768,
+      "slot_units": 768,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+     },
+     "tensors": {
+      "slot.L46.e40.w1": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "e22ee9ee8be10ad2cff69405ec2e014cad08bbab2c6acf63ced50edb9daf19d0",
+       "rms": 0.7701985422730891
+      },
+      "slot.L46.e40.w3": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "d28a9f88a02bd8dc392a46e0e673737ec77d0b712439088400ccca4861ba5333",
+       "rms": 0.8218456865700321
+      },
+      "slot.L46.e40.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        768
+       ],
+       "sha256": "aafc193689bf4347c054ba9108ca4b823af64181941906a7b3061746461c416e",
+       "rms": 0.0282423795024473
+      },
+      "slot.L46.e40.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "b5ead9a0eb354280694ab9c06a294a8925861c294e00b77ba60617b8a4a5fb9c",
+       "rms": 1.6109699753600695
+      }
+     }
+    },
+    "fe640": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 640,
+      "kept_importance_share": 0.89483078256507,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.06427328540208466,
+      "rel_sq_error_seed_space": 0.06321783933946344
+     },
+     "tensors": {
+      "slot.L46.e40.w1": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "3394c444d0a34918eaa57ef9dbcd47dabc9298fd763c2196dcd700acb37fcb5c",
+       "rms": 0.7753005314076041
+      },
+      "slot.L46.e40.w3": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "7c3bca25f445e408c7fbe09fd97152e570d8279e033a7ccf0b9886c581139864",
+       "rms": 0.8403833776889933
+      },
+      "slot.L46.e40.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        640
+       ],
+       "sha256": "15fb24a79116c7c265cd590d63fdceeb67fc408fd294d986ba2656fc1d060993",
+       "rms": 0.02826584040506578
+      },
+      "slot.L46.e40.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "b5ead9a0eb354280694ab9c06a294a8925861c294e00b77ba60617b8a4a5fb9c",
+       "rms": 1.6109699753600695
+      }
+     }
+    },
+    "fe512": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 512,
+      "kept_importance_share": 0.764893090344878,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.16553706665855641,
+      "rel_sq_error_seed_space": 0.1627570646503454
+     },
+     "tensors": {
+      "slot.L46.e40.w1": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "c16341efa3809760332c14a4aeeef4db49bebee243bf7d2b57d1999cce74cbfb",
+       "rms": 0.7806429400302379
+      },
+      "slot.L46.e40.w3": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "96568d3c995555fbecf63460074960a41480416b522ec8b7cb2453a5957f8530",
+       "rms": 0.8263445467569078
+      },
+      "slot.L46.e40.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        512
+       ],
+       "sha256": "e0d2590f6ddd3ad2bde01f49ff1062926469fdaa5bc75ec4c76bc05d6af4899b",
+       "rms": 0.0282853189132394
+      },
+      "slot.L46.e40.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "b5ead9a0eb354280694ab9c06a294a8925861c294e00b77ba60617b8a4a5fb9c",
+       "rms": 1.6109699753600695
+      }
+     }
+    },
+    "fe384": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 384,
+      "kept_importance_share": 0.617958208028673,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.2923527599010207,
+      "rel_sq_error_seed_space": 0.2882797949919674
+     },
+     "tensors": {
+      "slot.L46.e40.w1": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "0e2d0e6545bd4d5316eb47ae075047b74eace1f8590aa7678d01a977e01b22e4",
+       "rms": 0.7690095228411371
+      },
+      "slot.L46.e40.w3": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "4d57ad85dc7e2db9f2993e0f1f2e7a775a925387a64bb386687a0069ce5fa6dc",
+       "rms": 0.7977988355353254
+      },
+      "slot.L46.e40.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        384
+       ],
+       "sha256": "72f26ac8be64226ab2720371db7e5b6b96db9868715d8977da59487cc0399f3d",
+       "rms": 0.028303636789336627
+      },
+      "slot.L46.e40.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "b5ead9a0eb354280694ab9c06a294a8925861c294e00b77ba60617b8a4a5fb9c",
+       "rms": 1.6109699753600695
+      }
+     }
+    }
+   },
+   "donor_residual_rms": 2.2857720851898193
+  },
+  {
+   "layer": 46,
+   "expert": 85,
+   "copy": {
+    "donor.L46.e85.gate_proj": {
+     "source": "model.layers.46.mlp.experts.85.gate_proj.weight",
+     "shard": "model-00015-of-00016.safetensors",
+     "byte_range": [
+      3030561768,
+      3033707496
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "0229ebb532facbb851e6ca8606b038fc0804e65274fa1e5df85caeb715f67ebd"
+    },
+    "donor.L46.e85.up_proj": {
+     "source": "model.layers.46.mlp.experts.85.up_proj.weight",
+     "shard": "model-00015-of-00016.safetensors",
+     "byte_range": [
+      3033707496,
+      3036853224
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "080c2b45d22721789616e711f4def0f772328eaf11b61d770d5cfa4e9cd1656b"
+    },
+    "donor.L46.e85.down_proj": {
+     "source": "model.layers.46.mlp.experts.85.down_proj.weight",
+     "shard": "model-00015-of-00016.safetensors",
+     "byte_range": [
+      3027416040,
+      3030561768
+     ],
+     "dtype": "BF16",
+     "shape": [
+      2048,
+      768
+     ],
+     "sha256": "f36e21ecd0256f0a957707688d8eec4f899ad03d8176d37399a50c2d3e924fcf"
+    }
+   },
+   "projection": {
+    "fe768": {
+     "fit": {
+      "mode": "same width (exact)",
+      "donor_units": 768,
+      "slot_units": 768,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+     },
+     "tensors": {
+      "slot.L46.e85.w1": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "81bd2114ad7acc8a239568cb694c3dc3b049d2b13f8f11e27efdc5d08f45fa59",
+       "rms": 0.7444491890482495
+      },
+      "slot.L46.e85.w3": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "b0526b1b656b03a94f05cc2e07b6f12df1b2d7ed40c38d5629bc1a5adef5ef46",
+       "rms": 0.7696962998936147
+      },
+      "slot.L46.e85.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        768
+       ],
+       "sha256": "a2da5aa65e1c7ffd5beacb57341d4f8c5d66b4910c1c34bcdab2deb7dcda7798",
+       "rms": 0.02531648789220667
+      },
+      "slot.L46.e85.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "40a6e1f6b4b897f6302619cf8e66dd813affa4f6232e448c6675790ca7d9393c",
+       "rms": 1.5795810649424715
+      }
+     }
+    },
+    "fe640": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 640,
+      "kept_importance_share": 0.9258935773888318,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.022169842549914772,
+      "rel_sq_error_seed_space": 0.020760889322714877
+     },
+     "tensors": {
+      "slot.L46.e85.w1": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "17d5396b7acce949ba5d7813f1725fb595ef371c4aa10d06d5015cbc821966d6",
+       "rms": 0.7427258840273044
+      },
+      "slot.L46.e85.w3": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "a3db0df42014de4fbba1b968c20fae397bc2e7f50c7be3edbc4ada22615ef6d6",
+       "rms": 0.7640768486442346
+      },
+      "slot.L46.e85.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        640
+       ],
+       "sha256": "d3a7f94e7027627fa0dd31151e7d738f8322eb0c43d5054b951bd2744fcc929c",
+       "rms": 0.025052009394607937
+      },
+      "slot.L46.e85.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "40a6e1f6b4b897f6302619cf8e66dd813affa4f6232e448c6675790ca7d9393c",
+       "rms": 1.5795810649424715
+      }
+     }
+    },
+    "fe512": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 512,
+      "kept_importance_share": 0.8279045796393955,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.05564557444030609,
+      "rel_sq_error_seed_space": 0.05322758434246063
+     },
+     "tensors": {
+      "slot.L46.e85.w1": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "641cb2a7d20433d1b8f47f0c21774f30eecb9d0a33b5aa3210eced464669de91",
+       "rms": 0.7095319405276101
+      },
+      "slot.L46.e85.w3": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "3b66b790ea96349e831a93061ee4f4acd5a6f8bc298fb3bee43ed420c5463374",
+       "rms": 0.7688476528771572
+      },
+      "slot.L46.e85.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        512
+       ],
+       "sha256": "b73dffd9a1f7b90e2e1633655cef522ed14ecb6de61e0184045a7bc9894dd661",
+       "rms": 0.02476973000285316
+      },
+      "slot.L46.e85.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "40a6e1f6b4b897f6302619cf8e66dd813affa4f6232e448c6675790ca7d9393c",
+       "rms": 1.5795810649424715
+      }
+     }
+    },
+    "fe384": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 384,
+      "kept_importance_share": 0.7109962652786435,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.10436335121093944,
+      "rel_sq_error_seed_space": 0.10007913903150387
+     },
+     "tensors": {
+      "slot.L46.e85.w1": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "38fb30400a2ebce1218e312a814185c6aeddea786d1d3d1796fb81eb1a1b3857",
+       "rms": 0.6784310560718025
+      },
+      "slot.L46.e85.w3": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "aa006aeb17462d103490df441e528c37764fd368550704f0381e207ab4286bbc",
+       "rms": 0.7690199728149931
+      },
+      "slot.L46.e85.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        384
+       ],
+       "sha256": "a46dfe961c40d00a72acf600ee9b1149695f63ede798319f1a3de298b830315e",
+       "rms": 0.024236810420678614
+      },
+      "slot.L46.e85.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "40a6e1f6b4b897f6302619cf8e66dd813affa4f6232e448c6675790ca7d9393c",
+       "rms": 1.5795810649424715
+      }
+     }
+    }
+   },
+   "donor_residual_rms": 2.2857720851898193
+  },
+  {
+   "layer": 44,
+   "expert": 32,
+   "copy": {
+    "donor.L44.e32.gate_proj": {
+     "source": "model.layers.44.mlp.experts.32.gate_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      3726296552,
+      3729442280
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "ba899de2032bf54cac780a5bdbfc73b66e011c399edbfcc902148855dfa71a53"
+    },
+    "donor.L44.e32.up_proj": {
+     "source": "model.layers.44.mlp.experts.32.up_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      3729442280,
+      3732588008
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "64a44206e424b84d072323c701e2babcc83c253b3a49e2ce7e3dcec058a6be7e"
+    },
+    "donor.L44.e32.down_proj": {
+     "source": "model.layers.44.mlp.experts.32.down_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      3723150824,
+      3726296552
+     ],
+     "dtype": "BF16",
+     "shape": [
+      2048,
+      768
+     ],
+     "sha256": "39e5b078427dc049d192577fd694738e0710f257d2b7c8f4f33344844c6e9108"
+    }
+   },
+   "projection": {
+    "fe768": {
+     "fit": {
+      "mode": "same width (exact)",
+      "donor_units": 768,
+      "slot_units": 768,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+     },
+     "tensors": {
+      "slot.L44.e32.w1": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "6b23e514aa75f8182d98ea92ed5c50cde9be1a854dfb38eefcc41e1a61d0129d",
+       "rms": 0.5614707136307179
+      },
+      "slot.L44.e32.w3": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "015d709add8d16fb77875f8a7e82162a0f86b986682f3e53ec94391e0c17aebe",
+       "rms": 0.6227973135128347
+      },
+      "slot.L44.e32.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        768
+       ],
+       "sha256": "a456a5212ebc2ee8c7f51fcb539191a88ba94dfc74e2d09c0bac85cdd2ac7301",
+       "rms": 0.028552777032781793
+      },
+      "slot.L44.e32.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "875bfc6457176dddd2a5a26f63e06f7c4579cd7af27c6bd6bc963a75ae99e5c1",
+       "rms": 1.557267569830253
+      }
+     }
+    },
+    "fe640": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 640,
+      "kept_importance_share": 0.908905037858316,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.037090102989033334,
+      "rel_sq_error_seed_space": 0.035231485613371506
+     },
+     "tensors": {
+      "slot.L44.e32.w1": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "53f407d6f80288adbf3e1ee1a3cedc6ba299afa42ba9edcec9653601b5d0cb51",
+       "rms": 0.5461355868719675
+      },
+      "slot.L44.e32.w3": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "ea2e69eaa4d14873f533dbcf38587c3a6cb782742df266883cc51ce7f04621a2",
+       "rms": 0.6206204523961802
+      },
+      "slot.L44.e32.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        640
+       ],
+       "sha256": "6663a1bcb4071e23818e8099c59547a8e63926f065c9eddc0a75de00c990e444",
+       "rms": 0.028635855664258084
+      },
+      "slot.L44.e32.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "875bfc6457176dddd2a5a26f63e06f7c4579cd7af27c6bd6bc963a75ae99e5c1",
+       "rms": 1.557267569830253
+      }
+     }
+    },
+    "fe512": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 512,
+      "kept_importance_share": 0.7894200394026382,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.10969140049100054,
+      "rel_sq_error_seed_space": 0.10657037404943226
+     },
+     "tensors": {
+      "slot.L44.e32.w1": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "983f26ef9d66d2964e708dd39f0692a4dadfe361c36ee3145db067f48cc17edc",
+       "rms": 0.5420694646372527
+      },
+      "slot.L44.e32.w3": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "ca6669480b28fd19fc92f55af08dcde5f4d484885fbad8462903d7acd5a519ee",
+       "rms": 0.6184423323872348
+      },
+      "slot.L44.e32.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        512
+       ],
+       "sha256": "ba969853fcf365edd83f0b49b2a7fc1230cd13ee8ff290e8b4cbdec56ed4f542",
+       "rms": 0.028586556214757593
+      },
+      "slot.L44.e32.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "875bfc6457176dddd2a5a26f63e06f7c4579cd7af27c6bd6bc963a75ae99e5c1",
+       "rms": 1.557267569830253
+      }
+     }
+    },
+    "fe384": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 384,
+      "kept_importance_share": 0.648539560494111,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.21295499267175702,
+      "rel_sq_error_seed_space": 0.2104203978172806
+     },
+     "tensors": {
+      "slot.L44.e32.w1": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "00a6724083b396317cf6326714625afb6f5eb9e65c892205eb7c1e92af00c9fa",
+       "rms": 0.5361686129849816
+      },
+      "slot.L44.e32.w3": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "f9cfd72698f33f13a07d762e29d1208fe5dc2bde19d8aa91650dfc2c40dc22e2",
+       "rms": 0.6172785633414833
+      },
+      "slot.L44.e32.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        384
+       ],
+       "sha256": "4aca8dfcead5a2fef5c6d8844d794dfef568df65336b76caac60339d7f023d67",
+       "rms": 0.02855065107335714
+      },
+      "slot.L44.e32.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "875bfc6457176dddd2a5a26f63e06f7c4579cd7af27c6bd6bc963a75ae99e5c1",
+       "rms": 1.557267569830253
+      }
+     }
+    }
+   },
+   "donor_residual_rms": 2.0883750915527344
+  },
+  {
+   "layer": 41,
+   "expert": 41,
+   "copy": {
+    "donor.L41.e41.gate_proj": {
+     "source": "model.layers.41.mlp.experts.41.gate_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      431124968,
+      434270696
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "8cba768426f5e2b3f1367cff7e2a6a04b66835999ec5e144184db7dbacbfc057"
+    },
+    "donor.L41.e41.up_proj": {
+     "source": "model.layers.41.mlp.experts.41.up_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      434270696,
+      437416424
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "1a67137f899433651e9006ed82e28e0e1c187f4aa10d92eb91c858407975cd89"
+    },
+    "donor.L41.e41.down_proj": {
+     "source": "model.layers.41.mlp.experts.41.down_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      427979240,
+      431124968
+     ],
+     "dtype": "BF16",
+     "shape": [
+      2048,
+      768
+     ],
+     "sha256": "6804627e48d387586c4b110d89aa21195f26ded701017c8d6d46f7aede44780a"
+    }
+   },
+   "projection": {
+    "fe768": {
+     "fit": {
+      "mode": "same width (exact)",
+      "donor_units": 768,
+      "slot_units": 768,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+     },
+     "tensors": {
+      "slot.L41.e41.w1": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "8dd5ae082a0e1e595ee5b1b87c25017c9c8aba8ef191673461366ec8419e5352",
+       "rms": 0.5070481103424856
+      },
+      "slot.L41.e41.w3": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "3c1f114cc2b5720e133dfeefba6dc3f7aa7deb48b5a688e05b2003679932ece1",
+       "rms": 0.5175919936803591
+      },
+      "slot.L41.e41.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        768
+       ],
+       "sha256": "78cb95e38cdfe24ae83b160144a55cc4245580e6e96e5b41418c0c99417d4181",
+       "rms": 0.03582546065114788
+      },
+      "slot.L41.e41.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "374dcec1e0e91719075d2b6227723af460fd86d90c1d1984806a2322feeddbf7",
+       "rms": 1.903103638314688
+      }
+     }
+    },
+    "fe640": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 640,
+      "kept_importance_share": 0.924450865626549,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.019062946338856027,
+      "rel_sq_error_seed_space": 0.01952711373837588
+     },
+     "tensors": {
+      "slot.L41.e41.w1": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "dec1b4c1d12258cdc864294a75fad603c88bd06b0f4c53dc884acb1892ab3923",
+       "rms": 0.5020046600442417
+      },
+      "slot.L41.e41.w3": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "9c51b4874190d0321682c03dfd15b4edd4e6236e2df4ad8b87b2c4e992714c21",
+       "rms": 0.5227843444688979
+      },
+      "slot.L41.e41.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        640
+       ],
+       "sha256": "212dfeadf1e0da4a63f9df5b21d452f7a75fac591a90293ea0c0584b15b82a55",
+       "rms": 0.035375429781369386
+      },
+      "slot.L41.e41.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "374dcec1e0e91719075d2b6227723af460fd86d90c1d1984806a2322feeddbf7",
+       "rms": 1.903103638314688
+      }
+     }
+    },
+    "fe512": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 512,
+      "kept_importance_share": 0.8243535037854788,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.06170594725299012,
+      "rel_sq_error_seed_space": 0.06353682686998376
+     },
+     "tensors": {
+      "slot.L41.e41.w1": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "240a72e21e1d0392c58e4435a7a53706846d331290c38b6b1cd0257da43de1e2",
+       "rms": 0.49926400719794745
+      },
+      "slot.L41.e41.w3": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "cd1042ba31a303651393b4af6c6fb15308bd3afb1f832092007edf53dbcfaa37",
+       "rms": 0.5128916723074879
+      },
+      "slot.L41.e41.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        512
+       ],
+       "sha256": "a12d21d1c8ff92fd511edaa29bfc934ae0c7aaa72e1a70f0a6baefd7dc44688b",
+       "rms": 0.034782244180535445
+      },
+      "slot.L41.e41.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "374dcec1e0e91719075d2b6227723af460fd86d90c1d1984806a2322feeddbf7",
+       "rms": 1.903103638314688
+      }
+     }
+    },
+    "fe384": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 384,
+      "kept_importance_share": 0.6999185323567922,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.13568327793047677,
+      "rel_sq_error_seed_space": 0.1384426000098626
+     },
+     "tensors": {
+      "slot.L41.e41.w1": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "4b2d0136376f0e44b3de6dc95e9efb15b023905d0411875b39b4442469701dca",
+       "rms": 0.5093938503535698
+      },
+      "slot.L41.e41.w3": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "d4bcd04d9f2ac7e299ffce49a72baaa6025cdfc102e23ffa7d6548b6f505e88b",
+       "rms": 0.531039711259901
+      },
+      "slot.L41.e41.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        384
+       ],
+       "sha256": "00b45f41ed0cc3a3b2c2f15ee2c73c389f5568365dd8699ab4f8efd94fc0bbad",
+       "rms": 0.034294406742743824
+      },
+      "slot.L41.e41.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "374dcec1e0e91719075d2b6227723af460fd86d90c1d1984806a2322feeddbf7",
+       "rms": 1.903103638314688
+      }
+     }
+    }
+   },
+   "donor_residual_rms": 1.692176103591919
+  },
+  {
+   "layer": 43,
+   "expert": 84,
+   "copy": {
+    "donor.L43.e84.gate_proj": {
+     "source": "model.layers.43.mlp.experts.84.gate_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      3282220008,
+      3285365736
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "9ae6353600064140563b994da049339584ecba14a5e25aea64f4ff8cbd7dc163"
+    },
+    "donor.L43.e84.up_proj": {
+     "source": "model.layers.43.mlp.experts.84.up_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      3285365736,
+      3288511464
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "92ae241f0c8023848cdba8d310499ef2a663d41c46bd0f3e9e5c1a0c8eda90c0"
+    },
+    "donor.L43.e84.down_proj": {
+     "source": "model.layers.43.mlp.experts.84.down_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      3279074280,
+      3282220008
+     ],
+     "dtype": "BF16",
+     "shape": [
+      2048,
+      768
+     ],
+     "sha256": "eeae3cfe91887e50a559eca6002bf4a9f5867b6a48124e15feb0de0a3bb561f5"
+    }
+   },
+   "projection": {
+    "fe768": {
+     "fit": {
+      "mode": "same width (exact)",
+      "donor_units": 768,
+      "slot_units": 768,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+     },
+     "tensors": {
+      "slot.L43.e84.w1": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "4c861e9a410d8462424ef5597359714588f6ab6015815cb30e57605a88356c3e",
+       "rms": 0.5178151989685984
+      },
+      "slot.L43.e84.w3": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "941e6e7c068b44d556c2143ae7f663d16e034d65863687ea3c70311130b6e732",
+       "rms": 0.5720601620979361
+      },
+      "slot.L43.e84.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        768
+       ],
+       "sha256": "111aed09e8b9bc1306b15a38ac1b5e6946fbd296c78594e57395a769323de022",
+       "rms": 0.03049756495846895
+      },
+      "slot.L43.e84.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "18634ceb8beb42b080e0454aaedd63d622d10e9b476d52d744e72af61d5f1809",
+       "rms": 1.8313189307919238
+      }
+     }
+    },
+    "fe640": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 640,
+      "kept_importance_share": 0.9214289727250217,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.02616495954130997,
+      "rel_sq_error_seed_space": 0.02829863543030229
+     },
+     "tensors": {
+      "slot.L43.e84.w1": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "dc8ed768a14e110ae94e46f2b742e83b89461c2978c4106ad0ab4ff08e514dd9",
+       "rms": 0.5256125699134259
+      },
+      "slot.L43.e84.w3": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "f776826a7be139861db8c3d0a57aaf22e615b77d982a4551de540d6bdf781dce",
+       "rms": 0.5885694919457
+      },
+      "slot.L43.e84.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        640
+       ],
+       "sha256": "2fdb03bfd3a37531490c1045b87db155676698a4ebb506d95ecc8494cfed874a",
+       "rms": 0.030292558887042964
+      },
+      "slot.L43.e84.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "18634ceb8beb42b080e0454aaedd63d622d10e9b476d52d744e72af61d5f1809",
+       "rms": 1.8313189307919238
+      }
+     }
+    },
+    "fe512": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 512,
+      "kept_importance_share": 0.8235617749562597,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.0684266253096263,
+      "rel_sq_error_seed_space": 0.074324210616156
+     },
+     "tensors": {
+      "slot.L43.e84.w1": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "8fb3ece82b4683643b00da3ca10766ccaa72ecbf154ddb296a632c490d98b5d8",
+       "rms": 0.5249662202659867
+      },
+      "slot.L43.e84.w3": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "cc3bafa8c2676af13ed9cd41247308e9482490a61495e0d6d043fb8dcd0cefff",
+       "rms": 0.5954182386776035
+      },
+      "slot.L43.e84.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        512
+       ],
+       "sha256": "99d8a34f7913a8307496c5c2527b86755d95fc5b4bc5ae8dd8ff0ab2d99b27fa",
+       "rms": 0.029913138792575164
+      },
+      "slot.L43.e84.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "18634ceb8beb42b080e0454aaedd63d622d10e9b476d52d744e72af61d5f1809",
+       "rms": 1.8313189307919238
+      }
+     }
+    },
+    "fe384": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 384,
+      "kept_importance_share": 0.7043077672448973,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.1372996093178343,
+      "rel_sq_error_seed_space": 0.14938405386607598
+     },
+     "tensors": {
+      "slot.L43.e84.w1": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "4abe709dc646f9d3f2ce5310092cf5c1f45c74e32fe78587a2f635996228e542",
+       "rms": 0.527761369231453
+      },
+      "slot.L43.e84.w3": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "f15048fa7fa816acda72e8760314c2e503cb490814c9771f3f0c9ea3e55fb486",
+       "rms": 0.6052586408803504
+      },
+      "slot.L43.e84.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        384
+       ],
+       "sha256": "ebc8df97a593e5bf7d7c76035d23cf0e5851ea7a688c0e2ab4ac594567727ba4",
+       "rms": 0.02939439612262812
+      },
+      "slot.L43.e84.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "18634ceb8beb42b080e0454aaedd63d622d10e9b476d52d744e72af61d5f1809",
+       "rms": 1.8313189307919238
+      }
+     }
+    }
+   },
+   "donor_residual_rms": 1.9369781017303467
+  },
+  {
+   "layer": 44,
+   "expert": 41,
+   "copy": {
+    "donor.L44.e41.gate_proj": {
+     "source": "model.layers.44.mlp.experts.41.gate_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      3820668392,
+      3823814120
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "097c7284c9b12dc63f889de880c3fab89ec049d8fa55e69f8a4e8c736b346e17"
+    },
+    "donor.L44.e41.up_proj": {
+     "source": "model.layers.44.mlp.experts.41.up_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      3823814120,
+      3826959848
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "ec62908a16acf13ac89c4d4512eea9e9f9df5d4832e3414c09628849e5fc4c4e"
+    },
+    "donor.L44.e41.down_proj": {
+     "source": "model.layers.44.mlp.experts.41.down_proj.weight",
+     "shard": "model-00014-of-00016.safetensors",
+     "byte_range": [
+      3817522664,
+      3820668392
+     ],
+     "dtype": "BF16",
+     "shape": [
+      2048,
+      768
+     ],
+     "sha256": "87167cd18fa3d2bb227124433c6d98363f8e553de2371a07c1c3ea5e374c9e15"
+    }
+   },
+   "projection": {
+    "fe768": {
+     "fit": {
+      "mode": "same width (exact)",
+      "donor_units": 768,
+      "slot_units": 768,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+     },
+     "tensors": {
+      "slot.L44.e41.w1": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "9648bc70cb1ff3946c4e653e87337707dd6033cecea0df5e3b299c0a4e72a36a",
+       "rms": 0.5862724355984295
+      },
+      "slot.L44.e41.w3": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "038b08046a44db041d77d320b345f5ecd83a4b1e12d72c1783ff525a34a59a49",
+       "rms": 0.6291989660152254
+      },
+      "slot.L44.e41.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        768
+       ],
+       "sha256": "56a2fee9abf2774af4e43e19702c0ecb51325d21b7f8193cfbced3260dfc9b60",
+       "rms": 0.028269197208573002
+      },
+      "slot.L44.e41.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "bcabdade62c08274c5ca8847141c76d137a726cae4477b4b29f12a3551b3da42",
+       "rms": 1.7964704016839466
+      }
+     }
+    },
+    "fe640": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 640,
+      "kept_importance_share": 0.8997218643193625,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.04961141665793936,
+      "rel_sq_error_seed_space": 0.050284004937094604
+     },
+     "tensors": {
+      "slot.L44.e41.w1": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "91e8c4a3814b3984e044f1de9a5ff70244ecc681f17bca57c2ff659161cddbe6",
+       "rms": 0.5917655236572708
+      },
+      "slot.L44.e41.w3": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "f6f841c1a06b2beff9f1b0a00924a1ef4b5638c67bcafd19342989efd2445702",
+       "rms": 0.6216887705394448
+      },
+      "slot.L44.e41.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        640
+       ],
+       "sha256": "8ae0fb1dc5f1a969022f5f53264baeeeaaa8de4b1a2af06916884a0eaf40318f",
+       "rms": 0.02819272954599215
+      },
+      "slot.L44.e41.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "bcabdade62c08274c5ca8847141c76d137a726cae4477b4b29f12a3551b3da42",
+       "rms": 1.7964704016839466
+      }
+     }
+    },
+    "fe512": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 512,
+      "kept_importance_share": 0.776175689663382,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.13059318535569142,
+      "rel_sq_error_seed_space": 0.13306158310710464
+     },
+     "tensors": {
+      "slot.L44.e41.w1": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "26a1bc2f572ebcec04bacda4490e3fec3c8ae60b5a71d0cf1732c3619106b8c8",
+       "rms": 0.5896292171933917
+      },
+      "slot.L44.e41.w3": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "8ce9a14797283e84d034042292bd82be98cfce9c3e0a176fa0089d633cd41993",
+       "rms": 0.619777349206735
+      },
+      "slot.L44.e41.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        512
+       ],
+       "sha256": "400dca4ee6c55ee607dd8b2414122c8890104074592290f051b17a89776c39c3",
+       "rms": 0.02811255546680075
+      },
+      "slot.L44.e41.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "bcabdade62c08274c5ca8847141c76d137a726cae4477b4b29f12a3551b3da42",
+       "rms": 1.7964704016839466
+      }
+     }
+    },
+    "fe384": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 384,
+      "kept_importance_share": 0.6320599488659755,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.2439563701045521,
+      "rel_sq_error_seed_space": 0.24928490323326452
+     },
+     "tensors": {
+      "slot.L44.e41.w1": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "3a13ed83caa4d830974fe973e406ec5cce6d3246c5c9e5d13ac2b4e7cc448d8f",
+       "rms": 0.6055105163619455
+      },
+      "slot.L44.e41.w3": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "2266377ecb6cdb1e5830544a66602cc551747da41c6d126868a518fe9f402d72",
+       "rms": 0.6168138449069597
+      },
+      "slot.L44.e41.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        384
+       ],
+       "sha256": "11000096bd3c5c857dab1f05e60d3aed135309e30410f90828c33642ee3bdc41",
+       "rms": 0.02801387616721313
+      },
+      "slot.L44.e41.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "bcabdade62c08274c5ca8847141c76d137a726cae4477b4b29f12a3551b3da42",
+       "rms": 1.7964704016839466
+      }
+     }
+    }
+   },
+   "donor_residual_rms": 2.0883750915527344
+  },
+  {
+   "layer": 47,
+   "expert": 25,
+   "copy": {
+    "donor.L47.e25.gate_proj": {
+     "source": "model.layers.47.mlp.experts.25.gate_proj.weight",
+     "shard": "model-00015-of-00016.safetensors",
+     "byte_range": [
+      3389703656,
+      3392849384
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "bf4e6e2f3eccf80e8f4360ad469a664ab991d8af15cd24a996bba72eae669be6"
+    },
+    "donor.L47.e25.up_proj": {
+     "source": "model.layers.47.mlp.experts.25.up_proj.weight",
+     "shard": "model-00015-of-00016.safetensors",
+     "byte_range": [
+      3392849384,
+      3395995112
+     ],
+     "dtype": "BF16",
+     "shape": [
+      768,
+      2048
+     ],
+     "sha256": "fc225705b2691c746361e62169e91506d25d92303a30e2ec31ae7745193e640d"
+    },
+    "donor.L47.e25.down_proj": {
+     "source": "model.layers.47.mlp.experts.25.down_proj.weight",
+     "shard": "model-00015-of-00016.safetensors",
+     "byte_range": [
+      3386557928,
+      3389703656
+     ],
+     "dtype": "BF16",
+     "shape": [
+      2048,
+      768
+     ],
+     "sha256": "b84c4271b23411471cc36ee5ac1bd3f4bbbd7efc5c8245e61bd151ed6a1d2180"
+    }
+   },
+   "projection": {
+    "fe768": {
+     "fit": {
+      "mode": "same width (exact)",
+      "donor_units": 768,
+      "slot_units": 768,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector"
+     },
+     "tensors": {
+      "slot.L47.e25.w1": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "f0ff9f5fb8b2ed10a31328a4200b0311d6864814d04fda4bbd3d23450dedae6c",
+       "rms": 0.01939480835070143
+      },
+      "slot.L47.e25.w3": {
+       "dtype": "F32",
+       "shape": [
+        768,
+        1920
+       ],
+       "sha256": "ad0d23b3140dc1c83081984f173cd6143d118ed66448ff944745b634f6ca7282",
+       "rms": 0.02291092549833603
+      },
+      "slot.L47.e25.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        768
+       ],
+       "sha256": "14f34ce008d44394f5439ec5e2f83432aba300e51777105f3866ec79c7fc203a",
+       "rms": 0.020099936509936293
+      },
+      "slot.L47.e25.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "0176c03889a2358c85b74fb623488a95c8c088634851dcaae2525311bbf990c6",
+       "rms": 0.037901847534892515
+      }
+     }
+    },
+    "fe640": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 640,
+      "kept_importance_share": 0.93463167028352,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.01950277839852562,
+      "rel_sq_error_seed_space": 0.022264239616191128
+     },
+     "tensors": {
+      "slot.L47.e25.w1": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "14426c5ce2c9bdc5aec152f43b0b885fb0e0a1256a4832adca0bd0956c372e44",
+       "rms": 0.019215518102179367
+      },
+      "slot.L47.e25.w3": {
+       "dtype": "F32",
+       "shape": [
+        640,
+        1920
+       ],
+       "sha256": "a23574253b6a7d634d2b9f92b4b2c2714f96b9171341ce6042855ebe3e5801d2",
+       "rms": 0.023441808413477858
+      },
+      "slot.L47.e25.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        640
+       ],
+       "sha256": "1a17207ef1b4bd8db9bbdb8f74cdb8aa0e91bc9ee29e6196b1278166aed6f4f5",
+       "rms": 0.019710031512655327
+      },
+      "slot.L47.e25.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "0176c03889a2358c85b74fb623488a95c8c088634851dcaae2525311bbf990c6",
+       "rms": 0.037901847534892515
+      }
+     }
+    },
+    "fe512": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 512,
+      "kept_importance_share": 0.8407092857314569,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.05270324075549213,
+      "rel_sq_error_seed_space": 0.06061193554057457
+     },
+     "tensors": {
+      "slot.L47.e25.w1": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "82f6348c4d9beb983898ba76612015f673ed9f8e5db92087d6423374d27a8351",
+       "rms": 0.01920959891642015
+      },
+      "slot.L47.e25.w3": {
+       "dtype": "F32",
+       "shape": [
+        512,
+        1920
+       ],
+       "sha256": "21a13f3970d79344804fc2308233c43411f118f664e2a56b2abafc2f8e454998",
+       "rms": 0.02405104668173476
+      },
+      "slot.L47.e25.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        512
+       ],
+       "sha256": "6bc8c52566eb16fd5f7f9f09707cc4255050d5c5f9be839721e69c9a67ddad09",
+       "rms": 0.019123832092426938
+      },
+      "slot.L47.e25.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "0176c03889a2358c85b74fb623488a95c8c088634851dcaae2525311bbf990c6",
+       "rms": 0.037901847534892515
+      }
+     }
+    },
+    "fe384": {
+     "fit": {
+      "mode": "unit selection (lossy)",
+      "donor_units": 768,
+      "slot_units": 384,
+      "kept_importance_share": 0.7255340300941253,
+      "importance": "measured mean |activation| on routed tokens x norm of the folded write vector",
+      "rows_measured": 2048,
+      "rel_sq_error_donor_space": 0.09685370751879342,
+      "rel_sq_error_seed_space": 0.11210268464919221
+     },
+     "tensors": {
+      "slot.L47.e25.w1": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "5114942dc6a145c1c2f398a320282f2bff18e86f70965c1e8fb5cc5e225511d2",
+       "rms": 0.01943800987050659
+      },
+      "slot.L47.e25.w3": {
+       "dtype": "F32",
+       "shape": [
+        384,
+        1920
+       ],
+       "sha256": "3e48d144382513c40f49aab0164b3a97c06de857933dd0a770382e1ca9951b05",
+       "rms": 0.02500277862259172
+      },
+      "slot.L47.e25.w2": {
+       "dtype": "F32",
+       "shape": [
+        1920,
+        384
+       ],
+       "sha256": "b71fb3ccd26514802f793dabbd234108fe466ab11877f1b50f58ce461e9bfe12",
+       "rms": 0.018201171086448583
+      },
+      "slot.L47.e25.router": {
+       "dtype": "F32",
+       "shape": [
+        1920
+       ],
+       "sha256": "0176c03889a2358c85b74fb623488a95c8c088634851dcaae2525311bbf990c6",
+       "rms": 0.037901847534892515
+      }
+     }
+    }
+   },
+   "donor_residual_rms": 2.784440755844116
+  }
+ ],
+ "files": {
+  "copy": {
+   "sha256": "3ac98b765271453d7bbfc94cdac2cf775b79191cc9a54fbdd09c52513d335786",
+   "bytes": 150999760
+  },
+  "projection": {
+   "fe768": {
+    "file": "seed_slots_PROJECTION.f32.safetensors",
+    "sha256": "c74f96c7505972def586c232e6cf7c42167cba089dc072012424e9c8a0e79f31",
+    "bytes": 283244232
+   },
+   "fe640": {
+    "file": "seed_slots_PROJECTION_fe640.f32.safetensors",
+    "sha256": "457f412244389f24ffaf59a3580da8aeb52fa64ec4327806cdd58ffbba9cdf2f",
+    "bytes": 236058304
+   },
+   "fe512": {
+    "file": "seed_slots_PROJECTION_fe512.f32.safetensors",
+    "sha256": "2e7a8b7ae8e562bfb9a4bcf41a1a434b9d1080b24f4043baf09e15e8a01ca391",
+    "bytes": 188872368
+   },
+   "fe384": {
+    "file": "seed_slots_PROJECTION_fe384.f32.safetensors",
+    "sha256": "247721bedae257f4d2956c2c15563a7d432649969974904b5a77617a054ef194",
+    "bytes": 141686424
+   }
+  }
+ },
+ "provenance": {
+  "repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+  "revision": "b2cff646eb4bb1d68355c01b18ae02e7cf42d120"
+ }
+}

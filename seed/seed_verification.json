@@ -1,0 +1,148 @@
+{
+ "subset_file_sha256": "da5626cd0c6d75f0570ed2715c6c75ad856ac35d0d62575c7f6ba5d03d17a388",
+ "subset_file_sha256_matches_provenance": true,
+ "tensors": {
+  "tok_emb.weight": {
+   "dtype": "F32",
+   "shape": [
+    8192,
+    1920
+   ],
+   "sha256": "1f0fbc115a8327a0d1f571dc753c1839f4b6948f7723f289436711807622989d",
+   "matches_provenance": true
+  },
+  "norm.weight": {
+   "dtype": "F32",
+   "shape": [
+    1920
+   ],
+   "sha256": "46747325e7c581706ef7c7dbd27e3d88832a707eb139db21e4d8b02363e4c93b",
+   "matches_provenance": true
+  },
+  "blocks.0.attn_norm.weight": {
+   "dtype": "F32",
+   "shape": [
+    1920
+   ],
+   "sha256": "96ff64f43f2f1febfb1d2b299cccc98988d0cfc267a9fe9962e83d991dd39076",
+   "matches_provenance": true
+  },
+  "blocks.0.ffn_norm.weight": {
+   "dtype": "F32",
+   "shape": [
+    1920
+   ],
+   "sha256": "d89887d963d3e50ede8072c3317dea4281b7f02e0cc58e22c0f397994275c3e7",
+   "matches_provenance": true
+  },
+  "blocks.11.attn_norm.weight": {
+   "dtype": "F32",
+   "shape": [
+    1920
+   ],
+   "sha256": "45dfe1fd34bc73eeb5937c7fed2e759870af733666311dad33369c7558e77224",
+   "matches_provenance": true
+  },
+  "blocks.11.ffn_norm.weight": {
+   "dtype": "F32",
+   "shape": [
+    1920
+   ],
+   "sha256": "87860921d040f32651eeab2c22f28b56347dcd4ed945ff7bf37824bd6c709c10",
+   "matches_provenance": true
+  },
+  "blocks.23.attn_norm.weight": {
+   "dtype": "F32",
+   "shape": [
+    1920
+   ],
+   "sha256": "e52ecb76798c5584051a771f6355e0d3c9b6634ca7569db505dd26ffe1039edc",
+   "matches_provenance": true
+  },
+  "blocks.23.ffn_norm.weight": {
+   "dtype": "F32",
+   "shape": [
+    1920
+   ],
+   "sha256": "5b41ebd3fb9d9855176410aab2d451dbc8858c94f5ea59a7576b9434c8f713a3",
+   "matches_provenance": true
+  }
+ },
+ "n_tensors_inventory": 218,
+ "params_inventory": 959541120,
+ "params_formula": 959541120,
+ "params_ok": true,
+ "tok_emb_stats": {
+  "shape": [
+   8192,
+   1920
+  ],
+  "finite": true,
+  "mean": -0.00013932376047150023,
+  "std": 0.03972253784615975,
+  "row_norm": {
+   "min": 1.0742515003159683,
+   "median": 1.7415086607848704,
+   "max": 2.3366567882975966
+  },
+  "mean_row_norm_of_mean_vector": 0.9820668845928915,
+  "singular_values": {
+   "max": 32.52632202264327,
+   "min": 0.03184700367415424,
+   "cond": 1021.3306832705376
+  },
+  "effective_rank_exp_entropy": 583.3486277505342,
+  "participation_ratio": 171.65832762373654,
+  "dims_for_90pct_variance": 640,
+  "dims_for_99pct_variance": 1456,
+  "special_rows_norm": {
+   "<bos>": 1.764114289849054,
+   "<eos>": 1.3863342751026089,
+   "<pad>": 1.764074652602053
+  }
+ },
+ "norm_gains": {
+  "norm.weight": {
+   "mean": 1.114917278289795,
+   "std": 0.13513855636119843,
+   "min": 0.6614599823951721,
+   "max": 1.3368018865585327
+  },
+  "blocks.0.attn_norm.weight": {
+   "mean": 0.13977207243442535,
+   "std": 0.03367103636264801,
+   "min": 0.07052481919527054,
+   "max": 0.35907211899757385
+  },
+  "blocks.0.ffn_norm.weight": {
+   "mean": 0.2507452964782715,
+   "std": 0.13877733051776886,
+   "min": 0.11315768212080002,
+   "max": 0.740351140499115
+  },
+  "blocks.11.attn_norm.weight": {
+   "mean": 0.6159277558326721,
+   "std": 0.03539078310132027,
+   "min": 0.45133933424949646,
+   "max": 0.6838853359222412
+  },
+  "blocks.11.ffn_norm.weight": {
+   "mean": 0.6725353002548218,
+   "std": 0.07648346573114395,
+   "min": 0.12767140567302704,
+   "max": 0.7687538266181946
+  },
+  "blocks.23.attn_norm.weight": {
+   "mean": 0.7866947054862976,
+   "std": 0.037824422121047974,
+   "min": 0.4997731149196625,
+   "max": 0.8908396363258362
+  },
+  "blocks.23.ffn_norm.weight": {
+   "mean": 1.00730299949646,
+   "std": 0.09333403408527374,
+   "min": 0.5074340105056763,
+   "max": 1.123773455619812
+  }
+ }
+}

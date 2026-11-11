@@ -1,0 +1,35 @@
+{
+ "native": {
+  "tokens": 46372,
+  "bytes": 201273,
+  "mean_ce_nats": 0.685628354549408,
+  "bits_per_byte": 0.2278943806886673,
+  "code": {
+   "mean_ce_nats": 0.6237489581108093,
+   "bits_per_byte": 0.21662737429141998
+  },
+  "prose": {
+   "mean_ce_nats": 0.7444111704826355,
+   "bits_per_byte": 0.2377365678548813
+  }
+ },
+ "transplant": {
+  "tokens": 53411,
+  "bytes": 201318,
+  "mean_ce_nats": 2.673884153366089,
+  "bits_per_byte": 1.0234466791152954,
+  "code": {
+   "mean_ce_nats": 2.9599952697753906,
+   "bits_per_byte": 1.186911702156067
+  },
+  "prose": {
+   "mean_ce_nats": 2.400725841522217,
+   "bits_per_byte": 0.8806726932525635
+  }
+ },
+ "repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+ "revision": "b2cff646eb4bb1d68355c01b18ae02e7cf42d120",
+ "last_layer": 47,
+ "bytes_fetched": 59819581440,
+ "wall_s": 3282.9
+}

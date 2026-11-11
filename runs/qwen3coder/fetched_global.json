@@ -1,0 +1,9 @@
+{
+ "tensor_sha256": {
+  "model.embed_tokens.weight": "c351661a821b35921ff06eb1f3c45b9d85ae77d013042d69d3abb790bda444d2",
+  "lm_head.weight": "fcca80be3a50ede4325ecd42e0c2daed6631c0d287c3ca2afd0bfc2a65e858c5",
+  "model.norm.weight": "7af3c27feec4450112a105af0715d047ede9b8ab8c233a7941d3f6def49bfcbe"
+ },
+ "unknown_embed_rows": [],
+ "unknown_head_rows": []
+}

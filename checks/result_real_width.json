@@ -1,0 +1,70 @@
+{
+ "zero_router_as_after_upcycle": {
+  "n_routed": [
+   8,
+   36
+  ],
+  "params": [
+   109157760,
+   315703680
+  ],
+  "max_abs_logit_diff": 0.0,
+  "logit_abs_max": 11.560927391052246,
+  "logits_finite": true,
+  "old_slot_loads_equal": true,
+  "new_slot_load": 0,
+  "rows_per_layer": {
+   "0": 28,
+   "1": 28
+  },
+  "filler_slots": {
+   "0": 0,
+   "1": 0
+  },
+  "parameters_added": {
+   "implant": 206545920,
+   "filler": 0
+  }
+ },
+ "random_router": {
+  "n_routed": [
+   8,
+   36
+  ],
+  "params": [
+   109157760,
+   315703680
+  ],
+  "max_abs_logit_diff": 8.106231689453125e-06,
+  "logit_abs_max": 11.936481475830078,
+  "logits_finite": true,
+  "old_slot_loads_equal": true,
+  "new_slot_load": 0,
+  "rows_per_layer": {
+   "0": 28,
+   "1": 28
+  },
+  "filler_slots": {
+   "0": 0,
+   "1": 0
+  },
+  "parameters_added": {
+   "implant": 206545920,
+   "filler": 0
+  },
+  "switched_on": {
+   "finite": true,
+   "max_abs_logit_diff": 12.187958717346191,
+   "new_slot_load": 576,
+   "slots_with_load": 26
+  },
+  "placement_layer_1": [
+   "L63 e11 effort (Mistral-Large-)",
+   "L63 e85 effort (Mistral-Large-)",
+   "L63 e118 think_mode (Mistral-Large-)",
+   "L42 e29 code (Qwen3-Coder-30)",
+   "L42 e85 code (Qwen3-Coder-30)",
+   "L43 e84 code (Qwen3-Coder-30)"
+  ]
+ }
+}

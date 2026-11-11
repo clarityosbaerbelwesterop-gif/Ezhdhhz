@@ -1,0 +1,396 @@
+{
+ "file": "implant_mistral_l4_fe640_reasoning.safetensors",
+ "sha256": "1ae4d7b34d17b6ad39ce3b66bc0022ebd8536f2a07e1e283c9175a3986e003e0",
+ "bytes": 118026864,
+ "class": "PROJECTION",
+ "donor": {
+  "repo": "mistralai/Mistral-Large-4-1T-A52B",
+  "revision": "af26e7869af601441d5cdf75a1272469ddc3d059"
+ },
+ "donor_layers": 72,
+ "slot_width": 640,
+ "dim": 1920,
+ "rows": [
+  {
+   "donor_layer": 27,
+   "donor_expert": 116,
+   "functions": [
+    "reasoning"
+   ],
+   "relative_depth": 0.38028169014084506,
+   "selection": [
+    {
+     "function": "reasoning",
+     "rank": 7,
+     "mass_target": 0.10678104439167062,
+     "mass_baselines": {
+      "question": 0.012073000046766699,
+      "wiki": 0.016514953954259778,
+      "code": 0.019923627628255076
+     },
+     "excess": 0.08685741676341555,
+     "ratio_half": [
+      4.687244711028621,
+      6.417313815269963
+     ],
+     "target_tokens_routed": 968,
+     "target_tokens": 3168
+    }
+   ],
+   "width_reduction": {
+    "kept_importance_share": 0.28877852768043166,
+    "rel_sq_error_donor_space": 0.19842043486195662,
+    "rel_sq_error_seed_space": 0.19705633386413252
+   },
+   "row": 0,
+   "source_sha256": {
+    "w1": "e36c439eb7096df9a0ca5c92491c808a3f2d7fd50abb6ffc6f796365bc9ac508",
+    "w3": "72dd9d7fc6dffc23dbc2d46679a1c465fa7879fc3f7c88ce0f3a746da1c86546",
+    "w2": "f3b142312cc455b11c37a153351535e21af99cc024bfa7d4306c02c92f294abc",
+    "router": "b24028de17b97f8544d0d5761e175342c573bb2fec2c7427a1a67b6fd6cfa3eb"
+   }
+  },
+  {
+   "donor_layer": 37,
+   "donor_expert": 17,
+   "functions": [
+    "reasoning"
+   ],
+   "relative_depth": 0.5211267605633803,
+   "selection": [
+    {
+     "function": "reasoning",
+     "rank": 3,
+     "mass_target": 0.17996514445603495,
+     "mass_baselines": {
+      "question": 0.06366585994112318,
+      "wiki": 0.00031660992783985104,
+      "code": 0.011437323068004726
+     },
+     "excess": 0.11629928451491177,
+     "ratio_half": [
+      2.8266254550640313,
+      2.824768090999813
+     ],
+     "target_tokens_routed": 1427,
+     "target_tokens": 3168
+    }
+   ],
+   "width_reduction": {
+    "kept_importance_share": 0.2417791635287046,
+    "rel_sq_error_donor_space": 0.35776597135514987,
+    "rel_sq_error_seed_space": 0.3515062302134834
+   },
+   "row": 1,
+   "source_sha256": {
+    "w1": "42bd0e304afd1b10c28dd19840105ce65e81400ba8a77a83e40355297493a875",
+    "w3": "43e467295ee832803929be9eaf578292352f31eaaa73f6a19137f35c8110bab1",
+    "w2": "5d1cc4dce106fa4cb0485ff959a44062cb90c0f7f136fd007130727121566a95",
+    "router": "2922fd72da7e1c32e9e2f46b8858373b0301b0839e653ddc6e3dd71d94caef01"
+   }
+  },
+  {
+   "donor_layer": 40,
+   "donor_expert": 74,
+   "functions": [
+    "reasoning"
+   ],
+   "relative_depth": 0.5633802816901409,
+   "selection": [
+    {
+     "function": "reasoning",
+     "rank": 4,
+     "mass_target": 0.14285767680466777,
+     "mass_baselines": {
+      "question": 0.031289507475902846,
+      "wiki": 0.0,
+      "code": 0.002627310032770712
+     },
+     "excess": 0.11156816932876493,
+     "ratio_half": [
+      4.276495456050056,
+      4.912122709252862
+     ],
+     "target_tokens_routed": 1242,
+     "target_tokens": 3168
+    }
+   ],
+   "width_reduction": {
+    "kept_importance_share": 0.2519396889065631,
+    "rel_sq_error_donor_space": 0.39105721550548106,
+    "rel_sq_error_seed_space": 0.38687935815289154
+   },
+   "row": 2,
+   "source_sha256": {
+    "w1": "68672b54f7208cfaf2e5bf6f84a4f3e995ff991f4aac53135cb31d10260fbbae",
+    "w3": "fbf39a8405404f0b52deba08005c8a8478fd82d598ab655e83f087084705e506",
+    "w2": "0d3d8345481aab2a90c6fbf6067ba481d1d5bd610fd132981542e620731c0dc2",
+    "router": "0f75467c0071245a7dc08a94d40a6fd55fa0830fedf772f4b0fc1d7137466331"
+   }
+  },
+  {
+   "donor_layer": 46,
+   "donor_expert": 69,
+   "functions": [
+    "reasoning"
+   ],
+   "relative_depth": 0.647887323943662,
+   "selection": [
+    {
+     "function": "reasoning",
+     "rank": 5,
+     "mass_target": 0.1280807340988005,
+     "mass_baselines": {
+      "question": 0.019242227190158317,
+      "wiki": 0.0009984533214036312,
+      "code": 5.115514402774985e-05
+     },
+     "excess": 0.10883850690864218,
+     "ratio_half": [
+      5.718639041072461,
+      7.868911610370204
+     ],
+     "target_tokens_routed": 1324,
+     "target_tokens": 3168
+    }
+   ],
+   "width_reduction": {
+    "kept_importance_share": 0.23779815459450063,
+    "rel_sq_error_donor_space": 0.4782466436814909,
+    "rel_sq_error_seed_space": 0.4815284526231082
+   },
+   "row": 3,
+   "source_sha256": {
+    "w1": "8b46ab3155ccd9d12bc9c9d45c5a8809fdc5a1085bbc75038b5346641d4bb018",
+    "w3": "6f5040ec3ea5fd4000279b612e64c83d8744b48ee394ef3e76684074d7559c68",
+    "w2": "e786484567299d81dcc4a5f812ada5a39e4b34a79465b04add2cd2c547a7d060",
+    "router": "c418df0cb36f908660c7a24fb8c290e32fd7dabcb3a53f50c70e123d39b60b9f"
+   }
+  },
+  {
+   "donor_layer": 50,
+   "donor_expert": 72,
+   "functions": [
+    "reasoning"
+   ],
+   "relative_depth": 0.704225352112676,
+   "selection": [
+    {
+     "function": "reasoning",
+     "rank": 1,
+     "mass_target": 0.1623594881308199,
+     "mass_baselines": {
+      "question": 0.02645562501846054,
+      "wiki": 0.0,
+      "code": 0.028045433377347048
+     },
+     "excess": 0.13431405475347286,
+     "ratio_half": [
+      6.480091337363769,
+      5.108812304504042
+     ],
+     "target_tokens_routed": 1626,
+     "target_tokens": 3168
+    }
+   ],
+   "width_reduction": {
+    "kept_importance_share": 0.23860512359782693,
+    "rel_sq_error_donor_space": 0.47875673286176595,
+    "rel_sq_error_seed_space": 0.48289035585027396
+   },
+   "row": 4,
+   "source_sha256": {
+    "w1": "79b3b0271eab951019c0863f04d3bb4f0f1820f02fe847632aadf28604758a8e",
+    "w3": "077b87b776fd0bd96c6b6000e26ca5552174c536ce40676d225e53d18f6a9c4c",
+    "w2": "601693b7c2e5d3e81206e1b1f3b227adb47e7c912a857cbbc463c1bd13b57e33",
+    "router": "03afc67faaadb2d1e536a0b293f54317bd08f7083afd6fb7cb4de5041330d333"
+   }
+  },
+  {
+   "donor_layer": 52,
+   "donor_expert": 91,
+   "functions": [
+    "reasoning"
+   ],
+   "relative_depth": 0.7323943661971831,
+   "selection": [
+    {
+     "function": "reasoning",
+     "rank": 2,
+     "mass_target": 0.12414420734752309,
+     "mass_baselines": {
+      "question": 0.007228656617364721,
+      "wiki": 0.0011758701317359172,
+      "code": 0.0003009599002582697
+     },
+     "excess": 0.11691555073015837,
+     "ratio_half": [
+      15.392619751753656,
+      18.72968167906153
+     ],
+     "target_tokens_routed": 1260,
+     "target_tokens": 3168
+    }
+   ],
+   "width_reduction": {
+    "kept_importance_share": 0.20291359656156202,
+    "rel_sq_error_donor_space": 0.5739853243679532,
+    "rel_sq_error_seed_space": 0.5718014109433414
+   },
+   "row": 5,
+   "source_sha256": {
+    "w1": "85c6f9cab1fbe6de4dc0a960bee423226ff5d517e20cdcc4e27304f13de0d6c4",
+    "w3": "3ff1efcccafb548eb54ac2bf7033505a47452bf9a973a255c3c0dfd2a414585e",
+    "w2": "0ec7cbc0904ef827fe6c8ead89c2f6422570083ac2e1a894662214f18cd3123d",
+    "router": "23c8620416c8b91bf11baca2e6b8a4f07c44be883e78d14ebf718e90d256bb3b"
+   }
+  },
+  {
+   "donor_layer": 58,
+   "donor_expert": 18,
+   "functions": [
+    "reasoning"
+   ],
+   "relative_depth": 0.8169014084507042,
+   "selection": [
+    {
+     "function": "reasoning",
+     "rank": 8,
+     "mass_target": 0.11004442157167377,
+     "mass_baselines": {
+      "question": 0.031362859272851686,
+      "wiki": 0.0032717685237721138,
+      "code": 0.0032448629582165567
+     },
+     "excess": 0.07868156229882209,
+     "ratio_half": [
+      3.812705212325628,
+      3.2436266781874554
+     ],
+     "target_tokens_routed": 1097,
+     "target_tokens": 3168
+    }
+   ],
+   "width_reduction": {
+    "kept_importance_share": 0.20783846242229848,
+    "rel_sq_error_donor_space": 0.5672458508208147,
+    "rel_sq_error_seed_space": 0.5703083161384928
+   },
+   "row": 6,
+   "source_sha256": {
+    "w1": "08967a34787074e51b281d8b836f7b751365f6b1ce2addbec76271cd3146aea7",
+    "w3": "841fef7a58029ca829214047aa811cb0785bf5d8fc849b8662697ac7bb293041",
+    "w2": "372f62f5b697420928b1bd4bd71e1f839c96eba72a9ebd81e03e3ca27f6c2820",
+    "router": "e93b222670bf1644c1da052433d580173f89b3704b879aa9dfbba7dbd64ec54a"
+   }
+  },
+  {
+   "donor_layer": 60,
+   "donor_expert": 8,
+   "functions": [
+    "reasoning"
+   ],
+   "relative_depth": 0.8450704225352113,
+   "selection": [
+    {
+     "function": "reasoning",
+     "rank": 6,
+     "mass_target": 0.10206733087096552,
+     "mass_baselines": {
+      "question": 0.010705285652223142,
+      "wiki": 0.0020036807495344504,
+      "code": 0.0036266333808032125
+     },
+     "excess": 0.09136204521874237,
+     "ratio_half": [
+      8.76964552311323,
+      10.324606595059738
+     ],
+     "target_tokens_routed": 1112,
+     "target_tokens": 3168
+    }
+   ],
+   "width_reduction": {
+    "kept_importance_share": 0.1584373044357457,
+    "rel_sq_error_donor_space": 0.6944080172755117,
+    "rel_sq_error_seed_space": 0.6892456285399676
+   },
+   "row": 7,
+   "source_sha256": {
+    "w1": "b28f7d429061aa13b60023c91e8b38dd35c89c0cd237ec875f94beb8e363635f",
+    "w3": "648f22d7a7642572a5f00dc7badfffe4824429ee5a05d84b1206becc64f368f8",
+    "w2": "6d127677127fd7113e2f4e34326bc79a80a0d52f0b0dfd62003b978e1a1e0105",
+    "router": "885016707db250aa815bb3436686bc334d31242888e238a4803dd6799d6de707"
+   }
+  }
+ ],
+ "tensors": {
+  "implant.experts.w1": {
+   "dtype": "F32",
+   "shape": [
+    8,
+    640,
+    1920
+   ],
+   "nbytes": 39321600,
+   "sha256": "ff7c5df0df7800c346d39ed24b42de2871d85585ca84dc91911023531ed40ec7"
+  },
+  "implant.experts.w3": {
+   "dtype": "F32",
+   "shape": [
+    8,
+    640,
+    1920
+   ],
+   "nbytes": 39321600,
+   "sha256": "26e7ca3fe76acd3bc90c1f6b4703d1d707f8187f54ffa93edda03847b9d31075"
+  },
+  "implant.experts.w2": {
+   "dtype": "F32",
+   "shape": [
+    8,
+    1920,
+    640
+   ],
+   "nbytes": 39321600,
+   "sha256": "a6036e5f02c2d6c2e3a6371d24ca1e63b044c45eed89ec646b62c6aaee12b79d"
+  },
+  "implant.router.weight": {
+   "dtype": "F32",
+   "shape": [
+    8,
+    1920
+   ],
+   "nbytes": 61440,
+   "sha256": "db156a78c7ffbb79f5a3bd33d09f8962259c36cf48fc342db98d602dfc250669"
+  }
+ },
+ "assumptions": {
+  "slot_gain": "1.0 - insert_implant.py divides w1, w3 and the router rows by the receiving layer's ffn_norm gain",
+  "seed_residual_rms": "1.0 - a scalar on w2, set at insertion when measured",
+  "bridges": {
+   "Q_seed_to_donor_prehead": {
+    "r2_fit": 0.8183324766239912,
+    "ridge": 0.01,
+    "lambda": 0.010165635759700068,
+    "n": 8192,
+    "d_in": 6144,
+    "d_out": 1920,
+    "bias": false,
+    "r2_holdout_tokens": -1.3744936658177824,
+    "sha256": "4cb1261b1875cf3764e40df2c0c38389f9114c5c8a2953ed6d8ca4031da922ff"
+   },
+   "P_donor_to_seed_prehead": {
+    "r2_fit": 0.33118423174059597,
+    "ridge": 0.01,
+    "lambda": 0.12926152081816153,
+    "n": 8192,
+    "d_in": 1920,
+    "d_out": 6144,
+    "bias": false,
+    "r2_holdout_tokens": -0.2114090050662838,
+    "sha256": "607073dd67efaf31395a8743f515d84e99b28ad1176f55813450d7699f4207a4"
+   }
+  }
+ }
+}

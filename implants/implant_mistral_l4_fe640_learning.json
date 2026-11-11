@@ -1,0 +1,772 @@
+{
+ "file": "implant_mistral_l4_fe640_learning.safetensors",
+ "sha256": "fc8911deb8c87159cffa4c743fa54229e18d129c4e43c6745c9f5aa5810107b8",
+ "bytes": 236053112,
+ "class": "PROJECTION",
+ "donor": {
+  "repo": "mistralai/Mistral-Large-4-1T-A52B",
+  "revision": "af26e7869af601441d5cdf75a1272469ddc3d059"
+ },
+ "donor_layers": 72,
+ "slot_width": 640,
+ "dim": 1920,
+ "rows": [
+  {
+   "donor_layer": 22,
+   "donor_expert": 71,
+   "functions": [
+    "learning_gain"
+   ],
+   "relative_depth": 0.30985915492957744,
+   "selection": [
+    {
+     "function": "learning_gain",
+     "rank": 1,
+     "mass_target": 0.20055729662612534,
+     "mass_baselines": {
+      "icl_in": 0.08683388400767868,
+      "question": 0.008251418538565296,
+      "wiki": 0.004181101424290038,
+      "code": 0.012308341263526167
+     },
+     "excess": 0.11357895244751151,
+     "ratio_half": [
+      2.4103061589829706,
+      2.197614722028624
+     ],
+     "target_tokens_routed": 272,
+     "target_tokens": 361,
+     "mass_late": 0.233251678809691,
+     "mass_early": 0.11967272636217949,
+     "late_above_early_in_both_halves": true
+    }
+   ],
+   "width_reduction": {
+    "kept_importance_share": 0.2407959457555631,
+    "rel_sq_error_donor_space": 0.20098261721159272,
+    "rel_sq_error_seed_space": 0.19915402286128492
+   },
+   "row": 0,
+   "source_sha256": {
+    "w1": "626ac4dcbb6da338b73e59aec07ab04f6d066f9bcdff19b97b9b504d5d732028",
+    "w3": "e9f0e6fd197551a5acf17d84107bebc485a147105cadced0a64ba5fc98acdeac",
+    "w2": "109f830834032164d6e17e06750372559c81823d91236681188d71b1967dbe4c",
+    "router": "b7c9ed0f1589312cbcdd640868e0d55dbb4cf53ebf4ff3b885d7a79339a33d93"
+   }
+  },
+  {
+   "donor_layer": 24,
+   "donor_expert": 49,
+   "functions": [
+    "learning_gain"
+   ],
+   "relative_depth": 0.3380281690140845,
+   "selection": [
+    {
+     "function": "learning_gain",
+     "rank": 2,
+     "mass_target": 0.10430350264023545,
+     "mass_baselines": {
+      "icl_in": 0.04073399083542528,
+      "question": 0.006330734089477001,
+      "wiki": 0.0003973081791201117,
+      "code": 0.005646433121669516
+     },
+     "excess": 0.1037642496252431,
+     "ratio_half": [
+      2.6245265791606713,
+      2.4416084749780387
+     ],
+     "target_tokens_routed": 142,
+     "target_tokens": 361,
+     "mass_late": 0.1384791684954354,
+     "mass_early": 0.034714918870192304,
+     "late_above_early_in_both_halves": true
+    }
+   ],
+   "width_reduction": {
+    "kept_importance_share": 0.23848631550864402,
+    "rel_sq_error_donor_space": 0.2256184764858539,
+    "rel_sq_error_seed_space": 0.23091677260529936
+   },
+   "row": 1,
+   "source_sha256": {
+    "w1": "52155dc93cde37f65c5df81693aab466ab7ad744e22e44b71c96223031f941a1",
+    "w3": "24f2ecfbe0d4189d7efe098ce0fdf20621840e2201d2c51fe6dd470712c6f0d8",
+    "w2": "e74a38015db9c6170f1f6ac68875ed5457993fa05cedd305b1b51afd2ec0d4ae",
+    "router": "8f164574a774065815ff7ea414f750053306b41cb8b1eaeb7bba0f6f7c09a2aa"
+   }
+  },
+  {
+   "donor_layer": 27,
+   "donor_expert": 35,
+   "functions": [
+    "learning_gain"
+   ],
+   "relative_depth": 0.38028169014084506,
+   "selection": [
+    {
+     "function": "learning_gain",
+     "rank": 8,
+     "mass_target": 0.11943514921658588,
+     "mass_baselines": {
+      "icl_in": 0.051370078828724894,
+      "question": 0.0049112917269710935,
+      "wiki": 0.01079774426792365,
+      "code": 0.004768535737513824
+     },
+     "excess": 0.0564961874392286,
+     "ratio_half": [
+      2.386643140800665,
+      2.2596890092296444
+     ],
+     "target_tokens_routed": 170,
+     "target_tokens": 361,
+     "mass_late": 0.13502965348490167,
+     "mass_early": 0.07853346604567307,
+     "late_above_early_in_both_halves": true
+    }
+   ],
+   "width_reduction": {
+    "kept_importance_share": 0.18968207287815605,
+    "rel_sq_error_donor_space": 0.41544154101703107,
+    "rel_sq_error_seed_space": 0.42206769294869695
+   },
+   "row": 2,
+   "source_sha256": {
+    "w1": "ec9b4aed4ea84fe5a3a8b185524387bef2d959ce90fbe6ae381b74ad6ea1cdac",
+    "w3": "7ace77b69920bc6e293893bdfcbb70b2b058dcfae722a549ea12a4e67a9845e6",
+    "w2": "6ae87251102110980d16338b372b98b7feb78fd94e02841e7759902bb84ef2e6",
+    "router": "5416c13efdbbf76e1f6688f6368e3e907834c33aac17410285b607bd55d7b19e"
+   }
+  },
+  {
+   "donor_layer": 33,
+   "donor_expert": 5,
+   "functions": [
+    "learning_gain"
+   ],
+   "relative_depth": 0.4647887323943662,
+   "selection": [
+    {
+     "function": "learning_gain",
+     "rank": 6,
+     "mass_target": 0.06770303572974377,
+     "mass_baselines": {
+      "icl_in": 0.02656193759690638,
+      "question": 0.0006575797741414619,
+      "wiki": 0.0009346676050395716,
+      "code": 0.0025499145581452344
+     },
+     "excess": 0.06130261367626405,
+     "ratio_half": [
+      2.7400442201341213,
+      2.262866402647421
+     ],
+     "target_tokens_routed": 94,
+     "target_tokens": 361,
+     "mass_late": 0.07466931289501405,
+     "mass_early": 0.01336669921875,
+     "late_above_early_in_both_halves": true
+    }
+   ],
+   "width_reduction": {
+    "kept_importance_share": 0.30009963917982,
+    "rel_sq_error_donor_space": 0.20772915138295509,
+    "rel_sq_error_seed_space": 0.2081630338960052
+   },
+   "row": 3,
+   "source_sha256": {
+    "w1": "5bc6330dbae9f4d4b3130c6ce7f293d63d790e33d0b61c9c022836269c6a1b3f",
+    "w3": "cb70840ade8b8bc8fc32a98f508807f739765aaf1fbc7f2e332b2904b8c5371e",
+    "w2": "51232a92a499b73a839bd310264ed1f7d05ad49d6322e101b131cdb83b23d270",
+    "router": "9d5d61c0cd991bd6d7e3547c40fc3f75eed62df5f6f8494df395b940c7399feb"
+   }
+  },
+  {
+   "donor_layer": 33,
+   "donor_expert": 93,
+   "functions": [
+    "learning_gain"
+   ],
+   "relative_depth": 0.4647887323943662,
+   "selection": [
+    {
+     "function": "learning_gain",
+     "rank": 3,
+     "mass_target": 0.12891909950657895,
+     "mass_baselines": {
+      "icl_in": 0.05934008774641908,
+      "question": 0.010101491426925803,
+      "wiki": 0.018595400336068435,
+      "code": 0.0031053921645636437
+     },
+     "excess": 0.08769440163249963,
+     "ratio_half": [
+      2.0582098821040846,
+      2.2846440923486853
+     ],
+     "target_tokens_routed": 175,
+     "target_tokens": 361,
+     "mass_late": 0.15837937258602527,
+     "mass_early": 0.07068497095352565,
+     "late_above_early_in_both_halves": true
+    }
+   ],
+   "width_reduction": {
+    "kept_importance_share": 0.21971633339950514,
+    "rel_sq_error_donor_space": 0.41409317968522724,
+    "rel_sq_error_seed_space": 0.41844113743022626
+   },
+   "row": 4,
+   "source_sha256": {
+    "w1": "83caa7471d552cb8dea18af70155be922964089301e068381bce1b76d680f8f8",
+    "w3": "e3cfe402cf2430ee10f697d062cf30abe3b0e1fdf296e80169dbbd5959d05aeb",
+    "w2": "e32213a5a8134426712b3812625d314413c9449bb11c2075c8e2cfc74808f7eb",
+    "router": "73591ec33e7102d2b5c990fc288fb4113a6eb9107f5f160735df0d8ba1b0917f"
+   }
+  },
+  {
+   "donor_layer": 35,
+   "donor_expert": 105,
+   "functions": [
+    "learning"
+   ],
+   "relative_depth": 0.49295774647887325,
+   "selection": [
+    {
+     "function": "learning",
+     "rank": 7,
+     "mass_target": 0.28274257163261773,
+     "mass_baselines": {
+      "icl_in": 0.11375698533483461,
+      "question": 0.002163305925586799,
+      "wiki": 0.0005432015246741155,
+      "code": 0.01385004659929243
+     },
+     "excess": 0.16898558629778312,
+     "ratio_half": [
+      2.4474035123915705,
+      2.5142359288795966
+     ],
+     "target_tokens_routed": 287,
+     "target_tokens": 361,
+     "mass_late": 0.2732818260621489,
+     "mass_early": 0.24566806891025642,
+     "late_above_early_in_both_halves": false
+    }
+   ],
+   "width_reduction": {
+    "kept_importance_share": 0.24899900767952599,
+    "rel_sq_error_donor_space": 0.3009608345596801,
+    "rel_sq_error_seed_space": 0.3005255944864056
+   },
+   "row": 5,
+   "source_sha256": {
+    "w1": "e8a873c42c54ca4c6273d82786dedfb9072146dda9dddf9869225963352b9395",
+    "w3": "464a40ba62e811f752ed984d007d3a75fbb490c65087bdda6b025c5a57e8a7f5",
+    "w2": "f0a16a16ef585d9c6c7ec6462a80a7b07299b8a858016fcdf3049d4bbed8d9a4",
+    "router": "d31465b9c3ff535f1348f2b60ea6bd84ff10083459cda5d0a7962b03a1e22346"
+   }
+  },
+  {
+   "donor_layer": 41,
+   "donor_expert": 102,
+   "functions": [
+    "learning"
+   ],
+   "relative_depth": 0.5774647887323944,
+   "selection": [
+    {
+     "function": "learning",
+     "rank": 1,
+     "mass_target": 0.4420593768936115,
+     "mass_baselines": {
+      "icl_in": 0.15851361837460315,
+      "question": 0.0006449458429328135,
+      "wiki": 0.013444933900176035,
+      "code": 0.013365950547016388
+     },
+     "excess": 0.2835457585190084,
+     "ratio_half": [
+      2.861455201244195,
+      2.72060525372558
+     ],
+     "target_tokens_routed": 341,
+     "target_tokens": 361,
+     "mass_late": 0.40016122882285815,
+     "mass_early": 0.515922350761218,
+     "late_above_early_in_both_halves": false
+    }
+   ],
+   "width_reduction": {
+    "kept_importance_share": 0.22060502271361265,
+    "rel_sq_error_donor_space": 0.3773606725984817,
+    "rel_sq_error_seed_space": 0.37830292033733814
+   },
+   "row": 6,
+   "source_sha256": {
+    "w1": "6a9a760dea523d7152838e082b8013a76d34da3585618dde9d158ee3a522f7f8",
+    "w3": "ffd21e5763aa605da55e613bc63e1b04902e47e69885a54176719a47ab0fa9e4",
+    "w2": "17cb98e3df3c7ef79d35cf3a14b5fd6f0d0bf2021702fe333dd0fe70783b5838",
+    "router": "fdba3c9a7ae7bfec63d53463d8c4cd40268b8bd0127e7f9d547a86283cb67f29"
+   }
+  },
+  {
+   "donor_layer": 46,
+   "donor_expert": 52,
+   "functions": [
+    "learning_gain"
+   ],
+   "relative_depth": 0.647887323943662,
+   "selection": [
+    {
+     "function": "learning_gain",
+     "rank": 4,
+     "mass_target": 0.21954058279951524,
+     "mass_baselines": {
+      "icl_in": 0.07443779879466923,
+      "question": 0.023790653952278275,
+      "wiki": 0.0014290637366154563,
+      "code": 0.01358687467745749
+     },
+     "excess": 0.08213208725252538,
+     "ratio_half": [
+      2.9789254332091915,
+      2.9215913490894
+     ],
+     "target_tokens_routed": 253,
+     "target_tokens": 361,
+     "mass_late": 0.2356824553414677,
+     "mass_early": 0.15355036808894232,
+     "late_above_early_in_both_halves": true
+    }
+   ],
+   "width_reduction": {
+    "kept_importance_share": 0.1645648426362791,
+    "rel_sq_error_donor_space": 0.6489227872325737,
+    "rel_sq_error_seed_space": 0.6445245460455178
+   },
+   "row": 7,
+   "source_sha256": {
+    "w1": "fcccea7aa25d731922be8ede0acc19a590170372c2b1cd123a51ba2be0bdcd03",
+    "w3": "1081c78f228a4dc7e058c17efbf422cb7e0224eda617e96f3fe71e7fdfcb088a",
+    "w2": "e110863b2a3fb0986f59dee751cd24d194d2f721f66650a67e9dcfe309ee9d1f",
+    "router": "b025e1205a01f40d5d1433c96fd267ef8934f7dbe98b86fb94789e220c74f2c5"
+   }
+  },
+  {
+   "donor_layer": 53,
+   "donor_expert": 19,
+   "functions": [
+    "learning_gain"
+   ],
+   "relative_depth": 0.7464788732394366,
+   "selection": [
+    {
+     "function": "learning_gain",
+     "rank": 5,
+     "mass_target": 0.22098209455072715,
+     "mass_baselines": {
+      "icl_in": 0.08613093421787323,
+      "question": 0.013492269341721801,
+      "wiki": 0.004480787451262802,
+      "code": 0.005327861025710713
+     },
+     "excess": 0.07562656781749674,
+     "ratio_half": [
+      2.3700701492893805,
+      2.7908340360003714
+     ],
+     "target_tokens_routed": 252,
+     "target_tokens": 361,
+     "mass_late": 0.23538139428985252,
+     "mass_early": 0.15975482647235578,
+     "late_above_early_in_both_halves": true
+    }
+   ],
+   "width_reduction": {
+    "kept_importance_share": 0.17926247664582978,
+    "rel_sq_error_donor_space": 0.6025330913543566,
+    "rel_sq_error_seed_space": 0.6047790003906769
+   },
+   "row": 8,
+   "source_sha256": {
+    "w1": "a6f55d321ac6a1ad333d3e0d4a2d601767b9659d2679a78d1c224bd9cca826d2",
+    "w3": "b44f857eaa561adb0b97952e4df8dbbb14df1819f7199a768313220299890b73",
+    "w2": "1c56c50fb1076a85b266f61f87a945d881616eb4c60efb2b8dc494f85aace8cd",
+    "router": "ce9a1925fd56a9f20e97c3f816f80d51e5d3ceca0bfc72df6335a971087fd973"
+   }
+  },
+  {
+   "donor_layer": 58,
+   "donor_expert": 122,
+   "functions": [
+    "learning_gain"
+   ],
+   "relative_depth": 0.8169014084507042,
+   "selection": [
+    {
+     "function": "learning_gain",
+     "rank": 7,
+     "mass_target": 0.18701121153263503,
+     "mass_baselines": {
+      "icl_in": 0.07407384107469174,
+      "question": 0.0018300835862427142,
+      "wiki": 0.01276722771273423,
+      "code": 0.006899003888576438
+     },
+     "excess": 0.058810678898034596,
+     "ratio_half": [
+      2.4835710696754685,
+      2.566702916529426
+     ],
+     "target_tokens_routed": 232,
+     "target_tokens": 361,
+     "mass_late": 0.1985960542485955,
+     "mass_early": 0.1397853753505609,
+     "late_above_early_in_both_halves": true
+    }
+   ],
+   "width_reduction": {
+    "kept_importance_share": 0.18852753951000348,
+    "rel_sq_error_donor_space": 0.42385301717615526,
+    "rel_sq_error_seed_space": 0.43788236279151643
+   },
+   "row": 9,
+   "source_sha256": {
+    "w1": "12303b6656708b83be1d03421846f4eca0f6a0016eff14ab672e6e2c56bfbfab",
+    "w3": "1920f2e51407d472b365a87bd475a822ea5df4e8bddc450f61ced17d78ac0f6b",
+    "w2": "c6bbc1639e52473c3192899d9f0634014bc7293ef78a7a7417246f933f2401b4",
+    "router": "c17300a12f183d157b0c513faaae3a5c6537c9caebb180995af97b9a682c72b7"
+   }
+  },
+  {
+   "donor_layer": 59,
+   "donor_expert": 66,
+   "functions": [
+    "learning"
+   ],
+   "relative_depth": 0.8309859154929577,
+   "selection": [
+    {
+     "function": "learning",
+     "rank": 5,
+     "mass_target": 0.3335995660924515,
+     "mass_baselines": {
+      "icl_in": 0.14419222187869168,
+      "question": 0.023992484368538812,
+      "wiki": 0.0129351511125902,
+      "code": 0.01718704067148147
+     },
+     "excess": 0.18940734421375982,
+     "ratio_half": [
+      2.318024851859501,
+      2.3108284052654207
+     ],
+     "target_tokens_routed": 277,
+     "target_tokens": 361,
+     "mass_late": 0.3199606906162219,
+     "mass_early": 0.3873650966546474,
+     "late_above_early_in_both_halves": false
+    }
+   ],
+   "width_reduction": {
+    "kept_importance_share": 0.21802588715342447,
+    "rel_sq_error_donor_space": 0.41589663187546827,
+    "rel_sq_error_seed_space": 0.43111149950787664
+   },
+   "row": 10,
+   "source_sha256": {
+    "w1": "8e64050170387b3e7ff99d826e7e461407070e1c380ab9fb19885eb6e5296f70",
+    "w3": "04eae8d438f5050cd50bc7ed84164b43c7a14138188d9649276ef6d4cafd7f82",
+    "w2": "13670a98795a1da2423c28a12bd9300de4ee55d7ff05b97a8cb1ff85f55a8d2f",
+    "router": "40d37da21703318a9785dbdb05ef3da6b0ff6047079332c0dd6b8fee8cefe015"
+   }
+  },
+  {
+   "donor_layer": 65,
+   "donor_expert": 63,
+   "functions": [
+    "learning"
+   ],
+   "relative_depth": 0.9154929577464789,
+   "selection": [
+    {
+     "function": "learning",
+     "rank": 6,
+     "mass_target": 0.2908742804276316,
+     "mass_baselines": {
+      "icl_in": 0.11090920679821323,
+      "question": 0.012156937808906348,
+      "wiki": 0.012618296816806332,
+      "code": 0.007567880716022773
+     },
+     "excess": 0.17996507362941835,
+     "ratio_half": [
+      2.6020891088967404,
+      2.6450764812118788
+     ],
+     "target_tokens_routed": 313,
+     "target_tokens": 361,
+     "mass_late": 0.2869681026158708,
+     "mass_early": 0.3149461012620192,
+     "late_above_early_in_both_halves": false
+    }
+   ],
+   "width_reduction": {
+    "kept_importance_share": 0.289553383406043,
+    "rel_sq_error_donor_space": 0.3840317178978253,
+    "rel_sq_error_seed_space": 0.39841010944002786
+   },
+   "row": 11,
+   "source_sha256": {
+    "w1": "946067b3647ae20dc42bcc7e9d7b1d5aebbb26a9174cf8bee720bccff966323e",
+    "w3": "95c25896d556ab86eeb0e25a1e5e5f27f8ed1575f382b8bc6e29a578dc916e6d",
+    "w2": "d263b773618d53bd0df2cb41de3ebcb0a4c7907ada99e09194ecf0dea4ef1294",
+    "router": "58ce256370e3576440d68489b069431bb262403212c269652a481562731ada6d"
+   }
+  },
+  {
+   "donor_layer": 66,
+   "donor_expert": 94,
+   "functions": [
+    "learning"
+   ],
+   "relative_depth": 0.9295774647887324,
+   "selection": [
+    {
+     "function": "learning",
+     "rank": 4,
+     "mass_target": 0.2921974414603532,
+     "mass_baselines": {
+      "icl_in": 0.10263817703238057,
+      "question": 0.010933686744963965,
+      "wiki": 0.01109866918354283,
+      "code": 0.004652411842307838
+     },
+     "excess": 0.18955926442797263,
+     "ratio_half": [
+      2.8327597271745457,
+      2.860704995000983
+     ],
+     "target_tokens_routed": 324,
+     "target_tokens": 361,
+     "mass_late": 0.2883767117275281,
+     "mass_early": 0.30349027193509615,
+     "late_above_early_in_both_halves": false
+    }
+   ],
+   "width_reduction": {
+    "kept_importance_share": 0.2776308443509956,
+    "rel_sq_error_donor_space": 0.434763027733828,
+    "rel_sq_error_seed_space": 0.45078627624801715
+   },
+   "row": 12,
+   "source_sha256": {
+    "w1": "e83730fbb36f9bf463a4d703f44ebcd50885fece323056f0c1c55cbb89f27bbd",
+    "w3": "7b18d4902a2052f2cd54d78325da1d5ac9cbcf16a11bf7b3a95b0a0bbf959f88",
+    "w2": "9bc2f8e1b5dff183a816decc426b3b879b8e3adaf0650d323321ec12c3122581",
+    "router": "4617a9e75a62deae6654bd383b831f4c5ea9862a909855ddd4d6b435d3675a5c"
+   }
+  },
+  {
+   "donor_layer": 70,
+   "donor_expert": 11,
+   "functions": [
+    "learning"
+   ],
+   "relative_depth": 0.9859154929577465,
+   "selection": [
+    {
+     "function": "learning",
+     "rank": 8,
+     "mass_target": 0.19395214302718145,
+     "mass_baselines": {
+      "icl_in": 0.03454744865115549,
+      "question": 0.009827660102099086,
+      "wiki": 0.010399617740339852,
+      "code": 0.011244583053174642
+     },
+     "excess": 0.15940469437602595,
+     "ratio_half": [
+      4.926513005221403,
+      6.470812261407355
+     ],
+     "target_tokens_routed": 262,
+     "target_tokens": 361,
+     "mass_late": 0.2051782500877809,
+     "mass_early": 0.17627266125801283,
+     "late_above_early_in_both_halves": true
+    }
+   ],
+   "width_reduction": {
+    "kept_importance_share": 0.23675554712563668,
+    "rel_sq_error_donor_space": 0.4591887804545552,
+    "rel_sq_error_seed_space": 0.4970774514267684
+   },
+   "row": 13,
+   "source_sha256": {
+    "w1": "111c7ffb65ce4207e07e55b5e45f89b1e4881cccedd943f961985c1018c3e877",
+    "w3": "4b7848ef6b3c834eb3de00a0a5f2900cdd5328502ccc6bf57694ae95e629ff10",
+    "w2": "43fdd98ee0fcd1d91da9aebb34ce03c5b70f352912bc51abfbdee6a1919e44fb",
+    "router": "aac575b15c2237a8178241878e88601a7300e68d057e0fe253e855f7b863ffd6"
+   }
+  },
+  {
+   "donor_layer": 71,
+   "donor_expert": 57,
+   "functions": [
+    "learning"
+   ],
+   "relative_depth": 1.0,
+   "selection": [
+    {
+     "function": "learning",
+     "rank": 2,
+     "mass_target": 0.2836317236733899,
+     "mass_baselines": {
+      "icl_in": 0.05134902476419448,
+      "question": 0.008254033781555214,
+      "wiki": 0.01402375347343459,
+      "code": 0.008966276781337976
+     },
+     "excess": 0.23228269890919542,
+     "ratio_half": [
+      5.572286367824514,
+      5.481334972728622
+     ],
+     "target_tokens_routed": 270,
+     "target_tokens": 361,
+     "mass_late": 0.281757140427493,
+     "mass_early": 0.30353096203926283,
+     "late_above_early_in_both_halves": false
+    }
+   ],
+   "width_reduction": {
+    "kept_importance_share": 0.23526449503165434,
+    "rel_sq_error_donor_space": 0.5639859154210976,
+    "rel_sq_error_seed_space": 0.5640916537913301
+   },
+   "row": 14,
+   "source_sha256": {
+    "w1": "fd452973a9aa996c8b83427b6e0a2ac58c7199ce6133ef2a0a9a53566b5b5040",
+    "w3": "79bdc82cc7f7534a3629a66794daad93e26f91a9920083cecd05511a0c121870",
+    "w2": "78fd4005757104a3dea77bcfcd109d5f986cd6e782d7d705a8a43394bdcf2bf1",
+    "router": "0ab1c2a032f5477c5ecee35db8d263fcf585fb0de65f8ad68a170417c22483ca"
+   }
+  },
+  {
+   "donor_layer": 71,
+   "donor_expert": 64,
+   "functions": [
+    "learning"
+   ],
+   "relative_depth": 1.0,
+   "selection": [
+    {
+     "function": "learning",
+     "rank": 3,
+     "mass_target": 0.19970246629371538,
+     "mass_baselines": {
+      "icl_in": 0.008828232433411473,
+      "question": 0.006259362954498464,
+      "wiki": 0.006107948345844972,
+      "code": 0.00559581186650098
+     },
+     "excess": 0.19087423386030392,
+     "ratio_half": [
+      23.873996121024273,
+      21.38116213981299
+     ],
+     "target_tokens_routed": 265,
+     "target_tokens": 361,
+     "mass_late": 0.20803524403089887,
+     "mass_early": 0.19640096028645834,
+     "late_above_early_in_both_halves": true
+    }
+   ],
+   "width_reduction": {
+    "kept_importance_share": 0.2665050824710938,
+    "rel_sq_error_donor_space": 0.4732583553560553,
+    "rel_sq_error_seed_space": 0.4143458305605802
+   },
+   "row": 15,
+   "source_sha256": {
+    "w1": "34fe1ac17cf7af88dc55cee3d68d039496f51e5b6625e0454c3abedb0485512f",
+    "w3": "526134c85dcf00f62fd42800dc411b517e88b0e5b9a56f9ed1754755e148319d",
+    "w2": "f9dd3da40a6c9b9492f1a6d53f7ec6a6d5a4e1fb671774a31745a43c9ef2709e",
+    "router": "1cd3f768c7ffb26efd4ccfcbda6260967128baf4609e7735227fb497c5d5a609"
+   }
+  }
+ ],
+ "tensors": {
+  "implant.experts.w1": {
+   "dtype": "F32",
+   "shape": [
+    16,
+    640,
+    1920
+   ],
+   "nbytes": 78643200,
+   "sha256": "21618cf1e8829a309dfdfd1c8c7430ecc3181b6ee6edf5913e8bf294cd0e9eda"
+  },
+  "implant.experts.w3": {
+   "dtype": "F32",
+   "shape": [
+    16,
+    640,
+    1920
+   ],
+   "nbytes": 78643200,
+   "sha256": "300f2e4aaafe2ce3ae0b12a28664cd1fb47b9d464c2bacbc3d608bbce4cb378b"
+  },
+  "implant.experts.w2": {
+   "dtype": "F32",
+   "shape": [
+    16,
+    1920,
+    640
+   ],
+   "nbytes": 78643200,
+   "sha256": "f22408c3e0343dcc2afd4e71582c49406123fe02efb932e994632a83d293e2f3"
+  },
+  "implant.router.weight": {
+   "dtype": "F32",
+   "shape": [
+    16,
+    1920
+   ],
+   "nbytes": 122880,
+   "sha256": "92fdc542c4593e68f24235ecd02b85cfe2f8542f7e94620ed098e507f055e1aa"
+  }
+ },
+ "assumptions": {
+  "slot_gain": "1.0 - insert_implant.py divides w1, w3 and the router rows by the receiving layer's ffn_norm gain",
+  "seed_residual_rms": "1.0 - a scalar on w2, set at insertion when measured",
+  "bridges": {
+   "Q_seed_to_donor_prehead": {
+    "r2_fit": 0.8183324766239912,
+    "ridge": 0.01,
+    "lambda": 0.010165635759700068,
+    "n": 8192,
+    "d_in": 6144,
+    "d_out": 1920,
+    "bias": false,
+    "r2_holdout_tokens": -1.3744936658177824,
+    "sha256": "4cb1261b1875cf3764e40df2c0c38389f9114c5c8a2953ed6d8ca4031da922ff"
+   },
+   "P_donor_to_seed_prehead": {
+    "r2_fit": 0.33118423174059597,
+    "ridge": 0.01,
+    "lambda": 0.12926152081816153,
+    "n": 8192,
+    "d_in": 1920,
+    "d_out": 6144,
+    "bias": false,
+    "r2_holdout_tokens": -0.2114090050662838,
+    "sha256": "607073dd67efaf31395a8743f515d84e99b28ad1176f55813450d7699f4207a4"
+   }
+  }
+ }
+}

@@ -1,0 +1,16 @@
+{
+ "tokens": 23056,
+ "mean_ce_nats": 2.588094711303711,
+ "by_kind": {
+  "wiki": 1.7425144910812378,
+  "code": 0.702974796295166,
+  "gsm_raw": 1.2325654029846191,
+  "chat": 4.299853801727295,
+  "icl": 3.1401264667510986
+ },
+ "repo": "mistralai/Mistral-Large-4-1T-A52B",
+ "revision": "af26e7869af601441d5cdf75a1272469ddc3d059",
+ "last_layer": 71,
+ "bytes_fetched": 353605300288,
+ "wall_s": 7636.9
+}

@@ -1,0 +1,32 @@
+{
+ "n_routed": [
+  10,
+  13
+ ],
+ "params": [
+  86880,
+  101280
+ ],
+ "active_params": [
+  68448,
+  69024
+ ],
+ "dense": {
+  "max_abs_logit_diff": 1.1920928955078125e-07,
+  "logit_abs_max": 1.1650879383087158,
+  "old_slot_loads_equal": true,
+  "new_slot_load": 0,
+  "distinct_experts_used": 40
+ },
+ "ragged": {
+  "max_abs_logit_diff": 1.7881393432617188e-07,
+  "logit_abs_max": 1.1650879383087158,
+  "old_slot_loads_equal": true,
+  "new_slot_load": 0,
+  "distinct_experts_used": 40
+ },
+ "switched_on": {
+  "max_abs_logit_diff": 1.3330751657485962,
+  "new_slot_load": 864
+ }
+}
